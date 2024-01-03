@@ -355,7 +355,6 @@ void showcommands(char *source, char *chan, char *args)
 
 void showhelp(char *source, char *chan, char *args)
 {
-printf("showhelp\n");
   struct buffer_block *dyn = NULL;
   char buffer[512], word[80], *ptr;
   int i, l, index = 0, found = 0, file, linecount = 0;

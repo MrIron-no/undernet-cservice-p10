@@ -45,3 +45,36 @@ To run:
 You can reach me at <csfeedback@robin.pfft.net> for questions or comments,
 but I reserve the right to completely ignore you if I feel like it.
 
+IRCU P10 FORK:
+I started off with a nostalgic project of rewriting the old Undernet channel service 
+bot X/W to be compatible with the current P10 protocol of ircu. It has been tested on
+FreeBSD only. The bot has not been tested in debth, and the above recommendation of not
+using it in a production environment is repeated. 
+
+The purpose of the project has been to keep the bot as authentic as possible, and hence
+no new features have been added. There is however two exceptions: 
+- a REGISTER admin command  has been added to allow channel registrations over IRC command.
+- the bot will login to GNUWorld's mod.ccontrol to op itself via the REOP command. If neither
+ccontrol nor FAKE UWORLD is available, the bot will op itself through servermode. 
+
+The original HTTP interface should work if DOHTTP is defined in config.h. Make sure that HTTP_REDIRECT
+is not defined, as this will redirect any attempts to the defined website. The index.html.dist file in HTTP/ 
+must be replaced/renamed to index.html. The original way of registering new channels was to pass a raw command 
+to the HTTP connection which should still work with the following steps:
+1. Add a file called raw.auth in the root folder of the bot, including the IP address you will be connecting from.
+2. Telnet to the IP address and HTTP port. Type the command 'CSRAW'. Answer the PING request with a PONG and the same prompt.
+3a. The command "ISREG <#channel>" will respond YES or NO whether the channel is registered.
+3b. The command "REG <#channel> <realname> <mask> 0 <admin nick> [password]" will register the channel (I don't know
+    what the 0 was supposed to be, but it doesn't appear to be used).
+
+KNOWN BUGS:
+
+1. The Chat function has not been reviewed.
+2. NickServ has not been tested in detail. The ghost command causes a crash.
+3. Fake Uworld OPCOM command needs to be updated to pass the mode with numerics instead of nicknames. 
+4. MALLOC definition returning compiling errors and has therefore partly been deactivated.
+
+
+Enjoy this piece of history! 
+
+- MrIron

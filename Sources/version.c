@@ -26,5 +26,5 @@
  * overwritten when you recompile.
  */
 
-char VERSION[]="Undernet Channel Service v20020715 build-20240102113705 ";
+char VERSION[]="Undernet Channel Service v20020715 build-20240102232511 ";
 

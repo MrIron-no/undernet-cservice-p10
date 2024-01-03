@@ -499,7 +499,7 @@ static void http_show_userlist(http_socket * hsock, char *channel, char *protoco
   }
   else
   {
-    if (!strcmp(channel, "secret_admin_list"))
+    if (!strcmp(channel, HTTP_SECRET_WORD))
     {
         strcpy(channel, "*"); /* Enable us to see the * userlist via the web */
     }
@@ -1021,6 +1021,7 @@ static int auth_raw(u_long addr)
 {
   FILE *fp;
   char buffer[80], *ptr;
+
   if ((fp = fopen("raw.auth", "r")) == NULL)
     return 0;
 

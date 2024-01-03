@@ -54,5 +54,6 @@ config.h
 # Web
 HTTP/*.#
 HTTP/index.html
+raw.auth
 
 .gdbinit

@@ -52,9 +52,7 @@
 #include "events.h"
 #include "flags.h"
 #include "version.h"
-/*#ifdef DEBUG
 #include <sys/timeb.h>
-#endif*/
 
 #ifndef SIGCLD
 #define SIGCLD SIGCHLD
@@ -104,8 +102,6 @@ misc_socket *MiscList = NULL;
 irc_socket Irc =
 {-1, 0, NULL, NULL, NULL};
 unsigned long MEM_buffers = 0;
-//unsigned long NB_avail_buffer_blocks = 0;
-//unsigned long NB_alloc_buffer_blocks = 0;
 
 static int Data_files_loaded = 0;
 
@@ -116,13 +112,13 @@ const unsigned int glob_cksum1 = BINCKSUM1;
 const unsigned int glob_cksum2 = 0;
 
 #ifdef FAKE_UWORLD
-char ufakeservernum[10] = "AD";
-char ufakenum[10] = "ADAAA";
+char ufakenum[10];
 int Uworld_status = 0;
 time_t UworldTS, UworldServTS;
 #endif
 
 #ifdef NICKSERV
+char nservnum[10];
 int NServ_status = 1;
 #endif
 
@@ -170,7 +166,7 @@ void regist(void)
   bursting = 1;
 
   /* Then send reg stuff to server.. */
-  sprintf(buffer, "PASS :%s\nSERVER %s 1 %ld %ld J10 %sAAA +s6 :%s\n",
+  sprintf(buffer, "PASS :%s\nSERVER %s 1 %ld %ld J10 %s]]] +s6 :%s\n",
     PASSWORD, SERVERNAME, t, t, NUMERIC, SERVERINFO);
   sendtoserv(buffer);
 }
@@ -197,11 +193,13 @@ void IntroduceUworld(void)
   char buffer[512];
   UworldServTS = now;
   UworldTS = logTS;	/* force nick collision */
+
+  sprintf(ufakenum, "%sAAA", UFAKE_NUMERIC);
   sprintf(buffer, "%s S %s 2 0 %ld J10 %sAAA +s6 :%s\n"
-    "%s N %s 2 31337 %s %s +o AAAAAA %s :%s\n%s EB\n%s EB\n%s EA\n%s EA\n",
-    NUMERIC, UFAKE_SERVER, UworldServTS, ufakeservernum, UFAKE_INFO,
-    ufakeservernum, UFAKE_NICK, UFAKE_NICK, UFAKE_HOST, ufakenum, UFAKE_INFO, 
-    ufakeservernum, NUMERIC, ufakeservernum, NUMERIC);
+    "%s N %s 2 31337 %s %s +o AAAAAA %s :%s\n%s EB\n%s EA\n",
+    NUMERIC, UFAKE_SERVER, UworldServTS, UFAKE_NUMERIC, UFAKE_INFO,
+    UFAKE_NUMERIC, UFAKE_NICK, UFAKE_NICK, UFAKE_HOST, ufakenum, UFAKE_INFO, 
+    UFAKE_NUMERIC, UFAKE_NUMERIC);
   sendtoserv(buffer);
 }
 
@@ -211,7 +209,7 @@ void KillUworld(char *msg)
   sprintf(buffer, "%s Q :%s\n"
     "%s SQ %s %ld :%s\n",
     ufakenum, msg,
-    ufakeservernum, UFAKE_SERVER, UworldServTS, msg);
+    UFAKE_NUMERIC, SERVERNAME, UworldServTS, msg);
   sendtoserv(buffer);
 }
 #endif
@@ -219,9 +217,11 @@ void KillUworld(char *msg)
 #ifdef NICKSERV
 void IntroduceNickserv(void)
 {
-  char buffer[80];
-  sprintf(buffer, "%s N %s 1 %ld %s %s +kd DAqAoC %s :%s\n",
-    NUMERIC, NSERV_NICK, logTS, NSERV_USER, NSERV_HOST,
+  char buffer[512];
+
+  sprintf(nservnum, "%sAAB", NUMERIC);
+  sprintf(buffer, "%s N %s 1 31337 %s %s +kd AAAAAA %s :%s\n",
+    NUMERIC, NSERV_NICK, NSERV_USER, NSERV_HOST,
     nservnum, NSERV_INFO);
   sendtoserv(buffer);
   NServ_status = 1;
@@ -229,7 +229,7 @@ void IntroduceNickserv(void)
 
 void KillNickserv(char *msg)
 {
-  char buffer[80];
+  char buffer[200];
   sprintf(buffer, "%s Q :%s\r\n", nservnum, msg);
   sendtoserv(buffer);
   NServ_status = 0;
@@ -471,9 +471,9 @@ int restart(char *msg)		/* added by Kev */
 void notice(char *target, char *msg)
 {
   char buffer[200];
-//#ifdef DOHTTP
-//  extern chat_notice(char *, char *);
-//#endif
+#ifdef DOHTTP
+  extern chat_notice(char *, char *);
+#endif
 
 #ifdef DOHTTP
   if (*target == '+')

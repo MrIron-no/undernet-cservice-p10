@@ -228,6 +228,7 @@ extern char UWORLD2_SERVER[80];
 # define UFAKE_NICK	UWORLD2
 # define UFAKE_HOST	DEFAULT_HOSTNAME
 # define UFAKE_SERVER	UWORLD2_SERVER
+# define UFAKE_NUMERIC	"AD"
 # define UFAKE_INFO	"Uworld"
 #endif
 
@@ -277,6 +278,7 @@ extern char CALMDOWNTOPIC[512];
 #define HTTP_TIMEOUT 60
 #define HTTP_LOG  "http.log"
 #define HTTP_DENY "http.deny"
+#define HTTP_SECRET_WORD "cservice_secret_list"
 #define HTTP_REDIRECT "http://cservice.undernet.org/"
 #define HTTP_FOOTER "\n"\
 "<A HREF=\"http://cservice.undernet.org/\"><IMG SRC=\"/files/b_arrow.gif\">Back to main page</A><P>\n"\

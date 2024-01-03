@@ -259,10 +259,10 @@ void ModeChange(char *source, char *channel, char *change)
     for (ptr = change; *ptr != 'b' && *ptr != ' '; ptr++);
     if (*ptr != 'b' && strcasecmp(uworldservernum, source) && strcasecmp(NUMERIC, source)
 #ifdef UWORLD2
-      && strcasecmp(UWORLD2_SERVER, source)
+      && strcasecmp(UWORLD2_SERVER, source) // TODO: This is suppoed to be the numeric.
 #endif
 #ifdef FAKE_UWORLD
-      && strcasecmp(ufakeservernum, source)
+      && strcasecmp(UFAKE_NUMERIC, source)
 #endif
       )
     {
@@ -965,7 +965,7 @@ void flushmode(char *channel)
 	else if (AsServer == 2 && Uworld_status == 1 && *flags != '\0')
 	{
 	  sprintf(buffer, "%s M %s %s%s\n",
-	    ufakeservernum, channel,
+	    UFAKE_NUMERIC, channel,
 	    flags, args);
 	  sendtoserv(buffer);
 	}

@@ -70,12 +70,12 @@ extern alang Lang[NO_LANG];
 extern char *replies[][NO_LANG];
 #ifdef FAKE_UWORLD
 extern char ufakenum[10];
-extern char ufakeservernum[10];
 extern int Uworld_status;
 extern time_t UworldTS,UworldServTS;
 #endif
 #ifdef NICKSERV
 extern int NServ_status;
+extern char nservnum[10];
 #endif
 extern unsigned long MEM_buffers;
 extern unsigned long NB_avail_buffer_blocks;

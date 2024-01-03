@@ -1648,6 +1648,7 @@ void purge(char *source, char *ch, char *args)
 {
   register ShitUser **shit, *tshit;
   register RegUser *user;
+  register achannel *chan;
   register int index;
   char buffer[1024];
   char channel[80];
@@ -1672,8 +1673,12 @@ void purge(char *source, char *ch, char *args)
     GetNumNick(source), channel, comment);
   broadcast(buffer, 1);
 
+  chan = ToChannel(channel);
+
   RemChan("", channel, ""); // TODO: Only if defchan. 
-  part("", channel, ""); // TODO: Only if chan->on
+
+  if (chan && chan->on)
+	part("", channel, "");
 
   shit = &ShitList[sl_hash(channel)];
   while (*shit != NULL)

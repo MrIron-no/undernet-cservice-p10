@@ -54,6 +54,3 @@
 #include "flags.h"
 #include "dbio.h"
 #include "version.h"
-
-//unsigned long NB_avail_buffer_blocks=0;
-//unsigned long NB_alloc_buffer_blocks=0;

@@ -301,11 +301,11 @@ void GetOps(char *channel)
   if (Uworld_status == 1)
   {
     sprintf(buffer, "%s M %s +o %s %ld\n",
-      ufakeservernum, channel, mynum, timestamp);
+      UFAKE_NUMERIC, channel, mynum, timestamp);
     sendtoserv(buffer);
     PutLog("REOP by fake Uworld");
     sprintf(buffer, "+o %s %ld", mynum, timestamp);
-    ModeChange(ufakeservernum, channel, buffer);
+    ModeChange(UFAKE_NUMERIC, channel, buffer);
     return;
   }
 #endif

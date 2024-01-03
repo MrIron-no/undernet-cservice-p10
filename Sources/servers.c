@@ -1,6 +1,4 @@
-
 /* @(#)$Id: servers.c,v 1.9 1998/01/25 18:35:47 seks Exp $ */
-
 
 /* Undernet Channel Service (X)
  * Copyright (C) 1995-2002 Robin Thellend

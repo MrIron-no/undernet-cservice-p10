@@ -33,11 +33,11 @@
 
 static struct aregnick *NServ_DB [NSERV_HASH];
 
-static void nserv_notice(char *nick, char *msg)
+static void nserv_notice(char *num, char *msg)
 {
   char buffer[1024];
 
-  sprintf(buffer,":%s NOTICE %s :%s\r\n",NSERV_NICK,nick,msg);
+  sprintf(buffer,"%s O %s :%s\r\n", nservnum, num, msg);
   sendtoserv(buffer);
 }
 
@@ -86,13 +86,13 @@ void nserv_nickserv(char *source, char *args)
   
   if((luser=ToLuser(source))==NULL)
   {
-    log("ERROR: nserv_nickserv() can't locate user!");
+    PutLog("ERROR: nserv_nickserv() can't locate user!");
     return;
   }
 
   if(!(luser->mode&LFL_ISOPER))
   {
-    notice(source,"Cette commande est réservée aux IRC Opérateurs");
+    notice(source,"This command is reserved for IRC Operators.");
     return;
   }
 
@@ -100,26 +100,26 @@ void nserv_nickserv(char *source, char *args)
   {
     if(NServ_status == 1)
     {
-      sprintf(buffer,"%s est déjà actif!",NSERV_NICK);
+      sprintf(buffer,"%s is already activated!", NSERV_NICK);
       notice(source,buffer);
     }
     else
     {
       IntroduceNickserv();
-      sprintf(buffer,"%s est maintenant actif!",NSERV_NICK);
+      sprintf(buffer,"%s is activated!", NSERV_NICK);
       notice(source,buffer);
     }
   }
   else if(!strcmp(args,"off"))
   {
-    sprintf(buffer,"Désactivé par %s",source);
+    sprintf(buffer,"Deactivated by %s", GetNumNick(source));
     KillNickserv(buffer);
-    sprintf(buffer,"%s est maintenant désactivé!",NSERV_NICK);
+    sprintf(buffer,"%s is deactivated!", NSERV_NICK);
     notice(source,buffer);
   }
   else
   {
-    notice(source,"SYNTAXE: nickserv <on|off>");
+    notice(source,"SYNTAX: nickserv <on|off>");
   }
 }
 
@@ -133,19 +133,19 @@ void nserv_addnick(char *source, char *args)
   
   if((luser=ToLuser(source))==NULL)
   {
-    log("ERROR: nserv_addnick() can't locate user!");
+    PutLog("ERROR: nserv_addnick() can't locate user!");
     return;
   }
 
   if(NServ_status != 1)
   {
-    notice(source,"NickServ n'est pas actif!");
+    notice(source,"NickServ is not activated!");
     return;
   }
 
   if(!(luser->mode&LFL_ISOPER))
   {
-    nserv_notice(source,"Cette commande est réservée aux IRC Opérateurs");
+    nserv_notice(source,"This command is reserved for IRC Operators.");
     return;
   }
 
@@ -156,7 +156,7 @@ void nserv_addnick(char *source, char *args)
 
   if(!*nick || !*mask || !*password)
   {
-    nserv_notice(source,"SYNTAXE: addnick <nick> <mask> <mot_de_passe> [e-mail]");
+    nserv_notice(source,"SYNTAX: addnick <nick> <mask> <password> [e-mail]");
     return;
   }
 
@@ -165,7 +165,7 @@ void nserv_addnick(char *source, char *args)
 
   if((reg=nserv_find(nick)) != NULL)
   {
-    sprintf(buffer,"Le nick \"%s\" est déjà enregistré",nick);
+    sprintf(buffer,"The nick \"%s\" is already registered.", nick);
     nserv_notice(source,buffer);
     return;
   }
@@ -190,7 +190,7 @@ void nserv_addnick(char *source, char *args)
 
   reg->ref = 1;
 
-  sprintf(buffer,"Nick %s (%s) ajouté",nick,mask);
+  sprintf(buffer,"Nick %s (%s) is registered.", nick, mask);
   nserv_notice(source,buffer);
 }
 
@@ -205,19 +205,19 @@ void nserv_addmask(char *source, char *args)
   
   if((luser=ToLuser(source))==NULL)
   {
-    log("ERROR: nserv_addnick() can't locate user!");
+    PutLog("ERROR: nserv_addnick() can't locate user!");
     return;
   }
 
   if(NServ_status != 1)
   {
-    notice(source,"NickServ n'est pas actif!");
+    notice(source,"NickServ is not activated!");
     return;
   }
 
   if(!(luser->mode&LFL_ISOPER))
   {
-    nserv_notice(source,"Cette commande est réservée aux IRC Opérateurs");
+    nserv_notice(source,"This command is reserved for IRC Operators.");
     return;
   }
 
@@ -227,7 +227,7 @@ void nserv_addmask(char *source, char *args)
 
   if(!*nick || !*mask)
   {
-    nserv_notice(source,"SYNTAXE: addmask <nick> <mask>");
+    nserv_notice(source,"SYNTAX: addmask <nick> <mask>");
     return;
   }
 
@@ -235,7 +235,7 @@ void nserv_addmask(char *source, char *args)
 
   if((reg=nserv_find(nick)) == NULL)
   {
-    sprintf(buffer,"Le nick \"%s\" n'est pas enregistré",nick);
+    sprintf(buffer,"The nick \"%s\" is not registered.", nick);
     nserv_notice(source,buffer);
     return;
   }
@@ -250,7 +250,7 @@ void nserv_addmask(char *source, char *args)
   rmask->next = reg->mask;
   reg->mask = rmask;
    
-  sprintf(buffer,"Mask %s ajouté a %s",mask,nick);
+  sprintf(buffer,"Mask %s added to %s", mask, nick);
   nserv_notice(source,buffer);
 }
 
@@ -265,19 +265,19 @@ void nserv_remnick(char *source, char *args)
   
   if((luser=ToLuser(source))==NULL)
   {
-    log("ERROR: nserv_addnick() can't locate user!");
+    PutLog("ERROR: nserv_addnick() can't locate user!");
     return;
   }
 
   if(NServ_status != 1)
   {
-    notice(source,"NickServ n'est pas actif!");
+    notice(source,"NickServ is not activated!");
     return;
   }
 
   if(!(luser->mode&LFL_ISOPER))
   {
-    nserv_notice(source,"Cette commande est réservée aux IRC Opérateurs");
+    nserv_notice(source,"This command is reserved for IRC Operators.");
     return;
   }
 
@@ -286,7 +286,7 @@ void nserv_remnick(char *source, char *args)
 
   if(!*nick)
   {
-    nserv_notice(source,"SYNTAXE: remnick <nick>");
+    nserv_notice(source,"SYNTAX: remnick <nick>");
     return;
   }
 
@@ -294,7 +294,7 @@ void nserv_remnick(char *source, char *args)
 
   if( *(reg=nserv_find_ptr(nick)) == NULL)
   {
-    sprintf(buffer,"Le nick \"%s\" n'est pas enregistré",nick);
+    sprintf(buffer,"The nick \"%s\" is not registered", nick);
     nserv_notice(source,buffer);
     return;
   }
@@ -315,7 +315,7 @@ void nserv_remnick(char *source, char *args)
     free(tmpreg);  
   }
 
-  sprintf(buffer,"Nick %s effacé",nick);
+  sprintf(buffer,"Nick %s removed", nick);
   nserv_notice(source,buffer);
 }
 
@@ -329,19 +329,19 @@ void nserv_remmask(char *source, char *args)
   
   if((luser=ToLuser(source))==NULL)
   {
-    log("ERROR: nserv_addnick() can't locate user!");
+    PutLog("ERROR: nserv_addnick() can't locate user!");
     return;
   }
 
   if(NServ_status != 1)
   {
-    notice(source,"NickServ n'est pas actif!");
+    notice(source,"NickServ is not activated!");
     return;
   }
 
   if(!(luser->mode&LFL_ISOPER))
   {
-    nserv_notice(source,"Cette commande est réservée aux IRC Opérateurs");
+    nserv_notice(source,"This command is reserved for IRC Operators.");
     return;
   }
 
@@ -351,7 +351,7 @@ void nserv_remmask(char *source, char *args)
 
   if(!*nick || !*mask)
   {
-    nserv_notice(source,"SYNTAXE: remmask <nick> <mask>");
+    nserv_notice(source,"SYNTAX: remmask <nick> <mask>");
     return;
   }
 
@@ -359,7 +359,7 @@ void nserv_remmask(char *source, char *args)
 
   if((reg=nserv_find(nick)) == NULL)
   {
-    sprintf(buffer,"Le nick \"%s\" n'est pas enregistré",nick);
+    sprintf(buffer,"The nick \"%s\" is not registered", nick);
     nserv_notice(source,buffer);
     return;
   }
@@ -373,7 +373,7 @@ void nserv_remmask(char *source, char *args)
 
   if(*rmask == NULL)
   {
-    sprintf(buffer,"%s n'as pas de mask %s",nick,mask);
+    sprintf(buffer,"%s does not have the following mask registered: %s", nick, mask);
     nserv_notice(source,buffer);
     return;
   }
@@ -383,7 +383,7 @@ void nserv_remmask(char *source, char *args)
 
   free(tmprmask);
    
-  sprintf(buffer,"Mask %s enlevé de %s",mask,nick);
+  sprintf(buffer,"Mask %s removed from %s", mask, nick);
   nserv_notice(source,buffer);
 }
 
@@ -398,13 +398,13 @@ void nserv_nickinfo(char *source, char *args)
   
   if((luser=ToLuser(source))==NULL)
   {
-    log("ERROR: nserv_addnick() can't locate user!");
+    PutLog("ERROR: nserv_addnick() can't locate user!");
     return;
   }
 
   if(NServ_status != 1)
   {
-    notice(source,"NickServ n'est pas actif!");
+    notice(source,"NickServ is not activated!");
     return;
   }
 
@@ -412,7 +412,7 @@ void nserv_nickinfo(char *source, char *args)
 
   if(!*nick)
   {
-    nserv_notice(source,"SYNTAXE: nickinfo <nick>");
+    nserv_notice(source,"SYNTAX: nickinfo <nick>");
     return;
   }
 
@@ -420,14 +420,14 @@ void nserv_nickinfo(char *source, char *args)
 
   if((reg=nserv_find(nick)) == NULL)
   {
-    sprintf(buffer,"Le nick \"%s\" n'est pas enregistré",nick);
+    sprintf(buffer,"The nick \"%s\" is not registered", nick);
     nserv_notice(source,buffer);
     return;
   }
 
   sprintf(buffer,"Nick: %s",reg->nick);
   nserv_notice(source,buffer);
-  sprintf(buffer,"Création: %.24s",ctime(&reg->created));
+  sprintf(buffer,"Creation: %.24s",ctime(&reg->created));
   nserv_notice(source,buffer);
   sprintf(buffer,"Modification: %.24s",ctime(&reg->modified));
   nserv_notice(source,buffer);
@@ -435,7 +435,7 @@ void nserv_nickinfo(char *source, char *args)
   if((!strcmp(source,reg->nick) && luser->regnick && luser->reglimit == 0)
       || (luser->mode&LFL_ISOPER))
   {
-    sprintf(buffer,"Mot de passe: %s",reg->password);
+    sprintf(buffer,"Password: %s",reg->password);
     nserv_notice(source,buffer);
 
     sprintf(buffer,"E-mail: %s",reg->email);
@@ -445,7 +445,7 @@ void nserv_nickinfo(char *source, char *args)
   for(rmask = reg->mask; rmask != NULL; rmask = rmask->next)
   {
     if(rmask->lastused == (time_t) 0)
-      sprintf(buffer,"Mask: %s  (jamais utilisé)",rmask->mask);
+      sprintf(buffer,"Mask: %s  (never used)",rmask->mask);
     else
       sprintf(buffer,"Mask: %s  %.24s",rmask->mask, ctime(&rmask->lastused));
     nserv_notice(source,buffer);
@@ -461,13 +461,13 @@ void nserv_identify(char *source, char *args)
   
   if((luser=ToLuser(source))==NULL)
   {
-    log("ERROR: nserv_identify() can't locate user!");
+    PutLog("ERROR: nserv_identify() can't locate user!");
     return;
   }
 
   if(NServ_status != 1)
   {
-    notice(source,"NickServ n'est pas actif!");
+    notice(source,"NickServ is not activated!");
     return;
   }
 
@@ -475,13 +475,13 @@ void nserv_identify(char *source, char *args)
 
   if(!*password)
   {
-    nserv_notice(source,"SYNTAXE: identify <mot_de_passe>");
+    nserv_notice(source,"SYNTAX: identify <password>");
     return;
   }
 
   if(luser->regnick == NULL)
   {
-    sprintf(buffer,"Le nick \"%s\" n'est pas enregistré",source);
+    sprintf(buffer,"The nick \"%s\" is not registered", source);
     nserv_notice(source,buffer);
     return;
   }
@@ -502,11 +502,11 @@ void nserv_identify(char *source, char *args)
   {
     luser->reglimit = 0;
     rmask->lastused = now;
-    nserv_notice(source,"Mot de passe accepté. Bienvenue!");
+    nserv_notice(source,"Password accepted. Welcome!");
   }
   else
   {
-    nserv_notice(source,"Le mot de passe est \002incorrect!\002");
+    nserv_notice(source,"The password is \002incorrect!\002");
   }
 }
 
@@ -520,13 +520,13 @@ void nserv_ghost(char *source, char *args)
   
   if((luser=ToLuser(source))==NULL)
   {
-    log("ERROR: nserv_ghost() can't locate user!");
+    PutLog("ERROR: nserv_ghost() can't locate user!");
     return;
   }
 
   if(NServ_status != 1)
   {
-    notice(source,"NickServ n'est pas actif!");
+    notice(source,"NickServ is not activated!");
     return;
   }
 
@@ -535,21 +535,21 @@ void nserv_ghost(char *source, char *args)
 
   if(!*nick || !*password)
   {
-    nserv_notice(source,"SYNTAXE: ghost <nick> <mot_de_passe>");
+    nserv_notice(source,"SYNTAX: ghost <nick> <password>");
     return;
   }
 
-  if(!strcmp(nick,source))
+  if(!strcmp(nick,luser->nick))
   {
-    nserv_notice(source,"Ah oui? Vous n'avez pas l'air d'un ghost!");
+    nserv_notice(source,"Oh yes? You don't look like a ghost!");
     return;
   }
 
-  luser2 = ToLuser(nick);
+  luser2 = ToLuserNick(nick);
 
   if(luser2 == NULL)
   {
-    sprintf(buffer,"Le nick \"%s\" n'est pas utilisé présentement",nick);
+    sprintf(buffer,"The nick \"%s\" is not currently present",nick);
     nserv_notice(source,buffer);
     return;
   }
@@ -558,7 +558,7 @@ void nserv_ghost(char *source, char *args)
 
   if(reg == NULL)
   {
-    sprintf(buffer,"Le nick \"%s\" n'est pas enregistré",nick);
+    sprintf(buffer,"The nick \"%s\" is not registered", nick);
     nserv_notice(source,buffer);
     return;
   }
@@ -569,19 +569,19 @@ void nserv_ghost(char *source, char *args)
   while(rmask != NULL && !match(buffer,rmask->mask))
     rmask = rmask->next;
 
-  if(rmask && !strcmp(password,luser->regnick->password))
+  if(rmask && !strcmp(password,luser->regnick->password)) // TODO: This crashes. 
   {
-    sprintf(buffer, ":%s KILL %s :%s (Ghost kill demandé par %s)\r\n",
-            NSERV_NICK, nick, NSERV_NICK, source);
+    sprintf(buffer, "%s Q :Killed (%s (Ghost kill demanded by %s))\r\n",
+            luser2->num, NSERV_NICK, GetNumNick(source)); // TODO: Not sure this works?
     sendtoserv(buffer);
-    onquit(nick);
+    onquit(luser2->num);
 
-    sprintf(buffer,"Le ghost \"%s\" a été killé",nick);
+    sprintf(buffer,"The ghost \"%s\" was killed", nick);
     nserv_notice(source,buffer);
   }
   else
   {
-    nserv_notice(source,"Le mot de passe est \002incorrect!\002");
+    nserv_notice(source,"The password is \002incorrect!\002");
   }
 }
 
@@ -594,13 +594,13 @@ void nserv_nicknewpass(char *source, char *args)
   
   if((luser=ToLuser(source))==NULL)
   {
-    log("ERROR: nserv_nicknewpass() can't locate user!");
+    PutLog("ERROR: nserv_nicknewpass() can't locate user!");
     return;
   }
 
   if(NServ_status != 1)
   {
-    notice(source,"NickServ n'est pas actif!");
+    notice(source,"NickServ is not activated!");
     return;
   }
 
@@ -609,7 +609,7 @@ void nserv_nicknewpass(char *source, char *args)
 
   if(!*nick && !*password)
   {
-    nserv_notice(source,"SYNTAXE: nicknewpass [nick] <mot_de_passe>");
+    nserv_notice(source,"SYNTAX: nicknewpass [nick] <new password>");
     return;
   }
 
@@ -621,14 +621,14 @@ void nserv_nicknewpass(char *source, char *args)
 
   if(strcmp(nick,source) && !(luser->mode&LFL_ISOPER))
   {
-    nserv_notice(source,"Vous n'avez pas le droit de changer le mot de passe de quelqu'un d'autre");
+    nserv_notice(source,"You cannot change someone else's password");
     return;
   }
 
   if(!(luser->mode&LFL_ISOPER) && (luser->regnick == NULL ||
      luser->reglimit != 0))
   {
-    nserv_notice(source,"Vous devez d'abord vous identifier");
+    nserv_notice(source,"You first need to identify");
     return;
   }
 
@@ -643,7 +643,7 @@ void nserv_nicknewpass(char *source, char *args)
 
   if(reg == NULL)
   {
-    sprintf(buffer,"Le nick \"%s\" n'est pas enregistré",nick);
+    sprintf(buffer,"The nick \"%s\" is not registered",nick);
     nserv_notice(source,buffer);
     return;
   }
@@ -652,7 +652,7 @@ void nserv_nicknewpass(char *source, char *args)
 
   strcpy(reg->password,password);
 
-  sprintf(buffer,"Le nouveau mot de passe pour %s est %s",
+  sprintf(buffer,"The new password for %s is %s",
           reg->nick,reg->password);
   nserv_notice(source,buffer);
 }
@@ -666,13 +666,13 @@ void nserv_nicknewemail(char *source, char *args)
   
   if((luser=ToLuser(source))==NULL)
   {
-    log("ERROR: nserv_nicknewemail() can't locate user!");
+    PutLog("ERROR: nserv_nicknewemail() can't locate user!");
     return;
   }
 
   if(NServ_status != 1)
   {
-    notice(source,"NickServ n'est pas actif!");
+    notice(source,"NickServ is not activated!");
     return;
   }
 
@@ -681,27 +681,27 @@ void nserv_nicknewemail(char *source, char *args)
 
   if(!*nick || !*email)
   {
-    nserv_notice(source,"SYNTAXE: nicknewemail <nick> <e-mail>");
+    nserv_notice(source,"SYNTAX: nicknewemail <nick> <e-mail>");
     return;
   }
 
   if(!(luser->mode&LFL_ISOPER))
   {
-    nserv_notice(source,"Cette commande est réservée aux IRC Opérateurs");
+    nserv_notice(source,"This command is reserved for IRC Operators.");
     return;
   }
 
   reg = nserv_find(nick);
   if(reg == NULL)
   {
-    sprintf(buffer,"Le nick \"%s\" n'est pas enregistré",nick);
+    sprintf(buffer,"The nick \"%s\" is not registered", nick);
     nserv_notice(source,buffer);
     return;
   }
 
   strcpy(reg->email,email);
 
-  sprintf(buffer,"Le nouveau e-mail pour %s est %s",reg->nick,reg->email);
+  sprintf(buffer,"The new e-mail for %s is %s",reg->nick,reg->email);
   nserv_notice(source,buffer);
 }
 
@@ -782,22 +782,22 @@ void nserv_checkregnick(char *nick)
   if(NServ_status != 1)
     return;
 
-  luser = ToLuser(nick);
+  luser = ToLuserNick(nick);
   if(luser == NULL || luser->regnick == NULL || luser->reglimit == 0 ||
      luser->reglimit > now)
     return;
 
   /* timeout for receiving valid password has expired */
-  nserv_notice(nick,"Vous ne vous êtes pas identifié. Vous devez partir!");
-  /*sprintf(buffer,":%s KILL %s :NickServ (Non vérifié)\r\n",mynick,nick);
+  nserv_notice(nick,"You have not identified, therefore you must leave!");
+  /*sprintf(buffer,"%s Q :%s (Not verified)\r\n",luser->num, mynick);
   sendtoserv(buffer);*/
   sprintf(buffer,
-          ":%s GLINE + +%s@%s %d :Échec de l'identification pour le nick %s. "
-          "Accès non autorisé au serveur pendant %d secondes.\r\n",
-          mynick,luser->username,luser->site,NSERV_GLINETIME,nick,
+          "%s GL * +%s@%s %d %ld %ld :Not identified for the nick %s. "
+          "Access restricted to the server for %d seconds.\r\n",
+          nservnum,luser->username,luser->site,NSERV_GLINETIME,now, now + NSERV_GLINETIME,nick,
           NSERV_GLINETIME);
     sendtoserv(buffer);
-  onquit(nick);
+  onquit(luser->num);
 }
 
 void nserv_quit(aluser *user)
@@ -838,8 +838,8 @@ void nserv_nick(char *newnick, aluser *user)
   {
     user->regnick->ref++;
     user->reglimit = now + NSERV_DELAY;
-    sprintf(buffer,"Ce nick est enregistré. Vous avez 60 secondes pour vous identifier avec la commande \"/msg %s identify mot_de_passe\"",NSERV_NICK);
-    nserv_notice(newnick,buffer);
+    sprintf(buffer,"The nick is registered. You have 60 seconds to identify with the command \"/msg %s identify password\"",NSERV_NICK);
+    nserv_notice(user->num, buffer);
     AddEvent(EVENT_CHECKREGNICK,user->reglimit,newnick);
   }
 }
@@ -855,8 +855,8 @@ void nserv_onop(char *channel, auser *user)
 
   if(user->N->regnick == NULL)
   {
-    nserv_notice(user->N->nick,"Vous ne pouvez pas être op sans être enregistré");
-    changemode(channel,"-o",user->N->nick,1);
+    nserv_notice(user->N->num,"You cannot be op without being registered");
+    changemode(channel,"-o",user->N->num,1);
     user->chanop = 0;
   }
 }

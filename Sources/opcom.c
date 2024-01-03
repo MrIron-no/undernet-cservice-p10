@@ -70,7 +70,7 @@ void CalmDown(char *source, char *chan, char *args)
   }
 
   sprintf(buffer, "%s WA :%s is asking me to calm down on %s\n",
-    ufakeservernum, user->nick, ch->name);
+    UFAKE_NUMERIC, user->nick, ch->name);
   sendtoserv(buffer);
 
   sprintf(buffer, "%s!%s@%s is asking me to calm down on %s\n",
@@ -511,16 +511,16 @@ void Uworld_opcom(char *source, char *args)
       return;
     }
     sprintf(buffer, "%s WA :%s is using %s to: MODE %s %s\n",
-      ufakeservernum, user->nick, UFAKE_NICK, channel, args);
+      UFAKE_NUMERIC, user->nick, UFAKE_NICK, channel, args);
     sendtoserv(buffer);
 
-    sprintf(buffer, "%s M %s %s\n", ufakeservernum, channel, args);
+    sprintf(buffer, "%s M %s %s\n", UFAKE_NUMERIC, channel, args);
     sendtoserv(buffer);
 
     sprintf(buffer, "OPCOM MODE %s %s (%s!%s@%s)",
       channel, args, user->nick, user->username, user->site);
     PutLog(buffer);
-    ModeChange(ufakeservernum, channel, args);
+    ModeChange(UFAKE_NUMERIC, channel, args);
   }
   else
   {
@@ -579,7 +579,7 @@ void ClearChan(char *source, char *args)
   }
 
   sprintf(buffer, "%s WA :%s is using %s to: CLEARCHAN %s\n",
-    ufakeservernum, user->nick, UFAKE_NICK, channel);
+    UFAKE_NUMERIC, user->nick, UFAKE_NICK, channel);
   sendtoserv(buffer);
 
   sprintf(buffer, "CLEARCHAN on %s requested by %s!%s@%s",
