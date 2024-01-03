@@ -26,7 +26,6 @@ CC = gcc
 RM = /bin/rm
 
 CFLAGS = -Wall -g -O0
-#CFLAGS = -Wall -g -O0 -fno-builtin -Wno-traditional
 #CFLAGS = -O6
 
 #DEFINES = -DDEBUG

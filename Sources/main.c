@@ -52,7 +52,6 @@
 #include "events.h"
 #include "flags.h"
 #include "version.h"
-#include <sys/timeb.h>
 
 #ifndef SIGCLD
 #define SIGCLD SIGCHLD
@@ -471,9 +470,9 @@ int restart(char *msg)		/* added by Kev */
 void notice(char *target, char *msg)
 {
   char buffer[200];
-#ifdef DOHTTP
-  extern chat_notice(char *, char *);
-#endif
+//#ifdef DOHTTP
+//  extern chat_notice(char *, char *);
+//#endif
 
 #ifdef DOHTTP
   if (*target == '+')
