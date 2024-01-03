@@ -38,7 +38,7 @@
 void cksum(char *file, unsigned int *sum1, unsigned int *sum2)
 {
   int fd=-1, size;
-  unsigned char buffer[1024];
+  char buffer[1024];
 
   if(strchr(file,'/') != NULL)
   {

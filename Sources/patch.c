@@ -62,7 +62,7 @@ void open_patch_socket(char *source)
 	printf("Connecting to patch server %s on port %d\n",pserver,port);
 #endif
 	sprintf(buffer,"Connecting to patch server %s on port %d",pserver,port);
-	log(buffer);
+	PutLog(buffer);
 
 	notice(source,"Attempting to contact patch server...");
 

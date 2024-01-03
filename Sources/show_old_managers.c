@@ -90,7 +90,7 @@ void fix_user_db(void)
 {
   DIR *dp;
   struct dirent *ent;
-  char dir[256], file[256], channel[80], *ptr;
+  char dir[300], file[300], channel[80], *ptr;
   int count;
 
   for (count = 0; count < 1000; count++)

@@ -103,6 +103,10 @@ commands[] =
   }
   ,
   {
+    "register", XADMIN_LEVEL, "XADMIN"
+  }
+  ,
+  {
     "isreg", 0, "ISREG"
   }
   ,
@@ -351,6 +355,7 @@ void showcommands(char *source, char *chan, char *args)
 
 void showhelp(char *source, char *chan, char *args)
 {
+printf("showhelp\n");
   struct buffer_block *dyn = NULL;
   char buffer[512], word[80], *ptr;
   int i, l, index = 0, found = 0, file, linecount = 0;
@@ -616,11 +621,17 @@ void isreg(char *source, char *chan, char *args)
 #ifdef DOHTTP
 void http_show_help(http_socket * hsock, char *command)
 {
-  char buffer[512], buffer2[200];
+  char buffer[512], buffer2[700];
+  char date[80];
   struct buffer_block *dyn = NULL;
+  struct tm *timeptr;
   register char *ptr, *ptr2;
   register int i, index = 0, found = 0;
   int file, l;
+
+  timeptr = gmtime(&now);
+  sprintf(date, "%sUCT", asctime(timeptr));
+  *strchr(date, '\n') = ' ';
 
   listinit();
 
@@ -641,6 +652,11 @@ void http_show_help(http_socket * hsock, char *command)
   }
 
   buffer[0] = '\0';
+
+  sendto_http(hsock, "HTTP/1.0 200 Document follows%c", 10);
+  sendto_http(hsock, "Date: %s%c", date, 10);
+  sendto_http(hsock, "Server: CS/1.0%c", 10);
+  sendto_http(hsock, "Content-type: text/html%c%c", 10, 10);
 
   sendto_http(hsock, HTTP_HEADER, command);
   sendto_http(hsock, HTTP_BODY);

@@ -34,7 +34,7 @@ void CalmDown(char *source, char *chan, char *args)
 
   if ((user = ToLuser(source)) == NULL)
   {
-    log("ERROR: CalmDown() can't locate user!");
+    PutLog("ERROR: CalmDown() can't locate user!");
     return;
   }
 
@@ -69,8 +69,8 @@ void CalmDown(char *source, char *chan, char *args)
     return;
   }
 
-  sprintf(buffer, ":%s WALLOPS :%s!%s@%s is asking me to calm down on %s\n",
-    SERVERNAME, user->nick, user->username, user->site, ch->name);
+  sprintf(buffer, "%s WA :%s is asking me to calm down on %s\n",
+    ufakeservernum, user->nick, ch->name);
   sendtoserv(buffer);
 
   sprintf(buffer, "%s!%s@%s is asking me to calm down on %s\n",
@@ -101,7 +101,7 @@ void OperJoin(char *source, char *chan, char *args)
 
   if ((user = ToLuser(source)) == NULL)
   {
-    log("ERROR: OperJoin() can't locate user!");
+    PutLog("ERROR: OperJoin() can't locate user!");
     return;
   }
 
@@ -142,8 +142,8 @@ void OperJoin(char *source, char *chan, char *args)
     return;
   }
 
-  sprintf(buffer, ":%s WALLOPS :%s!%s@%s is asking me to join channel %s\n",
-    SERVERNAME, user->nick, user->username, user->site, channel);
+  sprintf(buffer, "%s WA :%s is asking me join channel %s\n",
+    NUMERIC, user->nick, channel);
   sendtoserv(buffer);
 
   sprintf(buffer, "%s!%s@%s is asking me join channel %s\n",
@@ -166,7 +166,7 @@ void OperPart(char *source, char *chan, char *args)
 
   if ((user = ToLuser(source)) == NULL)
   {
-    log("ERROR: OperPart() can't locate user!");
+    PutLog("ERROR: OperPart() can't locate user!");
     return;
   }
 
@@ -201,8 +201,8 @@ void OperPart(char *source, char *chan, char *args)
     return;
   }
 
-  sprintf(buffer, ":%s WALLOPS :%s!%s@%s is asking me to leave channel %s\n",
-    SERVERNAME, user->nick, user->username, user->site, channel);
+  sprintf(buffer, "%s WA :%s is asking me to leave channel %s\n",
+    NUMERIC, user->nick, channel);
   sendtoserv(buffer);
 
   sprintf(buffer, "%s!%s@%s is asking me to leave channel %s\n",
@@ -227,7 +227,7 @@ void ClearMode(char *source, char *chan, char *args)
 
   if ((user = ToLuser(source)) == NULL)
   {
-    log("ERROR: ClearMode() can't locate user!");
+    PutLog("ERROR: ClearMode() can't locate user!");
     return;
   }
 
@@ -252,8 +252,8 @@ void ClearMode(char *source, char *chan, char *args)
   {
     if (user->mode & LFL_ISOPER)
     {
-      sprintf(buffer, ":%s WALLOPS :%s is using clearmode on %s\n",
-	SERVERNAME, source, channel);
+      sprintf(buffer, "%s WA :%s is using clearmode on %s\n",
+	NUMERIC, user->nick, channel);
       sendtoserv(buffer);
     }
     else
@@ -276,7 +276,7 @@ void ClearMode(char *source, char *chan, char *args)
 
   sprintf(buffer, "CLEARMODE on %s requested by %s!%s@%s",
     channel, user->nick, user->username, user->site);
-  log(buffer);
+  PutLog(buffer);
 
   curr = ch->mode;
   i = 1;
@@ -312,7 +312,7 @@ void ClearMode(char *source, char *chan, char *args)
 void verify(char *source, char *arg)
 {
   aluser *luser;
-  char buffer[200], nick[80], global[] = "*", *oper;
+  char buffer[300], nick[80], global[] = "*", *oper;
   int acc;
 
   GetWord(0, arg, nick);
@@ -322,7 +322,8 @@ void verify(char *source, char *arg)
     return;
   }
 
-  luser = ToLuser(nick);
+  luser = ToLuserNick(nick);
+
   if (luser == NULL)
   {
     sprintf(buffer, "No such nick: %s", nick);
@@ -339,7 +340,7 @@ void verify(char *source, char *arg)
     oper = "";
   }
 
-  acc = Access(global, nick);
+  acc = Access(global, luser->num);
   if (acc == 1000)
   {
     sprintf(buffer, "%s!%s@%s is my daddy%s",
@@ -410,7 +411,7 @@ void Uworld_switch(char *source, char *ch, char *args)
     }
     else
     {
-      if ((user2 = ToLuser(UFAKE_NICK)) != NULL &&
+      if ((user2 = ToLuserNick(UFAKE_NICK)) != NULL &&
 	!strcmp(user2->site, DEFAULT_HOSTNAME))
       {
 	sprintf(buffer, "%s already present!", UFAKE_NICK);
@@ -421,20 +422,18 @@ void Uworld_switch(char *source, char *ch, char *args)
       {
 	onquit(UFAKE_NICK);
       }
-      if (FindServer(&ServerList, UFAKE_SERVER) != NULL)
+      if (FindServer(&ServerList, ufakenum) != NULL)
       {
 	sprintf(buffer, "%s already present!", UFAKE_SERVER);
 	notice(source, buffer);
 	return;
       }
-      sprintf(buffer, ":%s WALLOPS :%s activated %s\n",
-	SERVERNAME, source, UFAKE_NICK);
+      sprintf(buffer, "%s WA :%s activated by %s!%s@%s\n",
+	NUMERIC, UFAKE_NICK, user->nick, user->username, user->site);
       sendtoserv(buffer);
       Uworld_status = 1;
       IntroduceUworld();
-      sprintf(buffer, "%s activated by %s!%s@%s",
-	UFAKE_NICK, user->nick, user->username, user->site);
-      log(buffer);
+      PutLog(buffer);
     }
   }
   else if (!strcasecmp(args, "OFF"))
@@ -446,16 +445,14 @@ void Uworld_switch(char *source, char *ch, char *args)
     }
     else
     {
-      sprintf(buffer, ":%s WALLOPS :%s deactivated %s\n",
-	SERVERNAME, source, UFAKE_NICK);
+      sprintf(buffer, "%s WA :%s deactivated by %s!%s@%s\n",
+	NUMERIC, UFAKE_NICK, user->nick, user->username, user->site);
       sendtoserv(buffer);
       Uworld_status = 0;
-      sprintf(buffer, "Deactivated by %s!%s@%s",
+      sprintf(buffer, "Deactivated by %s!%s@%s\n",
 	user->nick, user->username, user->site);
       KillUworld(buffer);
-      sprintf(buffer, "%s deactivated by %s!%s@%s",
-	UFAKE_NICK, user->nick, user->username, user->site);
-      log(buffer);
+      PutLog(buffer);
     }
   }
   else
@@ -478,6 +475,7 @@ void parse_uworld_command(char *source, char *args)
     Uworld_reop(source, args);
 }
 
+/* TODO: Need to transalte nicknames into numerics. */
 void Uworld_opcom(char *source, char *args)
 {
   char buffer[512];
@@ -507,28 +505,30 @@ void Uworld_opcom(char *source, char *args)
   {
     if (*channel != '#')
     {
-      sprintf(buffer, ":%s NOTICE %s :bad channel name\n",
-	UFAKE_NICK, source);
+      sprintf(buffer, "%s O %s :bad channel name\n",
+	ufakenum, source);
       sendtoserv(buffer);
       return;
     }
-    sprintf(buffer, ":%s WALLOPS :%s is using %s to: MODE %s %s\n",
-      UFAKE_SERVER, source, UFAKE_NICK, channel, args);
+    sprintf(buffer, "%s WA :%s is using %s to: MODE %s %s\n",
+      ufakeservernum, user->nick, UFAKE_NICK, channel, args);
     sendtoserv(buffer);
-    sprintf(buffer, ":%s MODE %s %s\n", UFAKE_SERVER, channel, args);
+
+    sprintf(buffer, "%s M %s %s\n", ufakeservernum, channel, args);
     sendtoserv(buffer);
+
     sprintf(buffer, "OPCOM MODE %s %s (%s!%s@%s)",
       channel, args, user->nick, user->username, user->site);
-    log(buffer);
-    ModeChange(UFAKE_SERVER, channel, args);
+    PutLog(buffer);
+    ModeChange(ufakeservernum, channel, args);
   }
   else
   {
-    sprintf(buffer, ":%s NOTICE %s :(yet) unsupported command (%s)\n",
-      UFAKE_NICK, source, command);
+    sprintf(buffer, "%s O %s :(yet) unsupported command (%s)\n",
+      ufakenum, source, command);
     sendtoserv(buffer);
   }
-}
+} 
 
 
 void ClearChan(char *source, char *args)
@@ -543,7 +543,7 @@ void ClearChan(char *source, char *args)
 
   if ((user = ToLuser(source)) == NULL)
   {
-    log("ERROR: ClearMode() can't locate user!");
+    PutLog("ERROR: ClearMode() can't locate user!");
     return;
   }
 
@@ -557,8 +557,8 @@ void ClearChan(char *source, char *args)
 
   if (!user->mode & LFL_ISOPER)
   {
-    sprintf(buffer, ":%s NOTICE %s :This command is reserved to IRC Operators\n",
-      UFAKE_NICK, source);
+    sprintf(buffer, "%s O %s :This command is reserved to IRC Operators\n",
+      ufakenum, source);
     sendtoserv(buffer);
     return;
   }
@@ -572,26 +572,26 @@ void ClearChan(char *source, char *args)
 
   if ((ch = ToChannel(channel)) == NULL)
   {
-    sprintf(buffer, ":%s NOTICE %s :That channel does not exist\n",
-      UFAKE_NICK, source);
+    sprintf(buffer, "%s O %s :That channel does not exist\n",
+      ufakenum, source);
     sendtoserv(buffer);
     return;
   }
 
-  sprintf(buffer, ":%s WALLOPS :%s is using %s to: CLEARCHAN %s\n",
-    UFAKE_SERVER, source, UFAKE_NICK, channel);
+  sprintf(buffer, "%s WA :%s is using %s to: CLEARCHAN %s\n",
+    ufakeservernum, user->nick, UFAKE_NICK, channel);
   sendtoserv(buffer);
 
   sprintf(buffer, "CLEARCHAN on %s requested by %s!%s@%s",
     channel, user->nick, user->username, user->site);
-  log(buffer);
+  PutLog(buffer);
 
   chanuser = ch->users;
   while (chanuser != NULL)
   {
     if (chanuser->chanop)
     {
-      changemode(channel, "-o", chanuser->N->nick, 2);
+      changemode(channel, "-o", chanuser->N->num, 2);
       chanuser->chanop = 0;
     }
     chanuser = chanuser->next;
@@ -633,15 +633,17 @@ void ClearChan(char *source, char *args)
 
 void Uworld_reop(char *source, char *channel)
 {
+
   register aluser *user;
   char buffer[200];
 
   user = ToLuser(source);
+
   if (user != NULL && !strcasecmp(user->username, DEFAULT_USERNAME) &&
     !strcasecmp(user->site, DEFAULT_HOSTNAME))
   {
-    sprintf(buffer, "%s called for REOP on %s", source, channel);
-    log(buffer);
+    sprintf(buffer, "%s called for REOP on %s", GetNumNick(source), channel);
+    PutLog(buffer);
     changemode(channel, "+o", source, 2);
     flushmode(channel);
   }

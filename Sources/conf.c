@@ -94,6 +94,11 @@ void read_conf(char *conf)
       strncpy(PASSWORD, buffer + 9, 80);
       PASSWORD[79] = '\0';
     }
+    else if (!strncasecmp(buffer, "NUMERIC ", 8))
+    {
+      strncpy(NUMERIC, buffer + 8, 5);
+      NUMERIC[4] = '\0';
+    }
     else if (!strncasecmp(buffer, "HOMEDIR ", 8))
     {
       strncpy(HOMEDIR, buffer + 8, 256);
@@ -163,10 +168,25 @@ void read_conf(char *conf)
       strncpy(UWORLD, buffer + 12, 10);
       UWORLD[9] = '\0';
     }
+    else if (!strncasecmp(buffer, "UWORLD_USER ", 12))
+    {
+      strncpy(UWORLD_USER, buffer + 12, 80);
+      UWORLD_USER[79] = '\0';
+    }
     else if (!strncasecmp(buffer, "UWORLD_HOST ", 12))
     {
       strncpy(UWORLD_HOST, buffer + 12, 80);
       UWORLD_HOST[79] = '\0';
+    }
+    else if (!strncasecmp(buffer, "UWORLD_USERNAME ", 16))
+    {
+      strncpy(UWORLD_USERNAME, buffer + 16, 80);
+      UWORLD_USERNAME[79] = '\0';
+    }
+    else if (!strncasecmp(buffer, "UWORLD_PASSWORD ", 16))
+    {
+      strncpy(UWORLD_PASSWORD, buffer + 16, 80);
+      UWORLD_PASSWORD[79] = '\0';
     }
     else if (!strncasecmp(buffer, "UWORLD_SERVER ", 14))
     {

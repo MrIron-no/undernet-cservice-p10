@@ -30,6 +30,7 @@ void kick(char *source,char *chanarg,char *args)
 {
 	char buffer[500];
 	char nick[80];
+	char sNick[80];
 	char channel[80];
 	char *comment;
 	int found=0;
@@ -73,6 +74,12 @@ void kick(char *source,char *chanarg,char *args)
 		return;
 	}
 
+	// Fetching nick of source
+	if (*source)
+		strcpy(sNick,GetNumNick(source));
+	else
+		strcpy(sNick, "");
+
 	/* check whether there are wildcards or not.
 	 * if there are wildcards, it's a masskick and nick is a match pattern
 	 * otherwise, it's an ordinary kick and nick is the nick to kick
@@ -87,28 +94,28 @@ void kick(char *source,char *chanarg,char *args)
 			return;
 		}
 
-		user=ToUser(channel,nick);
+		user=ToUserNick(channel,nick);
 		if(!user) return;
 
 		if(*comment){
 			if(*source)
-				sprintf(buffer,":%s KICK %s %s :(%s) %s\n",
-					mynick,channel,nick,source,comment);
+				sprintf(buffer, "%s K %s %s :(%s) %s\n",
+					mynum,channel,user->N->num,sNick,comment);
 			else
-				sprintf(buffer,":%s KICK %s %s :%s\n",
-					mynick,channel,nick,comment);
+				sprintf(buffer, "%s K %s %s :%s\n",
+					mynum,channel,user->N->num,comment);
 		}else{
 			if(*source)
-				sprintf(buffer,":%s KICK %s %s :From %s\n",
-					mynick,channel,nick,source);
+				sprintf(buffer, "%s K %s %s :From %s\n",
+					mynum,channel,user->N->num,sNick);
 			else
-				sprintf(buffer,":%s KICK %s %s :%s\n",
-					mynick,channel,nick,mynick);
+				sprintf(buffer, "%s K %s %s :%s\n",
+					mynum,channel,user->N->num,mynick);
 		}
 		sendtoserv(buffer);
 		sprintf(buffer,"I KICK %s OFF %s",nick,channel);
-		log(buffer);
-	}else{
+		PutLog(buffer);
+	} else {
 #ifdef DEBUG
 		printf("KICK REQUEST (WITH WILDCARDS)\nSOURCE %s\nCHANNEL %s\nTARGET %s\n",
 			source,channel,nick);
@@ -121,23 +128,23 @@ void kick(char *source,char *chanarg,char *args)
 		user=chan->users;
 		while(user){
 			sprintf(buffer,"%s!%s@%s",user->N->nick,user->N->username,user->N->site);
-			if(match(buffer,nick)&&(!*source||strcasecmp(user->N->nick,source))){
+			if(match(buffer,nick)&&(!*source||strcasecmp(user->N->nick,sNick))){
 				if(*comment){
 					if(*source)
-						sprintf(buffer,":%s KICK %s %s :(%s) %s\n",mynick,channel,user->N->nick,source,comment);
+						sprintf(buffer, "%s K %s %s :(%s) %s\n",mynum,channel,user->N->num,sNick,comment);
 					else
-						sprintf(buffer,":%s KICK %s %s :%s\n",mynick,channel,user->N->nick,comment);
+						sprintf(buffer, "%s K %s %s :%s\n",mynum,channel,user->N->num,comment);
 				}else{
 					if(*source)
-						sprintf(buffer,":%s KICK %s %s :From %s\n",
-						        mynick,channel,user->N->nick,source);
+						sprintf(buffer, "%s K %s %s :From %s\n",
+						        mynum,channel,user->N->num,sNick);
 					else
-						sprintf(buffer,":%s KICK %s %s :%s\n",
-							mynick,channel,user->N->nick,mynick);
+						sprintf(buffer, "%s K %s %s :%s\n",
+							mynum,channel,user->N->num,mynick);
 				}
 				sendtoserv(buffer);
 				sprintf(buffer,"I KICK %s OFF %s",user->N->nick,channel);
-				log(buffer);
+				PutLog(buffer);
 				found=1;
 			}
 			user=user->next;

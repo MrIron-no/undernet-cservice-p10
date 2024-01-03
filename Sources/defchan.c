@@ -174,7 +174,7 @@ void AddChan(char *source,char *ch,char *args)
 			chan=chan->next;
 	}
 	sprintf(buffer,"I ADD DEFAULT CHANNEL %s",channel);
-	log(buffer);
+	PutLog(buffer);
 
 	if(found){
 		notice(source,replies[RPL_SETCHANDEFS][chan->lang]);
@@ -227,7 +227,7 @@ void RemChan(char *source, char *ch, char *arg)
 	free(chan);
 
 	sprintf(buffer,"I REMOVE DEFAULT CHANNEL %s",channel);
-	log(buffer);
+	PutLog(buffer);
 	if(*source){
 		notice(source,replies[RPL_REMDEF][L_DEFAULT]);
 #ifdef BACKUP
@@ -238,12 +238,12 @@ void RemChan(char *source, char *ch, char *arg)
 
 void SaveDefs(char *source)
 {
+	char buffer[80];
 	register int file;
 	register adefchan *curr;
 	adefchan buff;
 	filehdr hdr;
 	char global[]="*";
-	char buffer[200];
 
 	if(*source&&Access(global,source)<SAVE_DEFAULTS_LEVEL){
 		notice(source,"Your admin Access is too low!");
@@ -257,7 +257,7 @@ void SaveDefs(char *source)
 		return;
 	active=1;
 
-	sprintf(buffer,":%s AWAY :Busy saving precious channel list\n",mynick);
+	sprintf(buffer, "%s A :Busy saving precious channel list\n", mynum);
 	sendtoserv(buffer);
         dumpbuff();
 
@@ -268,7 +268,7 @@ void SaveDefs(char *source)
 	if(file<0){
 		if(*source)
 			notice(source,"Error while opening file. Aborted!");
-		log("ERROR Saving defaults channels");
+		PutLog("ERROR Saving defaults channels");
 	}else{
 		hdr.magic=0xff;
 		hdr.no=FORMATNO;
@@ -276,13 +276,13 @@ void SaveDefs(char *source)
 		if(write(file,&hdr,sizeof(hdr))<=0){
 			alarm(0);
 			close(file);
-			log("ERROR: Can't save channel list");
-			log((char *)sys_errlist[errno]);
+			PutLog("ERROR: Can't save channel list");
+			PutLog((char *)sys_errlist[errno]);
 			alarm(2);
 			remove(DEFAULT_CHANNELS_FILE".new");
 			alarm(0);
 			active=0;
-			sprintf(buffer,":%s AWAY\n",mynick);
+			sprintf(buffer, "%s A\n", mynum);
 			sendtoserv(buffer);
 			return;
 		}
@@ -303,13 +303,13 @@ void SaveDefs(char *source)
 			if(write(file,&buff,sizeof(adefchan))<=0){
 				alarm(0);
 				close(file);
-				log("ERROR: Can't save channel list");
-				log((char *)sys_errlist[errno]);
+				PutLog("ERROR: Can't save channel list");
+				PutLog((char *)sys_errlist[errno]);
 				alarm(2);
 				remove(DEFAULT_CHANNELS_FILE".new");
 				alarm(0);
 				active=0;
-				sprintf(buffer,":%s AWAY\n",mynick);
+				sprintf(buffer, "%s A\n", mynum);
 				sendtoserv(buffer);
 				return;
 			}
@@ -324,7 +324,7 @@ void SaveDefs(char *source)
 			notice(source,"Done.");
 	}
 	active=0;
-	sprintf(buffer,":%s AWAY\n",mynick);
+	sprintf(buffer, "%s A\n", mynum);
 	sendtoserv(buffer);
 }
 
@@ -350,7 +350,7 @@ void LoadDefs(char *source)
 	file=open(DEFAULT_CHANNELS_FILE,O_RDONLY);
 	if(file<0){
 		if(*source) notice(source,"Error opening file! Aborted.");
-		log("ERROR Loading the default channels");
+		PutLog("ERROR Loading the default channels");
 		active=0;
 		return;
 	}
@@ -390,7 +390,7 @@ void LoadDefs(char *source)
 				/* if the TS of a channel is negative
 				 * the file is prolly corrupted!
 				 */
-				log("Channel file is corrupted");
+				PutLog("Channel file is corrupted");
 				quit("LoadDefs(): corrupted file!", 1);
 			}
 	
@@ -419,7 +419,7 @@ void LoadDefs(char *source)
 				/* if the TS of a channel is negative
 				 * the file is prolly corrupted!
 				 */
-				log("Channel file is corrupted");
+				PutLog("Channel file is corrupted");
 				quit("LoadDefs(): corrupted file!", 1);
 			}
 	
@@ -460,7 +460,7 @@ void LoadDefs(char *source)
 				/* if the TS of a channel is negative
 				 * the file is prolly corrupted!
 				 */
-				log("Channel file is corrupted");
+				PutLog("Channel file is corrupted");
 				quit("LoadDefs(): corrupted file!", 1);
 			}
 	

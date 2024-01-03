@@ -31,3 +31,28 @@ Sources/cksum
 *.i*86
 *.x86_64
 *.hex
+cs
+showdb
+show_old_managers
+fixdb
+
+# Logs & div
+*.log
+*.pid
+*.old
+*.core
+
+# Databases
+*.dat
+db/
+db/*
+
+# Conf
+*.conf
+config.h
+
+# Web
+HTTP/*.#
+HTTP/index.html
+
+.gdbinit

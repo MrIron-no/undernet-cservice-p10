@@ -1,3 +1,4 @@
+
 /* @(#)$Id: main.c,v 1.21 2000/04/25 00:04:27 seks Exp $ */
 
 /* Undernet Channel Service (X)
@@ -51,9 +52,9 @@
 #include "events.h"
 #include "flags.h"
 #include "version.h"
-#ifdef DEBUG
+/*#ifdef DEBUG
 #include <sys/timeb.h>
-#endif
+#endif*/
 
 #ifndef SIGCLD
 #define SIGCLD SIGCHLD
@@ -65,8 +66,12 @@ char mynick[NICK_LENGTH] = DEFAULT_NICKNAME;
 char myuser[USERNAME_LENGTH] = DEFAULT_USERNAME;
 char mysite[SITE_LENGTH] = DEFAULT_HOSTNAME;
 char myrealname[REALNAME_LENGTH] = DEFAULT_REALNAME;
+char mynum[20];
+char myuplink[10] = "";
+char uworldservernum[10] = "";
 char *TmpPtr;
 int logfile;
+int bursting = 0;
 time_t now;
 time_t logTS = 0;
 time_t TSoffset = 0;
@@ -99,8 +104,8 @@ misc_socket *MiscList = NULL;
 irc_socket Irc =
 {-1, 0, NULL, NULL, NULL};
 unsigned long MEM_buffers = 0;
-unsigned long NB_avail_buffer_blocks = 0;
-unsigned long NB_alloc_buffer_blocks = 0;
+//unsigned long NB_avail_buffer_blocks = 0;
+//unsigned long NB_alloc_buffer_blocks = 0;
 
 static int Data_files_loaded = 0;
 
@@ -111,6 +116,8 @@ const unsigned int glob_cksum1 = BINCKSUM1;
 const unsigned int glob_cksum2 = 0;
 
 #ifdef FAKE_UWORLD
+char ufakeservernum[10] = "AD";
+char ufakenum[10] = "ADAAA";
 int Uworld_status = 0;
 time_t UworldTS, UworldServTS;
 #endif
@@ -153,38 +160,27 @@ void rec_sigusr(int sig)
 
 void regist(void)
 {
-  char buffer[256];
+  char buffer[512];
   time_t t;
-
   t = time(NULL);
 
   /* First clean memory */
-  /*QuitAll(); */
+  // QuitAll(); 
+
+  bursting = 1;
 
   /* Then send reg stuff to server.. */
-  sprintf(buffer, "PASS %s\nSERVER %s 1 %ld %ld J09 :%s\n",
-    PASSWORD, SERVERNAME, t, t, SERVERINFO);
+  sprintf(buffer, "PASS :%s\nSERVER %s 1 %ld %ld J10 %sAAA +s6 :%s\n",
+    PASSWORD, SERVERNAME, t, t, NUMERIC, SERVERINFO);
   sendtoserv(buffer);
 }
 
 void signon(void)
 {
-  char buffer[256];
+  char buffer[512];
+  sprintf(buffer, "%s N %s 1 31337 %s %s %s AAAAAA %s :%s\n", NUMERIC, mynick, myuser, mysite, UMODE, mynum, myrealname);
+  sendtoserv(buffer);
 
-  sprintf(buffer, ":%s KILL %s :%s (Clean up kill)\n", SERVERNAME, mynick, SERVERNAME);
-  sendtoserv(buffer);
-  /* The original left out the duplicate server name; u2.10 requires it to be there if the server is using P09 */
-  sprintf(buffer, ":%s NICK %s 1 %ld %s %s %s :%s\n", SERVERNAME, mynick, logTS, myuser, mysite, SERVERNAME, myrealname);
-  sendtoserv(buffer);
-  sprintf(buffer, ":%s MODE %s %s\n", mynick, mynick, UMODE);
-  sendtoserv(buffer);
-#ifdef BACKUP
-  /* see above */
-  sprintf(buffer, ":%s NICK %s 1 %ld %s %s %s %s\n", SERVERNAME, MAIN_NICK, logTS - 1000, myuser, mysite, SERVERNAME, MAIN_REALNAME);
-  sendtoserv(buffer);
-  sprintf(buffer, ":%s AWAY :Temporarily down.. please use %s\n", MAIN_NICK, mynick);
-  sendtoserv(buffer);
-#endif
 #ifdef FAKE_UWORLD
   if (Uworld_status == 1)
     IntroduceUworld();
@@ -193,32 +189,29 @@ void signon(void)
   if (NServ_status == 1)
     IntroduceNickserv();
 #endif
-  /*
-     sprintf(buffer,":%s USER %s %s %s :%s\n",mynick,myuser,mysite,SERVERNAME,myrealname);
-     sendtoserv(buffer);
-   */
 }
 
 #ifdef FAKE_UWORLD
 void IntroduceUworld(void)
 {
-  char buffer[500];
+  char buffer[512];
   UworldServTS = now;
   UworldTS = logTS;	/* force nick collision */
-  sprintf(buffer, ":%s SERVER %s 2 0 %ld P09 :%s\n"
-    ":%s NICK %s 2 %ld %s %s %s :%s\n",
-    SERVERNAME, UFAKE_SERVER, UworldServTS, UFAKE_INFO,
-    SERVERNAME, UFAKE_NICK, UworldTS, UFAKE_NICK, UFAKE_HOST, SERVERNAME, UFAKE_INFO);
+  sprintf(buffer, "%s S %s 2 0 %ld J10 %sAAA +s6 :%s\n"
+    "%s N %s 2 31337 %s %s +o AAAAAA %s :%s\n%s EB\n%s EB\n%s EA\n%s EA\n",
+    NUMERIC, UFAKE_SERVER, UworldServTS, ufakeservernum, UFAKE_INFO,
+    ufakeservernum, UFAKE_NICK, UFAKE_NICK, UFAKE_HOST, ufakenum, UFAKE_INFO, 
+    ufakeservernum, NUMERIC, ufakeservernum, NUMERIC);
   sendtoserv(buffer);
 }
 
 void KillUworld(char *msg)
 {
-  char buffer[500];
-  sprintf(buffer, ":%s QUIT :%s\n"
-    ":%s SQUIT %s %ld :%s\n",
-    UFAKE_NICK, msg,
-    UFAKE_SERVER, UFAKE_SERVER, UworldServTS, msg);
+  char buffer[200];
+  sprintf(buffer, "%s Q :%s\n"
+    "%s SQ %s %ld :%s\n",
+    ufakenum, msg,
+    ufakeservernum, UFAKE_SERVER, UworldServTS, msg);
   sendtoserv(buffer);
 }
 #endif
@@ -226,20 +219,18 @@ void KillUworld(char *msg)
 #ifdef NICKSERV
 void IntroduceNickserv(void)
 {
-  char buffer[500];
-  sprintf(buffer, ":%s NICK %s 1 %ld %s %s %s :%s\n",
-    SERVERNAME, NSERV_NICK, logTS, NSERV_USER, NSERV_HOST,
-    SERVERNAME, NSERV_INFO);
-  sendtoserv(buffer);
-  sprintf(buffer, ":%s MODE %s +kd\r\n", NSERV_NICK, NSERV_NICK);
+  char buffer[80];
+  sprintf(buffer, "%s N %s 1 %ld %s %s +kd DAqAoC %s :%s\n",
+    NUMERIC, NSERV_NICK, logTS, NSERV_USER, NSERV_HOST,
+    nservnum, NSERV_INFO);
   sendtoserv(buffer);
   NServ_status = 1;
 }
 
 void KillNickserv(char *msg)
 {
-  char buffer[500];
-  sprintf(buffer, ":%s QUIT :%s\r\n", NSERV_NICK, msg);
+  char buffer[80];
+  sprintf(buffer, "%s Q :%s\r\n", nservnum, msg);
   sendtoserv(buffer);
   NServ_status = 0;
 }
@@ -256,7 +247,7 @@ int reconnect(char *server)
 #ifdef DEBUG
   printf("Lost connection... sleeping 5 seconds...\n");
 #endif
-  log("Lost connection somehow.. trying to reconnect in 5 seconds");
+  PutLog("Lost connection somehow.. trying to reconnect in 5 seconds");
   sleep(5);
   QuitAll();
   if (!connection(server))
@@ -281,7 +272,7 @@ void try_later(char *server)
   do
   {
     Irc.fd = -1;
-    log("Oh well.. let's try again in one minute");
+    PutLog("Oh well.. let's try again in one minute");
 #ifdef DEBUG
     printf("Unable to keep the connection... sleeping 60 seconds...\n");
 #endif
@@ -328,7 +319,7 @@ void dumpcore(char *source)
     close(file);
   }
 
-  log("Core dumped");
+  PutLog("Core dumped");
 
   if (*source)
   {
@@ -390,13 +381,13 @@ int quit(char *msg, int flag)
   }
 
   if (!msg || !*msg)
-    sprintf(buffer, ":%s QUIT :%s\n"
-      ":%s SQUIT %s 0 :die request\n",
-      mynick, mynick, SERVERNAME, SERVERNAME);
+    sprintf(buffer, "%s Q :%s\n"
+      "%s SQ %s 0 :die request\n",
+      mynum, mynick, NUMERIC, SERVERNAME);
   else
-    sprintf(buffer, ":%s QUIT :%s\n"
-      ":%s SQUIT %s 0 :%s\n",
-      mynick, msg, SERVERNAME, SERVERNAME, msg);
+    sprintf(buffer, "%s Q :%s\n"
+      "%s SQ %s 0 :%s\n",
+      mynum, msg, NUMERIC, SERVERNAME, msg); // TODO: This is supposed to send the name of the uplink.
 
   if (Irc.fd >= 0)
   {
@@ -405,8 +396,8 @@ int quit(char *msg, int flag)
   }
 
   sprintf(buffer, "LEAVING (%s)", msg);
-  log(buffer);
-  log("Closing log file");
+  PutLog(buffer);
+  PutLog("Closing log file");
   close(logfile);
 
 #ifdef DEBUG_MALLOC
@@ -423,7 +414,7 @@ int quit(char *msg, int flag)
 
 int restart(char *msg)		/* added by Kev */
 {
-  char buffer[200];
+  char buffer[600];
   int i;
 
   SaveUserList("", NULL);	/* save necessary data... */
@@ -435,13 +426,13 @@ int restart(char *msg)		/* added by Kev */
   sync();
 
   if (!msg || !*msg)	/* send out QUIT/SQUIT stuff... */
-    sprintf(buffer, ":%s QUIT :restarting...\n"
-      ":%s SQUIT %s 0 :restart request\n",
-      mynick, SERVERNAME, SERVERNAME);
+    sprintf(buffer, "%s Q :restarting...\n"
+      "%s SQ %s 0 :restart request\n",
+      mynum, NUMERIC, SERVERNAME);
   else
-    sprintf(buffer, ":%s QUIT :%s\n"
-      ":%s SQUIT %s 0 :%s\n",
-      mynick, msg, SERVERNAME, SERVERNAME, msg);
+    sprintf(buffer, "%s Q :%s\n"
+      "%s SQ %s 0 :%s\n",
+      mynum, msg, NUMERIC, SERVERNAME, msg);
 
   if (Irc.fd >= 0)
   {	/* clear buffer... */
@@ -450,12 +441,12 @@ int restart(char *msg)		/* added by Kev */
   }
 
   sprintf(buffer, "RESTARTING (%s)", msg);	/* log the restart... */
-  log(buffer);
+  PutLog(buffer);
   switch (fork())
   {
   case -1:
-    log("Fork error; unable to restart");	/* couldn't fork :/ */
-    log("Closing log file");	/* and close the log file... */
+    PutLog("Fork error; unable to restart");	/* couldn't fork :/ */
+    PutLog("Closing log file");	/* and close the log file... */
     close(logfile);
     break;
 
@@ -470,7 +461,7 @@ int restart(char *msg)		/* added by Kev */
     break;
 
   default:
-    log("Closing log file");
+    PutLog("Closing log file");
     close(logfile);
     exit(0);
   }
@@ -479,12 +470,10 @@ int restart(char *msg)		/* added by Kev */
 
 void notice(char *target, char *msg)
 {
-#ifdef DOHTTP
-  extern chat_notice(char *, char *);
-#endif
-  char buffer[1024];
-  char nick[NICK_LENGTH];
-  char *ptr;
+  char buffer[200];
+//#ifdef DOHTTP
+//  extern chat_notice(char *, char *);
+//#endif
 
 #ifdef DOHTTP
   if (*target == '+')
@@ -494,23 +483,14 @@ void notice(char *target, char *msg)
   }
 #endif
 
-  strncpy(nick, target, NICK_LENGTH - 1);
-  nick[NICK_LENGTH - 1] = '\0';
-  ptr = strchr(nick, '!');
-  if (ptr)
-    *ptr = '\0';
-
-  if (*nick)
-  {
-    sprintf(buffer, ":%s NOTICE %s :%s\n", mynick, nick, msg);
-    sendtoserv(buffer);
-  }
+  sprintf(buffer, "%s O %s :%s\n", mynum, target, msg);
+  sendtoserv(buffer);
 }
 
 void servnotice(char *target, char *msg)
 {
-  char buffer[1024];
-  sprintf(buffer, ":%s NOTICE %s :%s\n", SERVERNAME, target, msg);
+  char buffer[200];
+  sprintf(buffer, "%s O %s :%s\n", NUMERIC, target, msg);
   sendtoserv(buffer);
 }
 
@@ -531,8 +511,8 @@ void broadcast(char *msg, int evenwallop)
   }
   else if (evenwallop)
   {
-    sprintf(buffer, ":%s WALLOPS :%s\n",
-      SERVERNAME, msg);
+    sprintf(buffer, "%s WA :%s\n",
+      NUMERIC, msg);
     sendtoserv(buffer);
   }
 #ifdef DOHTTP
@@ -597,14 +577,31 @@ char *time_remaining(time_t t)
   return s;
 }
 
-void pong(char *who)
+void pong(char *who, char *remotets)
 {
-  char buffer[256];
-  sprintf(buffer, ":%s PONG %s\n", SERVERNAME, who);
+  char buffer[80];
+  time_t offset;
+
+  if (remotets[0] == '!')
+    remotets++;
+
+  offset = atol(remotets) - now;
+
+  sprintf(buffer, "%s Z %s !%s %ld %ld\n", NUMERIC, who, remotets, offset, now);
   sendtoserv(buffer);
 }
 
-void log(char *text)
+void rpong(char *who, char *args)
+{
+  char buffer[80];
+  register aserver *server;
+  server = ToServer(who);
+
+  sprintf(buffer, "%s RO %s %s\n", NUMERIC, server->name, args);
+  sendtoserv(buffer);
+}
+
+void PutLog(char *text)
 {
   static char date[80], buffer[1024];
   strcpy(date, ctime(&now));
@@ -683,19 +680,39 @@ void checkpid(void)
 
 void proc(char *source, char *function, char *target, char *body)
 {
-  if (source[0] == ':')
-    source++;
+  char buffer[200];
 
-  if (!strcmp(function, "PING"))
+//  printf("source: %s, function: %s, target: %s, body: %s\n", source, function, target, body);
+
+  if (!strcmp(source, "SERVER") || !strcmp(function, "S"))
   {
-    pong(target + 1);
+    onserver(source, function, target, body);
 
   }
-  else if (!strcmp(function, "ERROR"))
+  else if (!strcmp(function, "G"))
   {
-    log(function);
-    log(target);
-    log(body);
+    pong(source, target);
+
+  }
+  else if (!strcmp(function, "RI"))
+  {
+    rpong(source, body);
+
+  }
+  else if (!strcmp(function, "EB"))
+  {
+    if (strcmp(source, myuplink)) return;
+
+    sprintf(buffer, "%s EA\n", NUMERIC);
+    sendtoserv(buffer);
+
+    bursting = 0;
+  }
+  else if (!strcmp(source, "ERROR") || !strcmp(function, "Y"))
+  {
+    PutLog(function);
+    PutLog(target);
+    PutLog(body);
     if (reconnect(server))
     {
       try_later(server);
@@ -703,83 +720,77 @@ void proc(char *source, char *function, char *target, char *body)
     };
 
   }
-  else if (!strcmp(function, "SQUIT"))
+  else if (!strcmp(function, "SQ"))
   {
     onsquit(source, target, body);
     if (ServerList == NULL)
     {
-      log("received squit from");
-      log(source);
-      log(body);
+      PutLog("received squit from");
+      PutLog(source);
+      PutLog(body);
       if (reconnect(server))
       {
 	try_later(server);
 	return;
       }
     }
-
   }
-  else if (!strcmp(function, "SERVER"))
-  {
-    onserver(source, target, body);
-
-  }
-  else if (!strcmp(function, "PRIVMSG"))
+  else if (!strcmp(function, "P"))
   {
     privmsg(source, target, body);
 
   }
-  else if (!strcmp(function, "NOTICE"))
+  else if (!strcmp(function, "O"))
   {	/* only for flood pro */
     onnotice(source, target, body);
 
   }
-  else if (!strcmp(function, "JOIN"))
+  else if (!strcmp(function, "J") || !strcmp(function, "C"))
   {
-    onjoin(source, target);
+    onjoin(function, source, target, body);
 
   }
-  else if (!strcmp(function, "INVITE"))
+  else if (!strcmp(function, "B"))
+  {
+    onburst(source, target, body);
+
+  }
+  else if (!strcmp(function, "I"))
   {
     oninvite(source, body + 1);
 
   }
-  else if (!strcmp(function, "PART"))
+  else if (!strcmp(function, "L"))
   {
     onpart(source, target);
 
   }
-  else if (!strcmp(function, "KILL"))
+  else if (!strcmp(function, "D"))
   {
     onkill(source, target, body);
 
   }
-  else if (!strcmp(function, "QUIT"))
+  else if (!strcmp(function, "Q"))
   {
     onquit(source);
 
   }
-  else if (!strcmp(function, "KICK"))
+  else if (!strcmp(function, "K"))
   {
     onkick(source, target, body);
 
   }
-  else if (!strcmp(function, "MODE"))
+  else if (!strcmp(function, "M"))
   {
     ModeChange(source, target, body);
 
   }
-  else if (!strcmp(function, "OMODE"))
-  {
-    ModeChange(UWORLD_SERVER, target, body);
-
-  }
-  else if (!strcmp(function, "NICK"))
+  else if (!strcmp(function, "N"))
   {
     onnick(source, target, body);
 
   }
-  else if (!strcmp(function, "TOPIC"))
+  else if (!strcmp(function, "T"))
   {
     ontopic(source, target, body);
 
@@ -789,12 +800,12 @@ void proc(char *source, char *function, char *target, char *body)
     onwhois(source, body + 1);
 
   }
-  else if (!strcmp(function, "SETTIME"))
+  else if (!strcmp(function, "SE"))
   {
     onsettime(source, target);
 
   }
-  else if (!strcmp(function, "VERSION"))
+  else if (!strcmp(function, "V"))
   {
     showversion(source);
   }
@@ -826,6 +837,7 @@ int main(int argc, char **argv)
   char conf[256] = "./cs.conf";
 
   cksum(argv[0], &sum1, &sum2);
+  sprintf(mynum, "%sAAA", NUMERIC);
 
   if (argc == 3 && !strcmp(argv[1], "-f"))
   {
@@ -939,7 +951,7 @@ int main(int argc, char **argv)
     exit(1);
   }
 
-  log("Opening log file");
+  PutLog("Opening log file");
 
 #ifdef DOHTTP
   open_http();

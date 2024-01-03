@@ -93,8 +93,8 @@ int CheckFlood(char *source, char *channel, int length)
 #ifdef DEBUG
     printf("Argh! %s has a shit level %d\n", source, count);
 #endif
-    sprintf(buffer, "FLOODPRO ACTIVATED BY %s ON %s", source, channel);
-    log(buffer);
+    sprintf(buffer, "FLOODPRO ACTIVATED BY %s ON %s", GetNumNick(source), channel);
+    PutLog(buffer);
 
     switch (count)
     {
@@ -103,8 +103,8 @@ int CheckFlood(char *source, char *channel, int length)
     case 2:
     case 3:
     case 4:
-      log("First warning");
-      sprintf(buffer, "%s That was not very smart!", source);
+      PutLog("First warning");
+      sprintf(buffer, "%s That was not very smart!", GetNumNick(source));
       break;
 
     case 5:
@@ -112,12 +112,12 @@ int CheckFlood(char *source, char *channel, int length)
     case 7:
     case 8:
     case 9:
-      log("Second warning");
-      sprintf(buffer, "%s You're pushing your luck too far!", source);
+      PutLog("Second warning");
+      sprintf(buffer, "%s You're pushing your luck too far!", GetNumNick(source));
       break;
 
     default:
-      sprintf(buffer, "%s That was one time too many", source);
+      sprintf(buffer, "%s That was one time too many", GetNumNick(source));
     }
 
     kick("", channel, buffer);

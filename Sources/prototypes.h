@@ -24,7 +24,7 @@
  * http://gnuworld.sourceforge.net/ for more information.
  */
 
-void log(char *);
+void PutLog(char *);
 void SpecLog(char *);
 void LogChan(void);
 int connection(char *);
@@ -40,16 +40,17 @@ void dumpcore(char *);
 void show_rusage(char *);
 void regist(void);
 void signon(void);
-void onserver(char *,char *,char *);
+void onserver(char *, char *, char *,char *);
 void onsettime(char *,char *);
 void onsquit(char *,char *,char *);
 aserver *ToServer(char *);
 aserver **FindServer(aserver **, char *);
+aserver **FindServerName(aserver **, char *);
 char *ToWord(int,char *);
 void GetWord(int,char *,char *);
 char *time_remaining(time_t);
 void proc(char *,char *, char *, char *);
-void pong(char *);
+void pong(char *, char *);
 void showversion(char *);
 int reconnect(char *server);
 int xmatch(char *, char *);
@@ -86,6 +87,7 @@ void showaccess(char *,char *,char *);
 void RemoveUser(char *,char *,char *);
 void ModUserInfo(char *,char *,char *,char *);
 void purge(char *,char *,char *);
+void RegChan(char *,char *,char *);
 void ChPass(char *,char *,char *);
 void SetChanFlag(char *,char *,char *);
 void free_user(RegUser **);
@@ -97,7 +99,9 @@ void SendBurst(void);
 void invite(char *,char *,char *);
 void part(char *,char *,char *);
 void oninvite(char *,char *);
-void onjoin(char *,char *);
+void onjoin(char *, char *, char *,char *);
+void onburst(char *, char *,char *);
+void JoinUser(char *,int,achannel *);
 void onpart(char *,char *);
 void onkick(char *,char *,char *);
 void onop(char *,char *,char *);
@@ -115,7 +119,12 @@ void onwhois(char *,char *);
 void UserQuit(char *);
 achannel *ToChannel(char *);
 auser *ToUser(char *,char *);
+auser *ToUserNick(char *,char *);
 aluser *ToLuser(char *);
+aluser *ToLuserNick(char *);
+char *GetNickNum(char *);
+char *GetNicklistNum(char *);
+char *GetNumNick(char *);
 void onquit(char *);
 void onkill(char *,char *,char *);
 void onwho(char *);
@@ -182,6 +191,7 @@ void RandomChannel(char *);
 void Say(char *,char *);
 void RobinSay(char *,char *);
 void ServNotice(char *,char *);
+void ccontrolLogin(char *, char *, char *, char *);
 int IsReg(char *);
 #ifdef FAKE_UWORLD
 void IntroduceUworld(void);
@@ -208,6 +218,8 @@ void read_http_conf(char *);
 long sendto_http(http_socket *sck, char *format, ...);
 int readfrom_http(http_socket *);
 int flush_http_buffer(http_socket *);
+void chat_notice(char *, char *);
+void chat_sendtoall(char *, char *);
 #endif
 void upgrade(char *,char *);
 void open_patch_socket(char *);
@@ -236,6 +248,7 @@ void gather_sync_channels(void);
 void sync_next_channel(void);
 void do_cold_sync(void);
 void do_cold_sync_slice(void);
+void cold_save_one(RegUser * reg);
 #ifdef HISTORY
 void History(char *);
 #endif

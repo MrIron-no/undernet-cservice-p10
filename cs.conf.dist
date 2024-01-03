@@ -12,13 +12,14 @@ UMODE +kid
 # Server to which X connects
 #
 UPLINK cheetah
-PORT 6667
+PORT 4400
 #
 # How X introduces itself
 #
 SERVERNAME channels.undernet.org
 SERVERINFO Undernet Channel Service
 PASSWORD pizza
+NUMERIC AC
 #
 # Files and directories
 #
@@ -50,6 +51,8 @@ VERIFYID CSERVICE
 UWORLD_NICK Uworld
 UWORLD_HOST *.nssl.uoknor.edu
 UWORLD_SERVER Uworld.undernet.org
+UWORLD_USERNAME X
+UWORLD_PASSWORD qwerty
 #
 UWORLD2_NICK Uworld2
 UWORLD2_HOST undernet.org

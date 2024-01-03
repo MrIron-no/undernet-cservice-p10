@@ -29,7 +29,7 @@
 
 char *make_dbfname(char *channel)
 {
-  static char fname[600];
+  static char fname[700];
   char tmp[600];
   register char *ptr;
 
@@ -406,7 +406,7 @@ static void sync_next(dbsync * sync, char *channel)
 
 void db_sync(char *channel)
 {
-  register RegUser **reg, *tmp;
+  register RegUser **reg;
   register char *ch;
   register dbsync *sync;
   struct stat st;
@@ -418,7 +418,7 @@ void db_sync(char *channel)
 
   if (DBSync != NULL && (DBSync->fd != -1 || DBSync->next != NULL))
   {
-    log("ERROR: simultaneous syncs??");
+    PutLog("ERROR: simultaneous syncs??");
     return;
   }
 
@@ -437,7 +437,6 @@ void db_sync(char *channel)
       if ((*reg)->access == 0 && (*reg)->inuse == 0 &&
 	!strcasecmp((*reg)->channel, channel))
       {
-	tmp = *reg;
 	*reg = (*reg)->next;
 	free_user(reg);
       }
@@ -641,14 +640,14 @@ void do_cold_sync_slice(void)
 
 void do_cold_sync(void)
 {
+  char buffer[80];
   register dbsync *sync;
   register syncchan *schan;
   register RegUser **reg;
   register int i;
-  char buffer[200];
 
   /* SET AWAY MESSAGE */
-  sprintf(buffer, ":%s AWAY :Busy saving precious user list\n", mynick);
+  sprintf(buffer, "%s A :Busy saving precious user list\n", mynum);
   sendtoserv(buffer);
   dumpbuff();
 
@@ -686,7 +685,7 @@ void do_cold_sync(void)
 	reg = &(*reg)->next;
     }
   }
-  sprintf(buffer, ":%s AWAY\n", mynick);
+  sprintf(buffer, "%s A\n", mynum);
   sendtoserv(buffer);
 }
 

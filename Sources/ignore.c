@@ -54,7 +54,7 @@ void rem_silence(char *);
 
 int CheckPrivateFlood(char *source, int length, char *type)
 {
-  char buffer[200];
+  char buffer[250];
   char userhost[200];
   char global[] = "*";
   register aluser *user;
@@ -64,7 +64,7 @@ int CheckPrivateFlood(char *source, int length, char *type)
   if ((user = ToLuser(source)) == NULL)
   {
     sprintf(buffer, "ERROR! CheckPrivateFlood(): %s not found", source);
-    log(buffer);
+    PutLog(buffer);
     return 1;
   }
 
@@ -137,7 +137,7 @@ int CheckPrivateFlood(char *source, int length, char *type)
     if (!IsIgnored(source))
     {
       sprintf(buffer, "%sFLOOD from %s!%s", type, user->nick, userhost);
-      log(buffer);
+      PutLog(buffer);
 
       sprintf(buffer, "%sFLOOD from %s!%s (%s)", type,
 	user->nick, userhost, user->server->name);
@@ -153,7 +153,7 @@ int CheckPrivateFlood(char *source, int length, char *type)
 
 void AddIgnore(char *source, char *mask, int t)
 {
-  char buffer[200];
+  char buffer[250];
   char *site;
   aignore *curr;
   int count;
@@ -199,7 +199,7 @@ void AddIgnore(char *source, char *mask, int t)
 #ifdef DEBUG
     printf("TOO MANY IGNORES FROM THE SAME SITE\n");
 #endif
-    log("Too many ignores.. ignoring the whole site");
+    PutLog("Too many ignores.. ignoring the whole site");
     sprintf(curr->mask, "*!*@%s", site);
     sprintf(buffer, "Ignoring the whole site! (%s)", site);
     broadcast(buffer, 1);
@@ -210,7 +210,7 @@ void AddIgnore(char *source, char *mask, int t)
 
 void CleanIgnores(void)
 {
-  char buffer[200];
+  char buffer[250];
   aignore *curr, *prev;
 
   prev = NULL;
@@ -220,7 +220,7 @@ void CleanIgnores(void)
     if (curr->time <= now)
     {
       sprintf(buffer, "Removing ignore for %s", curr->mask);
-      log(buffer);
+      PutLog(buffer);
       rem_silence(curr->mask);
       if (prev != NULL)
       {
@@ -245,14 +245,14 @@ void CleanIgnores(void)
   }
 }
 
-int IsIgnored(char *nick)
+int IsIgnored(char *num)
 {
   char userhost[200];
   register aignore *curr;
   register aluser *user;
   register int found = 0;
 
-  if ((user = ToLuser(nick)) == NULL)
+  if ((user = ToLuser(num)) == NULL)
   {
     return 1;
   }
@@ -264,7 +264,7 @@ int IsIgnored(char *nick)
   {
     if (compare(userhost, curr->mask))
     {
-      add_silence(nick, curr->mask);
+      add_silence(num, curr->mask);
       found++;
     }
     curr = curr->next;
@@ -275,7 +275,7 @@ int IsIgnored(char *nick)
 
 void ShowIgnoreList(char *source, char *channel, char *args)
 {
-  char buffer[200];
+  char buffer[250];
   aignore *curr = IgnoreList;
   time_t m;
 
@@ -297,16 +297,16 @@ void ShowIgnoreList(char *source, char *channel, char *args)
   }
 }
 
-void add_silence(char *nick, char *mask)
+void add_silence(char *num, char *mask)
 {
   char buffer[200];
 
-  sprintf(buffer, ":%s SILENCE %s :%s\n", mynick, nick, mask);
+  sprintf(buffer, "%s U %s :%s\n", mynum, num, mask);
   sendtoserv(buffer);
 #ifdef FAKE_UWORLD
   if (Uworld_status == 1)
   {
-    sprintf(buffer, ":%s SILENCE %s :%s\n", UFAKE_NICK, nick, mask);
+    sprintf(buffer, "%s U %s :%s\n", ufakenum, num, mask);
     sendtoserv(buffer);
   }
 #endif
@@ -316,12 +316,12 @@ void rem_silence(char *mask)
 {
   char buffer[200];
 
-  sprintf(buffer, ":%s SILENCE * -%s\n", mynick, mask);
+  sprintf(buffer, "%s U * -%s\n", mynum, mask);
   sendtoserv(buffer);
 #ifdef FAKE_UWORLD
   if (Uworld_status == 1)
   {
-    sprintf(buffer, ":%s SILENCE * -%s\n", UFAKE_NICK, mask);
+    sprintf(buffer, "%s U * -%s\n", ufakenum, mask);
     sendtoserv(buffer);
   }
 #endif
@@ -330,7 +330,7 @@ void rem_silence(char *mask)
 
 int CheckFloodFlood(char *source, int length)
 {
-  char buffer[200];
+  char buffer[250];
   char userhost[200];
   char global[] = "*";
   register aluser *user;
@@ -340,7 +340,7 @@ int CheckFloodFlood(char *source, int length)
   if ((user = ToLuser(source)) == NULL)
   {
     sprintf(buffer, "ERROR! CheckFloodFlood(): %s not found", source);
-    log(buffer);
+    PutLog(buffer);
     return 1;
   }
 
@@ -410,7 +410,7 @@ int CheckFloodFlood(char *source, int length)
     if (!IsIgnored(source))
     {
       sprintf(buffer, "OUTPUT-FLOOD from %s!%s", user->nick, userhost);
-      log(buffer);
+      PutLog(buffer);
 
       sprintf(buffer, "OUTPUT-FLOOD from %s!%s (%s)",
 	user->nick, userhost, user->server->name);
@@ -426,7 +426,7 @@ int CheckFloodFlood(char *source, int length)
 
 int CheckAdduserFlood(char *source, char *channel)
 {
-  char buffer[200];
+  char buffer[250];
   char userhost[200];
   char global[] = "*";
   register aluser *user;
@@ -436,7 +436,7 @@ int CheckAdduserFlood(char *source, char *channel)
   if ((user = ToLuser(source)) == NULL)
   {
     sprintf(buffer, "ERROR! CheckAdduserFlood(): %s not found", source);
-    log(buffer);
+    PutLog(buffer);
     return 1;
   }
 
@@ -506,7 +506,7 @@ int CheckAdduserFlood(char *source, char *channel)
     if (!IsIgnored(source))
     {
       sprintf(buffer, "ADDUSER-FLOOD from %s!%s [%s]", user->nick, userhost, channel);
-      log(buffer);
+      PutLog(buffer);
 
       sprintf(buffer, "ADDUSER-FLOOD from %s!%s [%s] (%s)",
 	user->nick, userhost, channel, user->server->name);
@@ -523,7 +523,7 @@ int CheckAdduserFlood(char *source, char *channel)
 void AdminRemoveIgnore(char *source, char *ch, char *args)
 {
   char mask[200], global[] = "*";
-  char buffer[200];
+  char buffer[250];
   aignore **curr, *tmp;
   int change = 0;
 
@@ -549,7 +549,7 @@ void AdminRemoveIgnore(char *source, char *ch, char *args)
       change = 1;
       sprintf(buffer, "removed %s", (*curr)->mask);
       notice(source, buffer);
-      log(buffer);
+      PutLog(buffer);
       rem_silence((*curr)->mask);
 
       tmp = *curr;

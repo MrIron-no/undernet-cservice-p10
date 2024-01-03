@@ -28,10 +28,10 @@
 
 void NickInUse(void)
 {
-	char buffer[200];
+	char buffer [200];
 
-	sprintf(buffer,":%s SQUIT %s 0 :Unexpected nick collision\n",
-		SERVERNAME,SERVERNAME);
+	sprintf(buffer, "%s SQ %s 0 :Unexpected nick collision\n",
+		NUMERIC,SERVERNAME);
 	sendtoserv(buffer);
 	dumpbuff();
 	close(Irc.fd);
@@ -53,11 +53,11 @@ void NickInUse(void)
 			(*ptr)++;
 			if(*ptr>'z') *ptr='0';
 		}
-	}while(ToLuser(mynick)!=NULL);
+	}while(ToLuser(mynum)!=NULL);
 
 	sprintf(buffer,
 		"ERROR: ARGH! Nick already in use! Changing to %s",mynick);
-	log(buffer);
+	PutLog(buffer);
 
 	for(index=0;index<1000;index++){
 		chan=ChannelList[index];
@@ -74,8 +74,9 @@ void NickInUse(void)
 
 void ChNick(char *newnick)
 {
-	char buffer[80];
-	sprintf(buffer,":%s NICK %s :%ld\n",mynick,newnick,now);
+	char buffer[200];
+
+	sprintf(buffer, "%s N %s :%ld\n",mynum,newnick,now);
 	sendtoserv(buffer);
 	strcpy(mynick,newnick);
 }

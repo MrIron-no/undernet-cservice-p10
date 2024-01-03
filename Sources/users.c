@@ -1,3 +1,4 @@
+
 /* @(#)$Id: users.c,v 1.7 1998/11/21 14:58:43 seks Exp $ */
 
 /* Undernet Channel Service (X)
@@ -26,34 +27,84 @@
 
 #include "h.h"
 
-int lu_hash(char *nick)
+int lu_hash(char *num)
 {
   register int i, j;
 
-  for (i = 0, j = 0; i < strlen(nick); i++)
-    j += toupper((unsigned char)nick[i]);
+  for (i = 0, j = 0; i < strlen(num); i++)
+  {
+    j += (unsigned char)num[i];
+  }
 
   return (j % 1000);
 }
 
-int su_hash(char *nick)
+int su_hash(char *num)
 {
   register int i, j;
 
-  for (i = 0, j = 0; i < strlen(nick); i++)
-    j += toupper((unsigned char)nick[i]);
+  for (i = 0, j = 0; i < strlen(num); i++)
+    j += (unsigned char)num[i];
 
   return (j % 100);
 }
 
-aluser *ToLuser(char *nick)
+aluser *ToLuser(char *num)
 {
   register aluser *curr;
-  curr = Lusers[lu_hash(nick)];
-  while (curr && strcasecmp(nick, curr->nick))
+  curr = Lusers[lu_hash(num)];
+  while (curr && strcmp(num, curr->num))
     curr = curr->next;
 
   return (curr);
+}
+
+aluser *ToLuserNick(char *nick)
+{
+	register aluser *curr;
+
+	for (int i = 0; i < 1000; i++)
+	{
+		curr = Lusers[i];
+
+		if (curr && !strcmp(nick, curr->nick))
+			return (curr);
+	}
+	return 0;
+}
+
+char *GetNickNum(char *nick)
+{
+  register aluser *user;
+
+  user = ToLuserNick(nick);
+
+  if (user == NULL)
+  {
+    printf("GetNickNum(): Cannot finder user %s\n", nick);
+    return 0;
+  }
+  else
+  {
+    return user->num;
+  }
+}
+
+char *GetNumNick(char *num)
+{
+  register aluser *user;
+
+  user = ToLuser(num);
+
+  if (user == NULL)
+  {
+    printf("GetNumNick(): Cannot finder user %s\n", num);
+    return 0;
+  }
+  else
+  {
+    return user->nick;
+  }
 }
 
 void onnick(char *source, char *newnick, char *body)
@@ -64,48 +115,58 @@ void onnick(char *source, char *newnick, char *body)
   char username[80];
   char hostname[80];
   char TS[80];
-  char server[80];
+  char num[10];
+  char modes[10];
   register achannelnode *chan;
   register anickchange *curr, *prec;
   char buffer[512];
   int i = 0;
-
-
-#ifdef DEBUG
-  printf("NICK: %s --> %s ...\n", source, newnick);
-#endif
+  int isOper = 0;
 
   /* a new user */
-  if (!ToLuser(source))
-  {	/* Not a user, so a server or nothing */
-    if (strchr(source, '.') == NULL)
+  if (strlen(source) == 2)
+  {	/* Message comes from server */
+
+    GetWord(1, body, TS);
+    GetWord(2, body, username);
+    GetWord(3, body, hostname);
+    GetWord(4, body, modes);
+    GetWord(6, body, num);
+
+    if (num[0] == ':') // New join
     {
-      /* Source is not a user and not a server either */
-      return;
+	GetWord(5, body, num);
+
+    } else { // Check modes
+
+	int length = (int)strlen(modes);
+	for (i = 0; i < length; i++)
+	{
+		if (modes[i] == 'o')
+		   isOper = LFL_ISOPER;
+	}
+	i = 0;
     }
 
     if (!strcasecmp(newnick, mynick))
     {
-      log("ERROR: I'm nick collided");
+      PutLog("ERROR: I'm nick collided");
 #ifdef DEBUG
       printf("ARGH!!! I'M NICK COLLIDED!\n");
 #endif
-      GetWord(1, body, TS);
-      GetWord(2, body, username);
-      GetWord(3, body, hostname);
 
       if (atol(TS) <= logTS &&
 	strcasecmp(username, myuser) &&
 	strcasecmp(hostname, mysite))
       {
 	NickInUse();
-	log(source);
-	log(newnick);
-	log(body);
+	PutLog(source);
+	PutLog(newnick);
+	PutLog(body);
       }
       else
       {
-	onquit(source);
+	onquit(num);
 	return;		/*ignore */
       }
 #ifdef BACKUP
@@ -115,17 +176,13 @@ void onnick(char *source, char *newnick, char *body)
       return;	/* ignore */
 #endif
     }
-    else if (ToLuser(newnick))
+    else if (ToLuser(num))
     {
 #ifdef DEBUG
       printf("ARGH!!! NICK COLLISION\n");
 #endif
-      onquit(newnick);
+      onquit(num);
     }
-    GetWord(1, body, TS);
-    GetWord(2, body, username);
-    GetWord(3, body, hostname);
-    GetWord(4, body, server);
 
 #ifdef FAKE_UWORLD
     if (Uworld_status == 1 && !strcasecmp(newnick, UFAKE_NICK))
@@ -135,7 +192,7 @@ void onnick(char *source, char *newnick, char *body)
 	strcasecmp(hostname, UFAKE_HOST))
       {
 	sprintf(buffer, "%s nick collided", UFAKE_NICK);
-	log(buffer);
+	PutLog(buffer);
 	Uworld_status = 0;
 	KillUworld("nick collision");
 	return;		/* ignore if younger */
@@ -143,7 +200,13 @@ void onnick(char *source, char *newnick, char *body)
     }
 #endif
 
+    // Check ccontrol login
+    ccontrolLogin(num, newnick, username, hostname);
+
     user = (aluser *) MALLOC(sizeof(aluser));
+
+    user->num = (char *)MALLOC(strlen(num) + 1);
+    strcpy(user->num, num);
 
     user->nick = (char *)MALLOC(strlen(newnick) + 1);
     strcpy(user->nick, newnick);
@@ -157,25 +220,33 @@ void onnick(char *source, char *newnick, char *body)
     if (*newnick == '+')
       serv = &VirtualServer;
     else
-      serv = ToServer(server);
+      serv = ToServer(source);
 
     user->server = serv;
 
+#ifdef DEBUG
+    printf("NEW USER: %s!%s@%s (%s) on %s (%s)", newnick, username, hostname, num, serv->name, serv->num);
+    if (isOper)
+	printf(" (IRC Operator)\n");
+    else
+	printf("\n");
+#endif
+
     user->time = atol(TS);
-    user->mode = 0;
+    user->mode = isOper;
 
     user->channel = NULL;
     user->valchan = NULL;
 
-    user->next = Lusers[lu_hash(newnick)];
-    Lusers[lu_hash(newnick)] = user;
+    user->next = Lusers[lu_hash(num)];
+    Lusers[lu_hash(num)] = user;
 
     /* add user in server's userlist
      */
     suser = (asuser *) MALLOC(sizeof(asuser));
     suser->N = user;
-    suser->next = serv->users[su_hash(newnick)];
-    serv->users[su_hash(newnick)] = suser;
+    suser->next = serv->users[su_hash(num)];
+    serv->users[su_hash(num)] = suser;
 
 #ifdef NICKSERV
     nserv_nick(newnick, user);
@@ -183,6 +254,7 @@ void onnick(char *source, char *newnick, char *body)
   }
   else
   {	/* nick change */
+    GetWord(0, body, TS);
 
 #if 0
     if (!strcasecmp(source, DEFAULT_NICKNAME) &&
@@ -196,13 +268,12 @@ void onnick(char *source, char *newnick, char *body)
 #ifdef DEBUG
       printf("ARGH!!! I'M NICK COLLIDED!\n");
 #endif
-      GetWord(0, body, TS);
       if (atol(TS + 1) <= logTS)
       {
 	NickInUse();
-	log(source);
-	log(newnick);
-	log(body);
+	PutLog(source);
+	PutLog(newnick);
+	PutLog(body);
       }
       else
       {
@@ -212,7 +283,7 @@ void onnick(char *source, char *newnick, char *body)
     }
 
     u = &Lusers[lu_hash(source)];
-    while (*u && strcasecmp(source, (*u)->nick))
+    while (*u && strcasecmp(source, (*u)->num))
       u = &(*u)->next;
     user = *u;
 
@@ -224,25 +295,18 @@ void onnick(char *source, char *newnick, char *body)
       quit("ERROR! onnick() can't find user", 1);
 
     s = &user->server->users[su_hash(source)];
-    while (*s && strcasecmp((*s)->N->nick, user->nick))
+    while (*s && strcasecmp((*s)->N->num, user->num))
       s = &(*s)->next;
     suser = *s;
 
     /* change the nick in memory */
 
+    printf("NICK CHANGE %s (%s) --> %s\n", user->nick, user->num, newnick);
+
     TTLALLOCMEM -= strlen(user->nick) + 1;
     free(user->nick);
     user->nick = (char *)MALLOC(strlen(newnick) + 1);
     strcpy(user->nick, newnick);
-
-    /* now relocate the structure */
-    *u = user->next;
-    user->next = Lusers[lu_hash(newnick)];
-    Lusers[lu_hash(newnick)] = user;
-
-    *s = suser->next;
-    suser->next = user->server->users[su_hash(newnick)];
-    user->server->users[su_hash(newnick)] = suser;
 
     /* NICK FLOOD PROTECTION */
     /* 1st wipe old nick changes off */
@@ -287,7 +351,7 @@ void onnick(char *source, char *newnick, char *body)
 
       /* now add the new nick change to the history */
       curr = (anickchange *) MALLOC(sizeof(anickchange));
-      strcpy(curr->nick, source);
+      strcpy(curr->num, source);
       curr->time = now;		/* a lil confusing :( */
       curr->next = chan->nickhist;
       chan->nickhist = curr;
@@ -301,9 +365,9 @@ void onnick(char *source, char *newnick, char *body)
 	&& chan->N->on)
       {
 	sprintf(buffer, "%s!%s@%s", user->nick, user->username, user->site);
-	notice(newnick,
+	notice(source,
 	  "### NICK FLOOD PROTECTION ACTIVATED ###");
-	sprintf(buffer, "%s %d", newnick,
+	sprintf(buffer, "%s %d", GetNumNick(source),
 	  NICK_FLOOD_SUSPEND_TIME);
 	suspend("", chan->N->name, buffer);
 	ban("", chan->N->name, newnick);
@@ -313,7 +377,7 @@ void onnick(char *source, char *newnick, char *body)
   }
 }
 
-void onquit(char *nick)
+void onquit(char *num)
 {
   register aluser *user, **u;
   register asuser *suser, **s;
@@ -322,15 +386,15 @@ void onquit(char *nick)
 #ifdef DEBUG
   printf("Detected user quit..\n");
 #endif
-  u = &Lusers[lu_hash(nick)];
-  while (*u && strcasecmp(nick, (*u)->nick))
+  u = &Lusers[lu_hash(num)];
+  while (*u && strcasecmp(num, (*u)->num))
     u = &(*u)->next;
 
   user = *u;
 
   if (user == NULL)
   {
-    log("ERROR: onquit() can't find user!");
+    PutLog("ERROR: onquit() can't find user!");
 #ifdef HISTORY
     History(NULL);
 #endif
@@ -360,13 +424,13 @@ void onquit(char *nick)
      * onpart() call. We must start from the 
      * beginning of the list every time
      */
-    onpart(nick, user->channel->N->name);
+    onpart(num, user->channel->N->name);
   }
 
   /* remove user from server's userlist
    */
-  s = &user->server->users[su_hash(user->nick)];
-  while (*s != NULL && strcasecmp((*s)->N->nick, user->nick))
+  s = &user->server->users[su_hash(user->num)];
+  while (*s != NULL && strcasecmp((*s)->N->num, user->num))
   {
     s = &(*s)->next;
   }
@@ -380,7 +444,7 @@ void onquit(char *nick)
   }
   else
   {
-    log("ERROR: onquit()  user not found in server's userlist!");
+    PutLog("ERROR: onquit()  user not found in server's userlist!");
   }
 
   *u = user->next;
@@ -395,6 +459,8 @@ void onquit(char *nick)
   nserv_quit(user);
 #endif
 
+  TTLALLOCMEM -= strlen(user->num) + 1;
+  free(user->num);
   TTLALLOCMEM -= strlen(user->nick) + 1;
   free(user->nick);
   TTLALLOCMEM -= strlen(user->username) + 1;
@@ -409,7 +475,7 @@ void onkill(char *source, char *target, char *comment)
 {
   char buffer[200];
 
-  if (!strcasecmp(target, mynick))
+  if (!strcasecmp(target, mynum))
   {
 #if 0
     /* ignore kill for nick collisions because we
@@ -420,12 +486,12 @@ void onkill(char *source, char *target, char *comment)
     if (strstr(comment, "older nick overruled") ||
       strstr(comment, "collided yourself"))
     {
-      log("ERROR: Nick collision on me?");
+      PutLog("ERROR: Nick collision on me?");
       return;
     }
 #endif
-    sprintf(buffer, ":%s SQUIT %s 0 :killed by %s\n",
-      SERVERNAME, SERVERNAME, source);
+    sprintf(buffer, "%s SQ %s 0 :killed by %s\n",
+      NUMERIC, SERVERNAME, GetNumNick(source));
     sendtoserv(buffer);
     dumpbuff();
     close(Irc.fd);
@@ -445,8 +511,8 @@ void onkill(char *source, char *target, char *comment)
   else if (!strcasecmp(target, UFAKE_NICK))
   {
     char buffer[200];
-    sprintf(buffer, "%s is KILLED by %s", UFAKE_NICK, source);
-    log(buffer);
+    sprintf(buffer, "%s is KILLED by %s", UFAKE_NICK, GetNumNick(source));
+    PutLog(buffer);
     Uworld_status = 0;
     KillUworld("Killed");
 #endif
@@ -462,23 +528,23 @@ void onwhois(char *source, char *nick)
   register achannelnode *chan;
   char buffer[512];
 
-  user = ToLuser(nick);
+  user = ToLuserNick(nick);
 
   if (user == NULL)
   {
-    sprintf(buffer, ":%s 401 %s %s :No such nick\n", SERVERNAME, source, nick);
-    sendtoserv(buffer);
+    sprintf(buffer, "%s 401 %s %s :No such nick\n", NUMERIC, source, nick);
   }
   else
   {
-    sprintf(buffer, ":%s 311 %s %s %s %s * :\n", SERVERNAME, source, user->nick,
+    sprintf(buffer, "%s 311 %s %s %s %s * :\n", NUMERIC, source, user->nick,
       user->username, user->site);
+
     sendtoserv(buffer);
 
     chan = user->channel;
     if (chan != NULL && strcmp(user->nick, "X") && strcmp(user->nick, "W"))
     {
-      sprintf(buffer, ":%s 319 %s %s :", SERVERNAME, source, nick);
+      sprintf(buffer, "%s 319 %s %s :", NUMERIC, source, user->nick);
       while (chan != NULL)
       {
 	/* show a channel only if it is
@@ -487,7 +553,7 @@ void onwhois(char *source, char *nick)
 	if (!IsSet(chan->N->name, 's', "") &&
 	  !IsSet(chan->N->name, 'p', ""))
 	{
-	  usr = ToUser(chan->N->name, nick);
+	  usr = ToUserNick(chan->N->name, nick);
 	  if (usr->chanop)
 	    strcat(buffer, "@");
 	  strcat(buffer, chan->N->name);
@@ -498,24 +564,24 @@ void onwhois(char *source, char *nick)
 	{
 	  strcat(buffer, "\n");
 	  sendtoserv(buffer);
-	  sprintf(buffer, ":%s 319 %s %s :",
-	    SERVERNAME, source, nick);
+	  sprintf(buffer, "%s 319 %s %s :",
+	    NUMERIC, source, nick);
 	}
       }
       strcat(buffer, "\n");
       sendtoserv(buffer);
     }
-    sprintf(buffer, ":%s 312 %s %s %s :\n", SERVERNAME, source, source, user->server->name);
+    sprintf(buffer, "%s 312 %s %s %s :\n", NUMERIC, source, source, user->server->name);
     sendtoserv(buffer);
 
     if (user->mode & LFL_ISOPER)
     {
-      sprintf(buffer, ":%s 313 %s %s :is an IRC Operator\n",
-	SERVERNAME, source, user->nick);
+      sprintf(buffer, "%s 313 %s %s :is an IRC Operator\n",
+	NUMERIC, source, user->nick);
       sendtoserv(buffer);
     }
   }
 
-  sprintf(buffer, ":%s 318 %s :End of /WHOIS list.\n", SERVERNAME, source);
+  sprintf(buffer, "%s 318 %s :End of /WHOIS list.\n", NUMERIC, source);
   sendtoserv(buffer);
 }

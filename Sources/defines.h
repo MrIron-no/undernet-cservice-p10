@@ -32,7 +32,7 @@
 #define SERVER_NAME_LENGTH 80
 #define PASSWD_LENGTH 20
 
-#define COMMAND_PREFIX "X "
+#define COMMAND_PREFIX "ACAAA "
 #define MAX_MODE_PER_LINE 6
 
 #define MAX_DEOP_RATE 3			/* deops within 15 seconds */

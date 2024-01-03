@@ -171,7 +171,7 @@ void AddToShitList(char *source, char *ch, char *args, int force)
 
   /* look if the user is on the channel, if so, take his address */
 
-  luser = ToLuser(pattern);
+  luser = ToLuserNick(pattern);
   if (luser != NULL)
   {
     MakeBanMask(luser, pattern);
@@ -186,7 +186,7 @@ void AddToShitList(char *source, char *ch, char *args, int force)
     }
     if ((ptr1 = strchr(pattern, '!')) == NULL)
     {
-      char tmp[200];
+      char tmp[300];
       sprintf(tmp, "*!%s", pattern);
       strncpy(pattern, tmp, 200);
       pattern[199] = '\0';
@@ -315,7 +315,7 @@ void AddToShitList(char *source, char *ch, char *args, int force)
 #endif
     mban("", channel, pattern);
 
-    sprintf(buffer, "%s (%s) %s", pattern, source, reason);
+    sprintf(buffer, "%s (%s) %s", pattern, GetNumNick(source), reason);
     kick("", channel, buffer);
   }
 
@@ -381,7 +381,7 @@ void RemShitList(char *source, char *ch, char *args, int force)
 
   /* look if the user is on the channel, if so, take his address */
 
-  luser = ToLuser(pattern[0]);
+  luser = ToLuserNick(pattern[0]);
   if (luser != NULL)
   {
     sprintf(pattern[1], "%s!%s@%s",
@@ -494,7 +494,7 @@ void CleanShitList(char *source, char *channel)
     notice(source, "Ban list is now up-to-date");
 
   sprintf(buffer, "Cleaned banlist on %s", channel);
-  log(buffer);
+  PutLog(buffer);
 }
 
 int IsShit(char *channel, char *user, char *out, char *reason)
@@ -631,10 +631,11 @@ void ShowShitList(char *source, char *ch, char *args)
 
 void SaveShitList(char *source, char *channel)
 {
+  char buffer[80];
+
   ShitDisk tmp;
   register ShitUser *user;
   register int file;
-  char buffer[200];
   int i;
 
   if (*source && Access(channel, source) < SAVE_SHITLIST_LEVEL)
@@ -655,12 +656,12 @@ void SaveShitList(char *source, char *channel)
   {
     if (*source)
       notice(source, "Error opening BanList file! Aborted.");
-    log("Error saving shitlist");
+    PutLog("Error saving shitlist");
     active = 0;
     return;
   }
 
-  sprintf(buffer, ":%s AWAY :Busy saving precious ban list\n", mynick);
+  sprintf(buffer, "%s A :Busy saving precious ban list\n", mynum);
   sendtoserv(buffer);
   dumpbuff();
 
@@ -686,14 +687,14 @@ void SaveShitList(char *source, char *channel)
       {
 	alarm(0);
 	close(file);
-	log("ERROR: Can't save banlist");
-	log((char *)sys_errlist[errno]);
+	PutLog("ERROR: Can't save banlist");
+	PutLog((char *)sys_errlist[errno]);
 	alarm(2);
 	remove(SHITLIST_FILE ".new");
 	alarm(0);
 	active = 0;
-	sprintf(buffer, ":%s AWAY\n", mynick);
-	sendtoserv(buffer);
+	sprintf(buffer, "%s A\n", mynum);
+    	sendtoserv(buffer);
 	return;
       }
       alarm(0);
@@ -709,7 +710,7 @@ void SaveShitList(char *source, char *channel)
   if (*source)
     notice(source, "banlist saved.");
   active = 0;
-  sprintf(buffer, ":%s AWAY\n", mynick);
+  sprintf(buffer, "%s A\n", mynum);
   sendtoserv(buffer);
 }
 
@@ -735,7 +736,7 @@ void LoadShitList(char *source)
   {
     if (*source)
       notice(source, "Error opening BanList file! Aborted.");
-    log("ERROR loading banlist");
+    PutLog("ERROR loading banlist");
     active = 0;
     return;
   }

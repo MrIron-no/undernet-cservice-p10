@@ -1,4 +1,6 @@
+
 /* @(#)$Id: servers.c,v 1.9 1998/01/25 18:35:47 seks Exp $ */
+
 
 /* Undernet Channel Service (X)
  * Copyright (C) 1995-2002 Robin Thellend
@@ -26,7 +28,7 @@
 
 #include "h.h"
 
-aserver **FindServer(aserver ** head, char *name)
+aserver **FindServer(aserver ** head, char *num)
 {
   register aserver **tmp;
 
@@ -35,11 +37,11 @@ aserver **FindServer(aserver ** head, char *name)
 
   while (*head != NULL)
   {
-    if (!strcasecmp((*head)->name, name))
+    if (!strcmp((*head)->num, num))
     {
       return head;
     }
-    if ((tmp = FindServer(&(*head)->down, name)) != NULL)
+    if ((tmp = FindServer(&(*head)->down, num)) != NULL)
     {
       return tmp;
     }
@@ -52,29 +54,76 @@ aserver **FindServer(aserver ** head, char *name)
   return NULL;
 }
 
-aserver *ToServer(char *name)
+aserver **FindServerName(aserver ** head, char *name)
 {
-  return (*FindServer(&ServerList, name));
+  register aserver **tmp;
+
+  if (head == NULL || *head == NULL)
+    return NULL;
+
+  while (*head != NULL)
+  {
+    if (!strcasecmp((*head)->name, name))
+    {
+      return head;
+    }
+    if ((tmp = FindServerName(&(*head)->down, name)) != NULL)
+    {
+      return tmp;
+    }
+    else
+    {
+      head = &(*head)->next;
+    }
+  }
+
+  return NULL;
 }
 
-void onserver(char *source, char *newserver, char *args)
+aserver *ToServer(char *num)
 {
+  return (*FindServer(&ServerList, num));
+}
+
+void onserver(char *arg1, char *arg2, char *arg3, char *args)
+{
+
+// This function is triggered both on SERVER (my uplink) and S (other servers)
+// arg1: SERVER, arg2: servername, arg3: 1, args: 1703190230 1703239705 J10 ABP]] +h6 :server description
+// arg1: AB, arg2: S, arg3: servername, args: 2 0 1703230760 P10 AKAB] +h6 :server description
+
   register aserver *head;
   register aserver *tmp;
   register int i;
-  char TS[80];
+  char newserver[200], TS[80], numYYYYY[10], uplink[10];
+  char *numYY = MALLOC(sizeof(numYYYYY));
 
-  if (source[0] != '\0')
+  if (!strcmp(arg1,"SERVER"))
   {
-    head = ToServer(source);
-  }
-  else
-  {
+    strcpy(newserver,arg2);
+    GetWord(1, args, TS);
+    GetWord(3, args, numYYYYY);
+    strncpy(numYY, numYYYYY, 2);
+    numYY[2] = '\0';
+
+    strcpy(myuplink,numYY);
+
     head = NULL;
+  } 
+  else 
+  {
+    strcpy(newserver,arg3);
+    strcpy(uplink, arg1);
+    GetWord(2, args, TS);
+    GetWord(4, args, numYYYYY);
+    strncpy(numYY, numYYYYY, 2);
+    numYY[2] = '\0';
+
+    head = ToServer(arg1);
   }
 
 #ifdef BACKUP
-  if (!strcasecmp(newserver, MAIN_SERVERNAME))
+  if (!strcasecmp(newserver, mynum))
   {
     quit(MAIN_NICK " is back", 0);
   }
@@ -82,8 +131,10 @@ void onserver(char *source, char *newserver, char *args)
 
   tmp = (aserver *) MALLOC(sizeof(aserver));
   tmp->name = (char *)MALLOC(strlen(newserver) + 1);
+  tmp->num = (char *)MALLOC(strlen(numYY) +1);
   strcpy(tmp->name, newserver);
-  GetWord(2, args, TS);
+  strcpy(tmp->num, numYY);
+
   tmp->TS = atol(TS);
   if (head == NULL)
   {
@@ -91,8 +142,8 @@ void onserver(char *source, char *newserver, char *args)
     ServerList = tmp;
     TSoffset = tmp->TS - now;
 #ifdef DEBUG
-    printf("New connection: my time: %ld  others' time %ld (%ld)\n",
-      now, tmp->TS, TSoffset);
+    printf("New connection with %s (%s): my time: %ld  others' time %ld (%ld)\n",
+      tmp->name, tmp->num, now, tmp->TS, TSoffset);
 #endif
   }
   else
@@ -120,28 +171,28 @@ void onsquit(char *source, char *theserver, char *args)
     {
       char buffer[200];
       sprintf(buffer, "%s squitted", UFAKE_NICK);
-      log(buffer);
+      PutLog(buffer);
       Uworld_status = 0;
     }
     return;
   }
 #endif
 
-  s = FindServer(&ServerList, theserver);
+  s = FindServerName(&ServerList, theserver);
 
   if (s == NULL)
   {
     char buffer[200];
     sprintf(buffer, "ERROR: SQUIT unknown server %s (from %s)",
       theserver, source);
-    log(buffer);
+    PutLog(buffer);
     return;
   }
 
   serv = *s;
 
 #ifdef DEBUG
-  printf("SQUIT: %s %s\n", source, theserver);
+  printf("SQUIT: %s\n", theserver);
 #endif
 
   if (args != NULL)
@@ -170,12 +221,14 @@ void onsquit(char *source, char *theserver, char *args)
   {
     while (serv->users[i] != NULL)
     {
-      onquit(serv->users[i]->N->nick);
+      onquit(serv->users[i]->N->num);
     }
   }
 
   TTLALLOCMEM -= strlen(serv->name) + 1;
   free(serv->name);
+  TTLALLOCMEM -= strlen(serv->num) + 1;
+  free(serv->num);
   *s = serv->next;
   TTLALLOCMEM -= sizeof(aserver);
   free(serv);
@@ -250,7 +303,7 @@ void onsettime(char *source, char *value)
 
   TSoffset = atol(value) - now;
   sprintf(buffer, "SETTIME from %s (%s) (%ld)", source, value, TSoffset);
-  log(buffer);
+  PutLog(buffer);
 #ifdef DEBUG
   puts(buffer);
 #endif
@@ -260,6 +313,6 @@ void showversion(char *source)
 {
   char buffer[200];
 
-  sprintf(buffer, ":%s 351 %s . %s :%s\n", SERVERNAME, source, SERVERNAME, VERSION);
+  sprintf(buffer, "%s 351 %s . %s :%s\n", NUMERIC, source, SERVERNAME, VERSION);
   sendtoserv(buffer);
 }

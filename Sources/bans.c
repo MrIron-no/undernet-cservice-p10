@@ -55,7 +55,7 @@ void ban(char *source, char *chan, char *nicklist)
 
 #ifdef DEBUG
   printf("BAN REQUEST FOR %s\nON CHANNEL %s\nBY %s (%d)\n",
-    nicklist, channel, source, Access(channel, source));
+    nicklist, channel, GetNumNick(source), Access(channel, source));
 #endif
 
   if (*source && Access(channel, source) < BAN_LEVEL)
@@ -89,7 +89,7 @@ void ban(char *source, char *chan, char *nicklist)
 
   while (*OneNick)
   {
-    luser = ToLuser(OneNick);
+    luser = ToLuserNick(OneNick);
     if (luser)
       sprintf(buffer, "%s!%s@%s", luser->nick,
 	luser->username, luser->site);
@@ -97,7 +97,7 @@ void ban(char *source, char *chan, char *nicklist)
     {
       sprintf(buffer, "I BAN %s!%s@%s ON %s", luser->nick,
 	luser->username, luser->site, channel);
-      log(buffer);
+      PutLog(buffer);
 
       user = ToUser(channel, OneNick);
       if (user && user->chanop)
@@ -174,7 +174,7 @@ void mban(char *source, char *ch, char *args)
     {
       sprintf(buffer, "I BAN %s!%s@%s on %s (%s)", user->N->nick,
 	user->N->username, user->N->site, channel, args);
-      log(buffer);
+      PutLog(buffer);
 
       if (user->chanop)
       {
@@ -249,7 +249,7 @@ void unban(char *source, char *ch, char *list)
   while (*one)
   {
     found = 0;
-    luser = ToLuser(one);
+    luser = ToLuserNick(one);
     if (luser != NULL)
     {
       sprintf(one, "%s!%s@%s", luser->nick, luser->username,
@@ -268,7 +268,7 @@ void unban(char *source, char *ch, char *list)
       {
 	sprintf(buffer, "I UNBAN %s ON %s",
 	  bans->pattern, chan->name);
-	log(buffer);
+	PutLog(buffer);
 	changemode(channel, "-b", bans->pattern, 0);
 	RemBan(channel, bans->pattern);
 	bans = chan->bans;

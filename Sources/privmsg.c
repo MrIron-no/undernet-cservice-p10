@@ -34,7 +34,7 @@ void privmsg(char *source, char *target, char *body)
   char global[] = "*";
 
 #ifdef DEBUG
-  printf("PRIVMSG from %s to %s\n", source, target);
+  printf("PRIVMSG from %s to %s with body %s\n", source, target, body);
 #endif
 
   if ((*target == '#' || *target == '$') && strchr(target, '*'))
@@ -85,7 +85,7 @@ void privmsg(char *source, char *target, char *body)
     if (!IsIgnored(source) && !CheckPrivateFlood(source, strlen(body), "MSG-"))
     {
 #ifdef FAKE_UWORLD
-      if (!strcasecmp(target, UFAKE_NICK))
+      if (!strcasecmp(target, ufakenum))
       {
 	parse_uworld_command(source, body + 1);
       }
@@ -106,8 +106,8 @@ void parse_command(char *source, char *target, char *channel, char *commandline)
   GetWord(0, commandline, command);
 
 #ifdef DEBUG
-  printf("PARSING COMMAND: %s\nCOMMAND: %s\nARGS: %s\nSOURCE: %s\n",
-    commandline, command, ToWord(1, commandline), source);
+  printf("PARSING COMMAND: %s\nCOMMAND: %s\nTARGET: %s\nARGS: %s\nSOURCE: %s\n",
+    commandline, command, target, ToWord(1, commandline), source);
 #endif
 
   user = ToLuser(source);
@@ -122,14 +122,14 @@ void parse_command(char *source, char *target, char *channel, char *commandline)
     sprintf(buffer, "COMMAND FROM %s!%s@%s on %s: %s",
       user->nick, user->username, user->site,
       channel, commandline);
-    log(buffer);
+    PutLog(buffer);
   }
   else
   {
     sprintf(buffer, "COMMAND FROM %s!%s@%s on %s: %s XXXXXXX",
       user->nick, user->username, user->site,
       channel, command);
-    log(buffer);
+    PutLog(buffer);
   }
 
   if (!strcmp(command, "showcommands"))
@@ -278,6 +278,9 @@ void parse_command(char *source, char *target, char *channel, char *commandline)
       else if (!strcmp(command, "purge"))
 	purge(source, channel, ToWord(1, commandline));
 
+      else if (!strcmp(command, "register"))
+	RegChan(source, channel, ToWord(1, commandline));
+
       else if (!strcmp(command, "verify"))
 	verify(source, ToWord(1, commandline));
 
@@ -371,8 +374,8 @@ void parse_ctcp(char *source, char *target, char *body)
 
   if (strcmp(func, "ACTION"))
   {
-    sprintf(buffer, "CTCP %s from %s [%s]", func, source, body);
-    log(buffer);
+    sprintf(buffer, "CTCP %s from %s [%s]", func, GetNumNick(source), body);
+    PutLog(buffer);
   }
 
   if (match(func, "PING"))

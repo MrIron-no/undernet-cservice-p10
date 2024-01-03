@@ -32,8 +32,8 @@
 
 static struct buffer_block *avail=NULL;
 /*static unsigned long MEM_buffers=0;*/
-static unsigned long NB_avail_buffer_blocks=0;
-static unsigned long NB_alloc_buffer_blocks=0;
+unsigned long NB_avail_buffer_blocks=0;
+unsigned long NB_alloc_buffer_blocks=0;
 
 
 /* get_buffer_block() by SeKs <intru@step.polymtl.ca>

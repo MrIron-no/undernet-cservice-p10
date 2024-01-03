@@ -43,7 +43,7 @@ int mycasecmp(char *s1, char *s2)
 }
 
 
-char *strcasestr(register char *s1, char *s2)
+char *strcasestr2(register char *s1, char *s2)
 {
   register char *a, *b;
 
@@ -109,8 +109,7 @@ static int matchX(char *pat1, char *pat2)
 
 int match(register char *string, register char *mask)
 {    
-  char *stack[200][2] = {{NULL, NULL}}; 
-  register char type = 0;
+  char *stack[200][2] = {{NULL, NULL}};
   register short quote, level = 0;
 
   while (*string)
@@ -119,7 +118,6 @@ int match(register char *string, register char *mask)
     switch (*mask) 
     {
     case '*':
-      type = '*';
       if (++level == 200)
         return 0;
       stack[level][0] = mask; 
@@ -239,7 +237,7 @@ int key_match(char *s, char *tok[])
 
   for (k = 0; tok[k] != NULL; k++)
   {
-    if (!strcasestr(s, tok[k]))
+    if (!strcasestr2(s, tok[k]))
       return 0;
   }
 

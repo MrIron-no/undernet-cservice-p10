@@ -28,9 +28,9 @@
 
 void op(char *source, char *chan, char *nicklist)
 {
+  char buffer[200];
   char channel[80];
   char nick[80];
-  char buffer[200];
   register auser *user;
   register achannel *ch;
   register int i;
@@ -91,22 +91,21 @@ void op(char *source, char *chan, char *nicklist)
 
   if (!*nicklist)
   {
-    strcpy(nick, source);
+	nicklist = GetNumNick(source);
   }
-  else
-  {
-    GetWord(0, nicklist, nick);
-  }
+
+  GetWord(0, nicklist, nick);
 
   i = 0;
   while (*nick)
   {
-    user = ToUser(channel, nick);
+    user = ToUserNick(channel, nick);
+
 #ifdef DEBUG
     if (user)
     {
       printf("USER FOUND!\n");
-      printf("nick: %s\n", user->N->nick);
+      printf("nick: %s, num: %s\n", user->N->nick, user->N->num);
       printf("Chanop: %s\n", (user->chanop) ? "YES" : "NO");
     }
     else
@@ -131,11 +130,11 @@ void op(char *source, char *chan, char *nicklist)
 	if (user && !user->chanop)
 	{
 	  user->chanop = 1;
-	  changemode(channel, "+o", nick, 0);
-	  if (*source && strcasecmp(source, nick))
+	  changemode(channel, "+o", user->N->num, 0);
+	  if (*source && strcasecmp(source, user->N->num))
 	  {
-	    sprintf(buffer, replies[RPL_YOUREOPPEDBY][ch->lang], source);
-	    notice(nick, buffer);
+	    sprintf(buffer, replies[RPL_YOUREOPPEDBY][ch->lang], GetNumNick(source));
+	    notice(user->N->num, buffer);
 	  }
 	}
       }
@@ -153,6 +152,7 @@ void op(char *source, char *chan, char *nicklist)
 
     GetWord(++i, nicklist, nick);
   }
+
   AddEvent(EVENT_FLUSHMODEBUFF, now + MODE_DELAY, channel);
 }
 
@@ -222,7 +222,8 @@ void deop(char *source, char *ch, char *nicklist)
   GetWord(i, nicklist, nick);
   while (*nick)
   {
-    user = ToUser(channel, nick);
+printf("running while %s", nick);
+    user = ToUserNick(channel, nick);
     if (user)
     {
       sprintf(buffer, "%s!%s@%s",
@@ -230,11 +231,12 @@ void deop(char *source, char *ch, char *nicklist)
       if (user && user->chanop)
       {
 	user->chanop = 0;
-	changemode(channel, "-o", nick, 0);
-	if (*source && strcasecmp(source, nick))
+	changemode(channel, "-o", user->N->num, 0);
+printf("running changemode -o %s\n", user->N->num);
+	if (*source && strcasecmp(source, user->N->num))
 	{
-	  sprintf(buffer, replies[RPL_YOUREDEOPPEDBY][chan->lang], source);
-	  notice(nick, buffer);
+	  sprintf(buffer, replies[RPL_YOUREDEOPPEDBY][chan->lang], GetNumNick(source));
+	  notice(user->N->num, buffer);
 	}
       }
     }
@@ -257,7 +259,7 @@ void massdeop(char *channel)
   {
     if (user->chanop)
     {
-      changemode(channel, "-o", user->N->nick, 0);
+      changemode(channel, "-o", user->N->num, 0);
       user->chanop = 0;
     }
     user = user->next;

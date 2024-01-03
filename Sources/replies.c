@@ -108,7 +108,7 @@ void RandomChannel(char *source)
 
 void Say(char *source, char *args)
 {
-  char buffer[1024], target[80], global[] = "*";
+  char target[80], buffer[512], global[] = "*";
 
   if (Access(global, source) < 900)
   {
@@ -122,16 +122,17 @@ void Say(char *source, char *args)
   {
     notice(source, "Syntax: say [#channel] [whatever]");
     return;
-  }
+  } else if (*target != '#')
+    strcpy(target, GetNickNum(target));
 
-  sprintf(buffer, ":%s PRIVMSG %s :%s\n", mynick, target, args);
+  sprintf(buffer, "%s P %s :%s\n", mynum, target, args);
   sendtoserv(buffer);
 }
 
 
 void ServNotice(char *source, char *args)
 {
-  char buffer[1024], target[80], global[] = "*";
+  char buffer[1048], target[80], global[] = "*";
 
   if (Access(global, source) < 600)
   {
@@ -147,7 +148,7 @@ void ServNotice(char *source, char *args)
     return;
   }
 
-  sprintf(buffer, "[Channel Service: %s] %s", source, args);
+  sprintf(buffer, "[Channel Service: %s] %s", GetNumNick(source), args);
   servnotice(target, buffer);
 }
 

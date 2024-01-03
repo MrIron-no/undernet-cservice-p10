@@ -137,11 +137,11 @@ void CheckEvent(void)
       break;
 
     case EVENT_RENAME_LOGFILE:
-      log("Closing log file");
+      PutLog("Closing log file");
       close(logfile);
       rename(LOGFILE, LOGFILEBAK);
       logfile = open(LOGFILE, O_WRONLY | O_CREAT | O_APPEND, 0600);	/* "a" in case rename() fails */
-      log("Opening log file");
+      PutLog("Opening log file");
       AddEvent(EVENT_RENAME_LOGFILE, now + RENAME_LOGFILE_FREQ, "");
       break;
 

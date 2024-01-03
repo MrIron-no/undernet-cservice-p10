@@ -147,11 +147,8 @@ void bounce(char *channel, char *change, time_t TS)
   char arg[200];
   register char sign = '+';
   register auser *user;
-  register achannel *chan;
   register int pos = 1;
   register int i;
-
-  chan = ToChannel(channel);
 
   for (i = 0; change[i] != '\0' && change[i] != ' '; i++)
   {
@@ -253,18 +250,19 @@ void ModeChange(char *source, char *channel, char *change)
   {
     return;	/* probably a lost MODE */
   }
-  if (u == NULL)
+
+  if (u == NULL && !bursting) // TODO: Should the burst timestamp be added to the ModeChange triggered by onburst()?
   {
     /* This is a mode change from a server.. if it is not
      * a +b, then the last argument is a TS
      */
     for (ptr = change; *ptr != 'b' && *ptr != ' '; ptr++);
-    if (*ptr != 'b' && strcasecmp(UWORLD_SERVER, source)
+    if (*ptr != 'b' && strcasecmp(uworldservernum, source) && strcasecmp(NUMERIC, source)
 #ifdef UWORLD2
       && strcasecmp(UWORLD2_SERVER, source)
 #endif
 #ifdef FAKE_UWORLD
-      && strcasecmp(UFAKE_SERVER, source)
+      && strcasecmp(ufakeservernum, source)
 #endif
       )
     {
@@ -274,10 +272,10 @@ void ModeChange(char *source, char *channel, char *change)
       *(ptr++) = '\0';
       if (atol(ptr) > chan->TS && atol(ptr) != 0 && chan->on)
       {
-	log(source);
-	log(channel);
-	log(change);
-	log(ptr);
+	PutLog(source);
+	PutLog(channel);
+	PutLog(change);
+	PutLog(ptr);
 	bounce(channel, change, chan->TS);
 	return;
       }
@@ -323,7 +321,7 @@ void ModeChange(char *source, char *channel, char *change)
 	  {
 	    u->mode |= LFL_ISOPER;
 #ifdef DEBUG
-	    printf("%s is now IRCOP\n", source);
+	    printf("%s (%s) is now IRCOP\n", GetNumNick(source), source);
 #endif
 	  }
 	}
@@ -348,7 +346,7 @@ void ModeChange(char *source, char *channel, char *change)
 	  {
 	    u->mode &= ~LFL_ISOPER;
 #ifdef DEBUG
-	    printf("%s is no longer IRCOP\n", source);
+	    printf("%s (%s) is no longer IRCOP\n", GetNumNick(source), source);
 #endif
 	  }
 	}
@@ -412,18 +410,14 @@ void onop(char *source, char *channel, char *target)
   char buffer[200];
 
   chan = ToChannel(channel);
-  luser = ToLuser(source);
 
-  user = ToUser(channel, target);
-
-  if (!strcasecmp(mynick, target))
+  if (!strcasecmp(mynum, target))
   {
     if (!chan)
     {
-      log("ERROR: onop() channel not found!");
+      PutLog("ERROR: onop() channel not found!");
       return;
     }
-
     chan->AmChanOp = 1;
   }
   else
@@ -431,11 +425,14 @@ void onop(char *source, char *channel, char *target)
 #ifdef DEBUG
     printf("OP for %s on %s\n", target, channel);
 #endif
+    luser = ToLuser(source);
+    user = ToUser(channel, target);
+
     if (!user)
     {
       sprintf(buffer, "ERROR: onop() user not found (%s)",
 	target);
-      log(buffer);
+      PutLog(buffer);
       return;
     }
 
@@ -446,8 +443,8 @@ void onop(char *source, char *channel, char *target)
     if (luser && chan->on && (chan->flags & CFL_NOOP))
     {
       sprintf(buffer, "NoOp MODE! deopping %s and %s",
-	target, source);
-      log(buffer);
+	target, GetNumNick(source));
+      PutLog(buffer);
       notice(target, replies[RPL_NOOP][chan->lang]);
       notice(source, replies[RPL_NOOP][chan->lang]);
       changemode(channel, "-o", target, 0);
@@ -464,8 +461,8 @@ void onop(char *source, char *channel, char *target)
       Access(channel, target) < OP_LEVEL)
     {
       sprintf(buffer, "StrictOp MODE! deopping %s and %s",
-	target, source);
-      log(buffer);
+	target, GetNumNick(source));
+      PutLog(buffer);
       notice(target, "Only authenticated users may be op in StrictOp mode");
       notice(source, "Only authenticated users may be op in StrictOp mode");
       changemode(channel, "-o", target, 0);
@@ -486,8 +483,8 @@ void onop(char *source, char *channel, char *target)
       if (Access(channel, source) < ACCESS_BAN_PRIORITY)
       {
 	sprintf(buffer, "%s is shitlisted (NO-OP LEVEL)!"
-	  "Deopping %s and %s", target, target, source);
-	log(buffer);
+	  "Deopping %s and %s", target, target, GetNumNick(source));
+	PutLog(buffer);
 	notice(target, replies[RPL_CANTBEOP][chan->lang]);
 	notice(source, replies[RPL_CANTBEOPPED][chan->lang]);
 	changemode(channel, "-o", target, 0);
@@ -497,7 +494,7 @@ void onop(char *source, char *channel, char *target)
 	if (user != NULL)
 	  user->chanop = 0;
 
-	sprintf(buffer, "%s %d", source, SUSPEND_TIME_FOR_OPPING_A_SHITLISTED_USER);
+	sprintf(buffer, "%s %d", GetNumNick(source), SUSPEND_TIME_FOR_OPPING_A_SHITLISTED_USER);
 	suspend("", channel, buffer);
       }
       else
@@ -524,7 +521,7 @@ void ondeop(char *source, char *channel, char *target, int *desync)
   chan = ToChannel(channel);
   if (!chan)
   {
-    log("ERROR: ondeop() channel not found!");
+    PutLog("ERROR: ondeop() channel not found!");
     return;
   }
 
@@ -538,8 +535,8 @@ void ondeop(char *source, char *channel, char *target, int *desync)
       user2->chanop = 0;
     }
     sprintf(buffer, "DESYNC detected! (%s deopped %s on %s)",
-      source, target, channel);
-    log(buffer);
+      GetNumNick(source), GetNumNick(target), channel);
+    PutLog(buffer);
 
 /*              part("",channel,"");
    join("",channel,""); now doing this in ChangeMode */
@@ -549,7 +546,7 @@ void ondeop(char *source, char *channel, char *target, int *desync)
     return;
   }
 
-  if (!strcasecmp(mynick, target))
+  if (!strcasecmp(mynum, target))
   {
     if ((chan->flags & CFL_ALWAYSOP) &&
       Access(channel, source) >= ALWAYSOP_OVERRIDE_LEVEL)
@@ -557,7 +554,7 @@ void ondeop(char *source, char *channel, char *target, int *desync)
       chan->flags &= ~CFL_ALWAYSOP;
       sprintf(buffer, "AlwaysOp is turned off on %s (deopped by %s!%s@%s)",
 	channel, user1->N->nick, user1->N->username, user1->N->site);
-      log(buffer);
+      PutLog(buffer);
       notice(source, replies[RPL_ALWAYSOPWASACTIVE][chan->lang]);
     }
     if (chan->flags & CFL_ALWAYSOP)
@@ -567,7 +564,7 @@ void ondeop(char *source, char *channel, char *target, int *desync)
 	sprintf(buffer, "DEOPPED by %s!%s@%s (%d) while AlwaysOp active on %s",
 	  user1->N->nick, user1->N->username, user1->N->site,
 	  Access(channel, source), channel);
-	log(buffer);
+	PutLog(buffer);
 	broadcast(buffer, 0);
 	i = IsShit(channel, source, NULL, NULL);
 	notice(source, replies[RPL_ALWAYSOP][chan->lang]);
@@ -578,7 +575,7 @@ void ondeop(char *source, char *channel, char *target, int *desync)
 	case 2:
 	case 3:
 	case 4:
-	  log("First warning");
+	  PutLog("First warning");
 	  notice(source, replies[RPL_DEOPPED1ST][chan->lang]);
 	  changemode(channel, "-o", source, 0);
 	  flushmode(channel);
@@ -590,9 +587,9 @@ void ondeop(char *source, char *channel, char *target, int *desync)
 	case 7:
 	case 8:
 	case 9:
-	  log("Second warning");
+	  PutLog("Second warning");
 	  notice(source, replies[RPL_DEOPPED2ND][chan->lang]);
-	  kick("", channel, source);
+	  kick("", channel, GetNickNum(source));
 	  break;
 
 	default:
@@ -628,7 +625,7 @@ void ondeop(char *source, char *channel, char *target, int *desync)
   }
 
   /* massdeop protection does NOT apply to the bot itself!
-     if(!strcasecmp(source,mynick)) return; obsolete */
+     if(!strcasecmp(source,mynum)) return; obsolete */
 
   /* No protection against server deop :/
      Hey! I'm not gonna /squit it just for doing a deop!! ;) */
@@ -641,7 +638,7 @@ void ondeop(char *source, char *channel, char *target, int *desync)
   chan = ToChannel(channel);
   if (!chan)
   {
-    log("ERROR: ondeop() channel not found!");
+    PutLog("ERROR: ondeop() channel not found!");
     return;
   }
 
@@ -656,7 +653,7 @@ void ondeop(char *source, char *channel, char *target, int *desync)
   /* ok.. let's free the *old* deops from history */
   while (curr)
   {
-    if (curr->time < (now - 15) || !strcasecmp(curr->nick, target))
+    if (curr->time < (now - 15) || !strcasecmp(curr->num, target))
     {
       if (prec)
       {
@@ -682,7 +679,7 @@ void ondeop(char *source, char *channel, char *target, int *desync)
 
   /* now store the deop in the user's deop history */
   curr = (adeop *) MALLOC(sizeof(adeop));
-  strcpy(curr->nick, target);
+  strcpy(curr->num, target);
   curr->time = now;
   curr->next = user1->deophist;
   user1->deophist = curr;
@@ -694,8 +691,8 @@ void ondeop(char *source, char *channel, char *target, int *desync)
 
   if (i == chan->MassDeopPro && chan->MassDeopPro != 0 && chan->on)
   {
-    sprintf(buffer, "MASSDEOP from %s on %s", source, channel);
-    log(buffer);
+    sprintf(buffer, "MASSDEOP from %s on %s", GetNumNick(source), channel);
+    PutLog(buffer);
     notice(source, "### MASSDEOP PROTECTION ACTIVATED ###");
     if (Access(channel, source) >= MASSDEOP_IMMUNE_LEVEL)
     {
@@ -703,13 +700,13 @@ void ondeop(char *source, char *channel, char *target, int *desync)
     }
     else
     {
-      sprintf(buffer, "%s %d", source, MASSDEOP_SUSPEND_TIME);
+      sprintf(buffer, "%s %d", GetNumNick(source), MASSDEOP_SUSPEND_TIME);
       suspend("", channel, buffer);
-      sprintf(buffer, "%s %d %d *** MASSDEOP ***", source,
+      sprintf(buffer, "%s %d %d *** MASSDEOP ***", GetNumNick(source),
 	MASSDEOP_SHITLIST_TIME,
 	MASSDEOP_SHITLIST_LEVEL);
       AddToShitList("", channel, buffer, 0);
-      sprintf(buffer, "%s ### MASSDEOP PROTECTION ###", source);
+      sprintf(buffer, "%s ### MASSDEOP PROTECTION ###", GetNumNick(source));
       kick("", channel, buffer);
     }
   }
@@ -748,7 +745,7 @@ void AddBan(char *channel, char *pattern)
   if (chan == NULL)
   {
     sprintf(buffer, "ERROR: AddBan(): can't find %s", channel);
-    log(buffer);
+    PutLog(buffer);
     return;
   }
 
@@ -766,6 +763,8 @@ void AddBan(char *channel, char *pattern)
   theban->pattern[79] = '\0';
   theban->next = chan->bans;
   chan->bans = theban;
+
+printf("Successfully added ban %s to %s\n", pattern, channel);
 }
 
 
@@ -803,6 +802,9 @@ void changemode(char *channel, char *flag, char *arg, int AsServer)
 {
   register achannel *chan;
   register modequeue *mode, *curr;
+  char args[80];
+
+  strcpy(args, arg);
 
 #ifdef DEBUG
   printf("Queueing mode change for channel %s %s %s %d\n", channel, flag, arg, AsServer);
@@ -814,6 +816,12 @@ void changemode(char *channel, char *flag, char *arg, int AsServer)
 
   /* first, cancel previous contradicting mode changes..  
      ex.. mode #test +o-o+o-o+o .. the bot won't do that..  */
+
+  // Adding timestamp for servermodes
+  if (AsServer && flag[1] != 'b')
+  {
+    sprintf(arg, "%s %ld", args, chan->TS);
+  }
 
   mode = chan->modebuff;
   while (mode)
@@ -862,7 +870,7 @@ void changemode(char *channel, char *flag, char *arg, int AsServer)
 
 void flushmode(char *channel)
 {
-  char buffer[500];
+  char buffer[600];
   register achannel *chan;
   register modequeue *mode, *tmp;
   char flags[20] = "";
@@ -942,22 +950,22 @@ void flushmode(char *channel)
       {
 	if (AsServer == 0 && chan->AmChanOp && *flags != '\0')
 	{
-	  sprintf(buffer, ":%s MODE %s %s%s\n",
-	    mynick, channel, flags, args);
+	  sprintf(buffer, "%s M %s %s%s\n",
+	    mynum, channel, flags, args);
 	  sendtoserv(buffer);
 	}
 	else if (AsServer == 1 && *flags != '\0')
 	{
-	  sprintf(buffer, ":%s MODE %s %s%s %ld\n",
-	    SERVERNAME, channel,
-	    flags, args, chan->TS);
+	  sprintf(buffer, "%s M %s %s%s\n",
+	    NUMERIC, channel,
+	    flags, args);
 	  sendtoserv(buffer);
 	}
 #ifdef FAKE_UWORLD
 	else if (AsServer == 2 && Uworld_status == 1 && *flags != '\0')
 	{
-	  sprintf(buffer, ":%s MODE %s %s%s\n",
-	    UFAKE_SERVER, channel,
+	  sprintf(buffer, "%s M %s %s%s\n",
+	    ufakeservernum, channel,
 	    flags, args);
 	  sendtoserv(buffer);
 	}

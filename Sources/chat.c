@@ -258,8 +258,8 @@ void DccMe(char *source, char *arg)
   {
     unsigned long addr = inet_addr(BINDADDR);
     addr = ntohl(addr);
-    sprintf(buffer, ":%s PRIVMSG %s :\001DCC CHAT chat %u %u\001\n",
-            mynick, source, addr, HTTP_PORT);
+    sprintf(buffer, "%s P %s :\001DCC CHAT chat %lu %u\001\n",
+            mynum, source, addr, HTTP_PORT);
     sendtoserv(buffer);
   }
 }

@@ -60,7 +60,7 @@ int connection(char *serv)
   }
 
   sprintf(buffer, "CONNECTING TO %s ON PORT %d", serv, portnum);
-  log(buffer);
+  PutLog(buffer);
 
   if (Irc.outbuf)
     zap_buffer(&Irc.outbuf);
@@ -76,7 +76,7 @@ int connection(char *serv)
 #ifdef DEBUG
     fprintf(stderr, "ERROR: Can't assign fd for socket, darn!\n");
 #endif
-    log("ERROR ASSIGNING FD FOR SOCKET");
+    PutLog("ERROR ASSIGNING FD FOR SOCKET");
     exit(1);
   }
 
@@ -90,8 +90,8 @@ int connection(char *serv)
 #ifdef DEBUG
     fprintf(stderr, "ERROR: Can't bind local address %s\n", BINDADDR);
 #endif
-    log("Can't bind local address");
-    log(BINDADDR);
+    PutLog("Can't bind local address");
+    PutLog(BINDADDR);
     exit(1);
   }
 #endif
@@ -106,7 +106,7 @@ int connection(char *serv)
 #ifdef DEBUG
     fprintf(stderr, "ERROR: Host %s is unknown, wtf?\n", serv);
 #endif
-    log("ERROR: BULLSHIT HOST!");
+    PutLog("ERROR: BULLSHIT HOST!");
     exit(1);
   }
   memcpy((void *)&socketname.sin_addr, (void *)remote_host->h_addr, remote_host->h_length);
@@ -121,7 +121,7 @@ int connection(char *serv)
 #ifdef DEBUG
     printf("ERROR: connect() %d: %s\n", errno, strerror(errno));
 #endif
-    log("ERROR: COULDN'T CONNECT");
+    PutLog("ERROR: COULDN'T CONNECT");
     return (1);
   }
   TSconnect = Irc.TS = now = time(NULL);
@@ -146,6 +146,7 @@ int wait_msg(void)
 #endif
   register dbquery **dq, *dqtmp;
   register dbsync **ds, *dstmp;
+  char buffer[200];
 
   /* initialize the fd_sets
    */
@@ -313,8 +314,8 @@ int wait_msg(void)
    */
   if (select(maxfd + 1, &readfds, &writefds, NULL, &timeout) < 0)
   {
-    log("ERROR: select()");
-    log((char *)sys_errlist[errno]);
+    PutLog("ERROR: select()");
+    PutLog((char *)sys_errlist[errno]);
     return (-1);
   }
 
@@ -325,7 +326,7 @@ int wait_msg(void)
   {
     if (read_from_server(0) < 0)
     {
-      log("ERROR: in read_from_server()");
+      PutLog("ERROR: in read_from_server()");
       return (-1);
     }
     pingflag = 0;
@@ -337,7 +338,7 @@ int wait_msg(void)
   {
     if (write_to_server(&Irc) < 0)
     {
-      log("ERROR: in write_to_server()");
+      PutLog("ERROR: in write_to_server()");
       return (-1);
     }
   }
@@ -456,7 +457,7 @@ int wait_msg(void)
    */
   if ((now - Irc.TS) >= (3 * PING_FREQ + 1))
   {
-    log("Errr PING TIMEOUT");
+    PutLog("Errr PING TIMEOUT");
 #ifdef DEBUG
     printf("Ping timeout..\n");
 #endif
@@ -465,9 +466,8 @@ int wait_msg(void)
   }
   else if (pingflag == 0 && (now - Irc.TS) >= (PING_FREQ - 1))
   {
-    sendtoserv("PING :");
-    sendtoserv(SERVERNAME);
-    sendtoserv("\n");
+    sprintf(buffer, "%s G !%ld %s %ld", NUMERIC, now, SERVERNAME, now);
+    sendtoserv(buffer);
     pingflag = 1;
   }
 
@@ -486,7 +486,7 @@ void sendtoserv(char *msg)
 
   if (CurrentSendQ > MAX_SENDQ)
   {
-    log("ERROR: Reached MAX_SENDQ!!!");
+    PutLog("ERROR: Reached MAX_SENDQ!!!");
     zap_buffer(&Irc.outbuf);
     close(Irc.fd);
     exit(-1);
@@ -511,8 +511,8 @@ void dumpbuff(void)
 int read_from_server(int reset)
 {
   static char inbuff[1025] = "";
-  static char source[SERVER_NAME_LENGTH] = "";
-  static char function[10] = "";
+  static char source[100] = "";
+  static char function[100] = "";
   static char target[513] = "";
   static char body[513] = "";
 
@@ -592,14 +592,16 @@ int read_from_server(int reset)
 	  switch (in_pos)
 	  {
 	  case 0:
-	    if (in_offset == 0 && *inchar != ':')
+	 /*   if (in_offset == 0 && *inchar != ':')
 	    {
 	      source[0] = '\0';
 	      in_pos++;
 	      function[in_offset++] = *inchar;
 	    }
 	    else
-	      source[in_offset++] = *inchar;
+	      source[in_offset++] = *inchar;*/
+
+	    source[in_offset++] = *inchar;
 	    break;
 
 	  case 1:

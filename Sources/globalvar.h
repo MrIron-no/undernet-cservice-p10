@@ -33,7 +33,11 @@ extern char mynick[NICK_LENGTH];
 extern char myuser[USERNAME_LENGTH];
 extern char mysite[SITE_LENGTH];
 extern char myrealname[REALNAME_LENGTH];
+extern char mynum[10];
 extern char server[SERVER_NAME_LENGTH];
+extern char myuplink[20];
+extern char uworldservernum[10];
+extern int bursting;
 extern int logfile;
 extern RegUser *UserList[1000];
 extern ShitUser *ShitList[1000];
@@ -65,6 +69,8 @@ extern unsigned long long HTTPTTLSENTBYTES;
 extern alang Lang[NO_LANG];
 extern char *replies[][NO_LANG];
 #ifdef FAKE_UWORLD
+extern char ufakenum[10];
+extern char ufakeservernum[10];
 extern int Uworld_status;
 extern time_t UworldTS,UworldServTS;
 #endif
@@ -79,8 +85,11 @@ extern long CurrentSendQ;
 extern int DB_Save_Status;
 extern char DB_Save_Nick[NICK_LENGTH];
 
-#define MALLOC(X)  ((TmpPtr=(char *)malloc(X))? \
+/*#define MALLOC(X)  ((TmpPtr=(char *)malloc(X))? \
 	TmpPtr : (char *)quit("ERROR: malloc() failed", 1));\
+	TTLALLOCMEM+=X*/ 
+
+#define MALLOC(X)  malloc(X);\
 	TTLALLOCMEM+=X
 
 #define close(X)   if((X)>=0) close(X)

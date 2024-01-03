@@ -79,7 +79,7 @@ void free_user(RegUser ** head)
   register RegUser *tmp = *head;
 
   if ((*head)->inuse != 0)
-    log("ERROR!!!! free_user(): inuse != 0");
+    PutLog("ERROR!!!! free_user(): inuse != 0");
 
   *head = (*head)->next;
   TTLALLOCMEM -= strlen(tmp->realname) + 1;
@@ -260,9 +260,9 @@ int LAccess(char *channel, aluser * user)
   return vchan->reg->access;
 }
 
-int Access(char *channel, char *nick)
+int Access(char *channel, char *num)
 {
-  return LAccess(channel, ToLuser(nick));
+  return LAccess(channel, ToLuser(num));
 }
 
 
@@ -351,27 +351,27 @@ static void successful_auth(aluser * luser, char *channel, RegUser * reg)
     sprintf(buffer, "AUTHENTICATION SUCCESSFUL ON %s!",
       channel);
   }
-  notice(luser->nick, buffer);
+  notice(luser->num, buffer);
   if (reg->suspend > now)
-    notice(luser->nick, "... however, your access is suspended!");
+    notice(luser->num, "... however, your access is suspended!");
 
   sprintf(buffer, "AUTH: %s!%s@%s as %s on %s",
     luser->nick, luser->username, luser->site,
     reg->realname, reg->channel);
-  log(buffer);
+  PutLog(buffer);
 
   last = (now - reg->lastseen) / 86400;
   if (last > 1)
   {
     sprintf(buffer, "I last saw you %ld days ago", last);
-    notice(luser->nick, buffer);
+    notice(luser->num, buffer);
   }
   if (strcmp(channel, "*"))
   {
     if (!strcmp(reg->channel, "*"))
     {
       sprintf(buffer, "You now have access on %s", channel);
-      notice(luser->nick, buffer);
+      notice(luser->num, buffer);
       sprintf(buffer, "%s is getting access on %s",
 	luser->nick, channel);
       broadcast(buffer, 1);
@@ -393,9 +393,9 @@ static void successful_auth(aluser * luser, char *channel, RegUser * reg)
   else
   {
     if (reg->access < 500)
-      notice(luser->nick, "You are now an authenticated helper");
+      notice(luser->num, "You are now an authenticated helper");
     else
-      notice(luser->nick, "You now have administrative access");
+      notice(luser->num, "You now have administrative access");
   }
 }
 
@@ -419,7 +419,7 @@ static void
 
   if (dbu != NULL)
   {
-    luser = ToLuser((char *)hook1);
+    luser = ToLuser((char *)hook1); 
 
     if (luser == NULL)
     {
@@ -703,11 +703,12 @@ void AddUser(char *source, char *ch, char *args)
 
   GetWord(0, args, realname);
   GetWord(1, args, mask);
+
   if (isdigit(*mask) || *mask == '-')
   {
     strcpy(straccess, mask);
     GetWord(2, args, password);
-    luser = ToLuser(realname);
+    luser = ToLuserNick(realname);
     if (luser == NULL)
     {
       *mask = '\0';
@@ -725,6 +726,9 @@ void AddUser(char *source, char *ch, char *args)
 
   ptr = strchr(mask, '@');
   ptr2 = strchr(mask, '!');
+
+printf("mask: %s, ptr: %s, ptr2: %s, straccess: %s, password: %s\n", mask, ptr, ptr2, straccess, password);
+
 
   if (ptr == NULL || ptr2 == NULL || ptr2 > ptr ||
     strchr(ptr2 + 1, '!') || strchr(ptr + 1, '@'))
@@ -1113,7 +1117,7 @@ void showaccess(char *source, char *ch, char *args)
     args = ToWord(1, args);
   }
 
-  luser = ToLuser(realname);
+  luser = ToLuserNick(realname);
   if (!strcmp(channel, "*") && !IsValid(ToLuser(source), channel))
   {
     notice(source, "SYNTAX: access <channel> [nick]");
@@ -1253,7 +1257,6 @@ void showaccess(char *source, char *ch, char *args)
     showaccess_callback);
 }
 
-
 static void
  suspend_callback(int *fd, off_t off, int action, void *hook1, void *hook2,
   dbuser * dbu, int count)
@@ -1295,7 +1298,7 @@ static void
     {
       user->suspend = exp;
       user->modified = 1;
-      if (*(char *)hook1 && (lusr = ToLuser((char *)hook1)))
+      if (*(char *)hook1 && (lusr = ToLuser((char *)hook1))) 
       {
 	RegUser *reg;
 	time_t now1 = now + 3600;
@@ -1666,11 +1669,11 @@ void purge(char *source, char *ch, char *args)
   }
 
   sprintf(buffer, "%s is purging channel %s (%s)",
-    source, channel, comment);
+    GetNumNick(source), channel, comment);
   broadcast(buffer, 1);
 
-  RemChan("", channel, "");
-  part("", channel, "");
+  RemChan("", channel, ""); // TODO: Only if defchan. 
+  part("", channel, ""); // TODO: Only if chan->on
 
   shit = &ShitList[sl_hash(channel)];
   while (*shit != NULL)
@@ -1722,6 +1725,159 @@ void purge(char *source, char *ch, char *args)
   sprintf(buffer, "PURGE (mis)used by %s on %s (%s)",
     source, channel, comment);
   SpecLog(buffer);
+}
+
+void RegChan(char *source, char *ch, char *args)
+{
+  aluser *luser;
+  RegUser *reg;
+  struct stat st;
+  int bad = 0;
+  char buffer[250];
+  char global[] = "*";
+  char channel[80];
+  char realname[NICK_LENGTH];
+  char mask[80];
+  char passwd[40];
+  char *ptr, *ptr2;
+
+  GetWord(0, args, channel);
+  GetWord(1, args, realname);
+  GetWord(2, args, mask);
+  GetWord(3, args, passwd);
+
+  if (Access(global, source) < XADMIN_LEVEL)
+  {
+    notice(source, "Sorry. This command is reserved to X-admins.");
+    return;
+  }
+
+  if (!*channel || *channel != '#' || !*realname || !*mask)
+  {
+    notice(source, "SYNTAX: register <channel> <nick> [mask] <password>");
+    return;
+  }
+
+  if (!*passwd)
+  {
+    strcpy(passwd, mask);
+    luser = ToLuserNick(realname);
+    if (luser == NULL)
+    {
+      *mask = '\0';
+    }
+    else
+    {
+      MakeBanMask(luser, mask);
+    }
+  }
+
+  ptr = strchr(mask, '@');
+  ptr2 = strchr(mask, '!');
+
+  if (ptr == NULL || ptr2 == NULL || ptr2 > ptr ||
+    strchr(ptr2 + 1, '!') || strchr(ptr + 1, '@'))
+  {
+    notice(source, "Invalid nick!user@host mask");
+    return;
+  }
+
+  for (ptr = mask; *ptr; ptr++)
+  {
+    if (*ptr <= 32)
+      break;
+  }
+
+  if (*ptr)
+  {
+    notice(source, "Invalid nick!user@host mask");
+    return;
+  }
+
+  if (!regex_cmp(VALIDMASK, mask))
+  {
+    notice(source, "Invalid nick!user@host mask");
+    return;
+  }
+
+  for (ptr = realname; *ptr; ptr++)
+  {
+    if (*ptr <= 32)
+      break;
+  }
+
+  if (*ptr)
+  {
+    notice(source, "Invalid nick!");
+    return;
+  }
+
+  if (!*channel || *channel != '#' || !*realname || !*mask || !*passwd)
+  {
+    notice(source, "SYNTAX: register <channel> <nick> [mask] <password>");
+    return;
+  }
+
+  if (stat(make_dbfname(channel), &st) >= 0)
+    bad = 1;
+
+  if (!bad)
+  {
+    reg = UserList[ul_hash(channel)];
+    while (reg != NULL && (strcasecmp(reg->channel, channel) || reg->access == 0))
+      reg = reg->next;
+    if (reg != NULL)
+      bad = 1;
+  }
+ 
+  if (bad)
+  {
+    notice(source, "Sorry. This channel is already registered.");
+  }
+  else
+  {
+    // Register!
+    reg = (RegUser *) MALLOC(sizeof(RegUser));
+    memset(reg, 0, sizeof(RegUser));
+    reg->realname = (char *)MALLOC(strlen(realname) + 1);
+    strcpy(reg->realname, realname);
+    reg->match = (char *)MALLOC(strlen(mask) + 1);
+    strcpy(reg->match, mask);
+    reg->modif = (char *)MALLOC(strlen(source) + 1);
+    strcpy(reg->modif, source);
+    reg->channel = (char *)MALLOC(strlen(channel) + 1);
+    strcpy(reg->channel, channel);
+    if (passwd[0] != '\0')
+    {
+       reg->passwd = (char *)MALLOC(strlen(passwd) + 1);
+       strcpy(reg->passwd, passwd);
+    }
+    else
+    {
+       reg->passwd = (char *)MALLOC(1);
+       reg->passwd[0] = '\0';
+    }
+    reg->access = 500;
+    reg->suspend = 0;
+    reg->lastseen = now;
+    reg->flags = 0;
+    reg->offset = (off_t) - 1;
+    reg->modified = 1;
+    reg->next = UserList[ul_hash(channel)];
+    UserList[ul_hash(channel)] = reg;
+    cold_save_one(reg);
+
+    sprintf(buffer, "%s registered %s to %s!%s", GetNumNick(reg->modif),
+      reg->channel, reg->realname, reg->match);
+    broadcast(buffer, 0);
+
+//  AddChan("", channel, "");
+    join("", channel, "");
+
+    sprintf(buffer, "Channel %s has been registered to %s!%s", channel, realname, mask);
+    notice(source, buffer);
+    SpecLog(buffer);
+  }
 }
 
 
@@ -1959,7 +2115,6 @@ void ModUserInfo(char *source, char *msgtarget, char *ch, char *args)
     return;
   }
 
-
   srcacs = LAccess(channel, luser);
   if (srcacs < MOD_USERINFO_LEVEL)
   {
@@ -2010,7 +2165,7 @@ void ChPass(char *source, char *ch, char *args)
 {
   char newpassword[80];
   char channel[80];
-  char buffer[200];
+  char buffer[300];
   char userhost[200];
   register RegUser *user;
   register aluser *luser;
@@ -2024,13 +2179,13 @@ void ChPass(char *source, char *ch, char *args)
     return;
   }
 
-  if (!strchr(ch, '@'))
+/*  if (!strchr(ch, '@'))
   {
     sprintf(buffer, "Please use /msg %s@%s newpass [channel] <new_password>",
       mynick, SERVERNAME);
     notice(source, buffer);
     return;
-  }
+  }*/
 
   if (*args == '#' || *args == '*')
   {
@@ -2100,7 +2255,7 @@ void ChPass(char *source, char *ch, char *args)
     notice(source, "Password changed!");
     sprintf(buffer, "NEWPASS %s as %s on %s",
       userhost, user->realname, user->channel);
-    log(buffer);
+    PutLog(buffer);
   }
   return;
 }

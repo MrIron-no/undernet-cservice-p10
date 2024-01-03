@@ -354,7 +354,7 @@ static int check_http_deny(struct in_addr *addr)
 void http_accept(int sock)
 {
   register http_socket *new;
-  int size;
+  unsigned int size;
   struct in_addr addr;
 
   new = new_struct();
@@ -685,6 +685,11 @@ static void http_show_chaninfo(http_socket * hsock, char *channel)
   sprintf(date, "%sUCT", asctime(timeptr));
   *strchr(date, '\n') = ' ';
 
+  sendto_http(hsock, "HTTP/1.0 200 Document follows%c", 10);
+  sendto_http(hsock, "Date: %s%c", date, 10);
+  sendto_http(hsock, "Server: CS/1.0%c", 10);
+  sendto_http(hsock, "Content-type: text/html%c%c", 10, 10);
+
   sendto_http(hsock, HTTP_HEADER, "Channel information");
   sendto_http(hsock, HTTP_BODY);
   sendto_http(hsock, "<H1>Channel information</H1>\n");
@@ -714,12 +719,18 @@ static void http_show_whois(http_socket * hsock, char *nick)
 #ifdef DEBUG
   printf("HTTP WHOIS: \"%s\"\n", nick);
 #endif
+
+  sendto_http(hsock, "HTTP/1.0 200 Document follows%c", 10);
+  sendto_http(hsock, "Date: %s%c", date, 10);
+  sendto_http(hsock, "Server: CS/1.0%c", 10);
+  sendto_http(hsock, "Content-type: text/html%c%c", 10, 10);
+
   sendto_http(hsock, HTTP_HEADER, "WHOIS");
   sendto_http(hsock, HTTP_BODY);
   sendto_http(hsock, "<H1>WHOIS Information</H1>\n");
   sendto_http(hsock, "%s<p>\n", date);
 
-  user = ToLuser(nick);
+  user = ToLuserNick(nick);
 
   if (user == NULL)
   {
@@ -738,7 +749,7 @@ static void http_show_whois(http_socket * hsock, char *nick)
 	if (!IsSet(chan->N->name, 's', "") &&
 	  !IsSet(chan->N->name, 'p', ""))
 	{
-	  usr = ToUser(chan->N->name, nick);
+	  usr = ToUserNick(chan->N->name, nick);
 	  if (usr->chanop)
 	    sendto_http(hsock, "@%s ", chan->N->name);
 	  else
@@ -1123,7 +1134,7 @@ static void proc_raw(http_socket * hsock, char *line)
 	reg->channel = (char *)MALLOC(strlen(target) + 1);
 	strcpy(reg->channel, target);
 	GetWord(6, line, tmp);
-	if (tmp && tmp[0] != '\0')
+	if (*tmp && tmp[0] != '\0')
 	{
 	  reg->passwd = (char *)MALLOC(strlen(tmp) + 1);
 	  strcpy(reg->passwd, tmp);

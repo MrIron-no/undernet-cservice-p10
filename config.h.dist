@@ -28,7 +28,7 @@
 /* BINDADDR is the local address that all the sockets should be
  * bound to.
  */
-#define BINDADDR "12.34.56.78"
+#define BINDADDR "127.0.0.1"
 
 
 /* DEFAULT_PORTNUM is the port X will try to
@@ -36,7 +36,7 @@
  * DEFAULT_SERVER
  */
 #ifdef MAIN
-int DEFAULT_PORTNUM = 6667;
+int DEFAULT_PORTNUM = 4400;
 #else
 extern int DEFAULT_PORTNUM;
 #endif
@@ -74,10 +74,12 @@ extern char UMODE[10];
 char SERVERNAME[80] = "channels.undernet.org";
 char SERVERINFO[80] = "Channel Service";
 char PASSWORD[80] = "pizza";
+char NUMERIC[5] = "AC";
 #else
 extern char SERVERNAME[80];
 extern char SERVERINFO[80];
 extern char PASSWORD[80];
+extern char NUMERIC[5];
 #endif
 
 /* HOMEDIR is X's home directory.
@@ -177,12 +179,18 @@ extern char VERIFY_ID[256];
 
 #ifdef MAIN
 char UWORLD[10] = "Uworld";
+char UWORLD_USER[80] = "UWorld";
 char UWORLD_HOST[80] = "*.nssl.uoknor.edu";
 char UWORLD_SERVER[80] = "Uworld.undernet.org";
+char UWORLD_USERNAME[80] = DEFAULT_NICKNAME;
+char UWORLD_PASSWORD[80] = "qwerty";
 #else
 extern char UWORLD[10];
+extern char UWORLD_USER[80];
 extern char UWORLD_HOST[80];
 extern char UWORLD_SERVER[80];
+extern char UWORLD_USERNAME[80];
+extern char UWORLD_PASSWORD[80];
 #endif
 
 #define UWORLD2 UWORLD2_NICK
@@ -213,7 +221,7 @@ extern char UWORLD2_SERVER[80];
 #endif
 
 
-#define UWORLD_COMMAND "reop %s"
+#define UWORLD_COMMAND "reop %s %s"
 
 #define FAKE_UWORLD
 #ifdef FAKE_UWORLD
