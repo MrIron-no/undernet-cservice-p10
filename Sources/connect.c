@@ -315,7 +315,7 @@ int wait_msg(void)
   if (select(maxfd + 1, &readfds, &writefds, NULL, &timeout) < 0)
   {
     PutLog("ERROR: select()");
-    PutLog((char *)sys_errlist[errno]);
+    PutLog((char *)strerror(errno));
     return (-1);
   }
 

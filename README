@@ -73,7 +73,7 @@ KNOWN BUGS:
 2. NickServ has not been tested in detail. The ghost command causes a crash.
 3. Fake Uworld OPCOM command needs to be updated to pass the mode with numerics instead of nicknames. 
 4. MALLOC definition returning compiling errors and has therefore partly been deactivated.
-
+5. Several netsplits occuring in close proximity may cause the bot to crash.
 
 Enjoy this piece of history! 
 

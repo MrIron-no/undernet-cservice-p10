@@ -277,7 +277,7 @@ void SaveDefs(char *source)
 			alarm(0);
 			close(file);
 			PutLog("ERROR: Can't save channel list");
-			PutLog((char *)sys_errlist[errno]);
+			PutLog((char *)strerror(errno));
 			alarm(2);
 			remove(DEFAULT_CHANNELS_FILE".new");
 			alarm(0);
@@ -304,7 +304,7 @@ void SaveDefs(char *source)
 				alarm(0);
 				close(file);
 				PutLog("ERROR: Can't save channel list");
-				PutLog((char *)sys_errlist[errno]);
+				PutLog((char *)strerror(errno));
 				alarm(2);
 				remove(DEFAULT_CHANNELS_FILE".new");
 				alarm(0);

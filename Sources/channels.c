@@ -426,10 +426,15 @@ void onopless(char *channel)
   GetOps(channel);
 }
 
-void oninvite(char *source, char *channel)
+void oninvite(char *source, char *chan)
 {
   char buffer[1024];
   char sNick[80];
+  char *channel = MALLOC(strlen(chan));
+
+  GetWord(0, chan, channel);
+
+  if (channel[0] == ':') channel++;
 
   strcpy(sNick, GetNumNick(source));
 #ifdef DEBUG
@@ -722,6 +727,8 @@ void onburst(char *source, char *channel, char *args)
   int isOp = 0;
   long timestamp;
 
+  timestamp = atol(ToWord(0, args));
+
   // Checking if the channel is new. 
   chan = ToChannel(channel);
   if (!chan)
@@ -729,14 +736,17 @@ void onburst(char *source, char *channel, char *args)
 #ifdef DEBUG
 	printf("onburst(): New channel %s\n", channel);
 #endif
-
-	timestamp = atol(ToWord(0, args));
 	if (!timestamp)
 		NewChannel(channel, now + TSoffset, 0);
 	else
 		NewChannel(channel, timestamp, 0);
 
 	chan = ToChannel(channel);
+  }
+  else
+  {
+	if (chan->TS > timestamp)
+		chan->TS = timestamp;
   }
 
   chan->lastact = now;

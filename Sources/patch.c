@@ -76,7 +76,7 @@ void open_patch_socket(char *source)
 
 	if((msock->fd=socket(AF_INET,SOCK_STREAM,0))<0){
 		free(msock);
-		sprintf(buffer,"Can't assigned fd for socket: %s",sys_errlist[errno]);
+		sprintf(buffer,"Can't assigned fd for socket: %s",strerror(errno));
 		notice(source,buffer);
 		return;
 	}
@@ -85,7 +85,7 @@ void open_patch_socket(char *source)
 
 	socketname.sin_family=AF_INET;
 	if((remote_host=gethostbyname(pserver))==NULL){
-		sprintf(buffer,"gethostbyname() failed for %s: %s",pserver,sys_errlist[errno]);
+		sprintf(buffer,"gethostbyname() failed for %s: %s",pserver,strerror(errno));
 		notice(source,buffer);
 		close(msock->fd);
 		free(msock);
@@ -98,7 +98,7 @@ void open_patch_socket(char *source)
 	if(connect(msock->fd,(struct sockaddr *)&socketname,sizeof(socketname))<0
 	   && errno != EINPROGRESS){
 		close(msock->fd);
-		sprintf(buffer,"Can't connect() to %s: %s",pserver,sys_errlist[errno]);
+		sprintf(buffer,"Can't connect() to %s: %s",pserver,strerror(errno));
 		notice(source,buffer);
 		free(msock);
 		return;
@@ -201,7 +201,7 @@ void send_misc_handshake(misc_socket *msock)
 	if(msock->type==MISC_GETPATCH){
 		if(stat("lastupgrade",&stlast)<0){
 			sprintf(buffer,"lastupgrade: %s",
-				sys_errlist[errno]);
+				strerror(errno));
 			notice(msock->link,buffer);
 			close(msock->fd);
 			msock->status=MISC_ERROR;
@@ -211,7 +211,7 @@ void send_misc_handshake(misc_socket *msock)
 			close(msock->fd);
 			msock->fd=-1;
 			msock->status=MISC_ERROR;
-			sprintf(buffer,"lastupgrade: %s",sys_errlist[errno]);
+			sprintf(buffer,"lastupgrade: %s",strerror(errno));
 			notice(msock->link,buffer);
 			return;
 		}

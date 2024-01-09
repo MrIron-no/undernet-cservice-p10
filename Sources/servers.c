@@ -311,6 +311,6 @@ void showversion(char *source)
 {
   char buffer[200];
 
-  sprintf(buffer, "%s 351 %s . %s :%s\n", NUMERIC, source, SERVERNAME, VERSION);
+  sprintf(buffer, "%s 351 %s :%s\n", NUMERIC, source, VERSION);
   sendtoserv(buffer);
 }

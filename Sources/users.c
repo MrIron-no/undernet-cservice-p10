@@ -98,7 +98,7 @@ char *GetNumNick(char *num)
 
   if (user == NULL)
   {
-    printf("GetNumNick(): Cannot finder user %s\n", num);
+    printf("GetNumNick(): Cannot find user %s\n", num);
     return 0;
   }
   else
@@ -122,6 +122,7 @@ void onnick(char *source, char *newnick, char *body)
   char buffer[512];
   int i = 0;
   int isOper = 0;
+  int numPos = 5;
 
   /* a new user */
   if (strlen(source) == 2)
@@ -131,22 +132,23 @@ void onnick(char *source, char *newnick, char *body)
     GetWord(2, body, username);
     GetWord(3, body, hostname);
     GetWord(4, body, modes);
-    GetWord(6, body, num);
 
-    if (num[0] == ':') // New join
+    if (modes[0] == '+')
     {
-	GetWord(5, body, num);
-
-    } else { // Check modes
-
+	numPos++;
 	int length = (int)strlen(modes);
+
 	for (i = 0; i < length; i++)
 	{
 		if (modes[i] == 'o')
 		   isOper = LFL_ISOPER;
+		else if (modes[i] == 'r') // TODO: This does not (yet) work if the server passes on the account_ts
+		   numPos++;
 	}
 	i = 0;
     }
+
+    GetWord(numPos, body, num);
 
     if (!strcasecmp(newnick, mynick))
     {

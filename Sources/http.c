@@ -233,7 +233,7 @@ void open_http(void)
   if (new->fd < 0)
   {
     http_log("ERROR: open_http() socket() failed!");
-    http_log("%d: %s", errno, sys_errlist[errno]);
+    http_log("%d: %s", errno, strerror(errno));
     free(new);
     return;
   }
@@ -242,7 +242,7 @@ void open_http(void)
   if (setsockopt(new->fd, SOL_SOCKET, SO_REUSEADDR, (void *)&opt, sizeof(opt)) < 0)
   {
     http_log("ERROR: open_http() setsockopt() failed!");
-    http_log("%d: %s", errno, sys_errlist[errno]);
+    http_log("%d: %s", errno, strerror(errno));
     close(new->fd);
     free(new);
     return;
@@ -251,7 +251,7 @@ void open_http(void)
   if (fcntl(new->fd, F_SETFL, O_NONBLOCK) < 0)
   {
     http_log("ERROR: open_http() fcntl() failed!");
-    http_log("%d: %s", errno, sys_errlist[errno]);
+    http_log("%d: %s", errno, strerror(errno));
     close(new->fd);
     free(new);
     return;
@@ -268,7 +268,7 @@ void open_http(void)
   if (bind(new->fd, (struct sockaddr *)&myaddr, sizeof(myaddr)) < 0)
   {
     http_log("ERROR: open_http() bind() failed!");
-    http_log("%d: %s", errno, sys_errlist[errno]);
+    http_log("%d: %s", errno, strerror(errno));
     close(new->fd);
     free(new);
     /*return; */
@@ -279,7 +279,7 @@ void open_http(void)
   if (listen(new->fd, 10) < 0)
   {
     http_log("ERROR: open_http() listen() failed!");
-    http_log("%d: %s", errno, sys_errlist[errno]);
+    http_log("%d: %s", errno, strerror(errno));
     close(new->fd);
     free(new);
     return;
@@ -369,7 +369,7 @@ void http_accept(int sock)
   if (new->fd < 0)
   {
     http_log("ERROR: http_accept() accept() failed!");
-    http_log("%d: %s", errno, sys_errlist[errno]);
+    http_log("%d: %s", errno, strerror(errno));
     free(new);
     return;
   }
@@ -377,7 +377,7 @@ void http_accept(int sock)
   if (fcntl(new->fd, F_SETFL, O_NONBLOCK) < 0)
   {
     http_log("ERROR: open_accept() fcntl() failed!");
-    http_log("%d: %s", errno, sys_errlist[errno]);
+    http_log("%d: %s", errno, strerror(errno));
     close(new->fd);
     free(new);
     return;

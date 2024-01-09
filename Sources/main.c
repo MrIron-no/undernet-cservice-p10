@@ -165,7 +165,7 @@ void regist(void)
   bursting = 1;
 
   /* Then send reg stuff to server.. */
-  sprintf(buffer, "PASS :%s\nSERVER %s 1 %ld %ld J10 %s]]] +s6 :%s\n",
+  sprintf(buffer, "PASS :%s\nSERVER %s 1 %ld %ld J10 %s]]] +s :%s\n",
     PASSWORD, SERVERNAME, t, t, NUMERIC, SERVERINFO);
   sendtoserv(buffer);
 }
@@ -194,7 +194,7 @@ void IntroduceUworld(void)
   UworldTS = logTS;	/* force nick collision */
 
   sprintf(ufakenum, "%sAAA", UFAKE_NUMERIC);
-  sprintf(buffer, "%s S %s 2 0 %ld J10 %sAAA +s6 :%s\n"
+  sprintf(buffer, "%s S %s 2 0 %ld J10 %sAAA +s :%s\n"
     "%s N %s 2 31337 %s %s +o AAAAAA %s :%s\n%s EB\n%s EA\n",
     NUMERIC, UFAKE_SERVER, UworldServTS, UFAKE_NUMERIC, UFAKE_INFO,
     UFAKE_NUMERIC, UFAKE_NICK, UFAKE_NICK, UFAKE_HOST, ufakenum, UFAKE_INFO, 
@@ -658,14 +658,14 @@ void checkpid(void)
     alarm(2);
     if (write(file, buf, strlen(buf)) < 0)
     {
-      fprintf(stderr, "%s: %s\n", PIDFILE, sys_errlist[errno]);
+      fprintf(stderr, "%s: %s\n", PIDFILE, strerror(errno));
       exit(1);
     }
     alarm(0);
 
     if (close(file) < 0)
     {
-      fprintf(stderr, "%s: %s\n", PIDFILE, sys_errlist[errno]);
+      fprintf(stderr, "%s: %s\n", PIDFILE, strerror(errno));
       exit(1);
     }
   }
@@ -756,7 +756,7 @@ void proc(char *source, char *function, char *target, char *body)
   }
   else if (!strcmp(function, "I"))
   {
-    oninvite(source, body + 1);
+    oninvite(source, body);
 
   }
   else if (!strcmp(function, "L"))

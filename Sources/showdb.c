@@ -38,7 +38,7 @@ void fix_user_file(char *file, char *channel)
   fd = open(file, O_RDONLY);
   if (fd < 0)
   {
-    fprintf(stderr, "Can't open %s [%s]\n", file, sys_errlist[errno]);
+    fprintf(stderr, "Can't open %s [%s]\n", file, strerror(errno));
     return;
   }
 
@@ -71,7 +71,7 @@ void fix_user_db(void)
     dp = opendir(dir);
     if (dp == NULL)
     {
-      fprintf(stderr, "Can't read %s [%s]\n", dir, sys_errlist[errno]);
+      fprintf(stderr, "Can't read %s [%s]\n", dir, strerror(errno));
       continue;
     }
     while ((ent = readdir(dp)) != NULL)

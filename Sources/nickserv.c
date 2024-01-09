@@ -571,8 +571,8 @@ void nserv_ghost(char *source, char *args)
 
   if(rmask && !strcmp(password,luser->regnick->password)) // TODO: This crashes. 
   {
-    sprintf(buffer, "%s Q :Killed (%s (Ghost kill demanded by %s))\r\n",
-            luser2->num, NSERV_NICK, GetNumNick(source)); // TODO: Not sure this works?
+    sprintf(buffer, "%s D %s :Ghost kill demanded by %s\r\n",
+            nservnum, luser2->num, GetNumNick(source)); // TODO: Not sure this works?
     sendtoserv(buffer);
     onquit(luser2->num);
 

@@ -688,7 +688,7 @@ void SaveShitList(char *source, char *channel)
 	alarm(0);
 	close(file);
 	PutLog("ERROR: Can't save banlist");
-	PutLog((char *)sys_errlist[errno]);
+	PutLog((char *)strerror(errno));
 	alarm(2);
 	remove(SHITLIST_FILE ".new");
 	alarm(0);
