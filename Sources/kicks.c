@@ -28,17 +28,17 @@
 
 void kick(char *source,char *chanarg,char *args)
 {
-	char buffer[500];
-	char nick[80];
-	char sNick[80];
-	char channel[80];
+	char buffer[500] = "";
+	char nick[80] = "";
+	char kicknum[6] = "";
+	char channel[CHANNELNAME_LENGTH] = "";
 	char *comment;
 	int found=0;
 	achannel *chan;
 	auser *user;
 
 	if(*args=='#'){
-		GetWord(0,args,channel);
+		GetnWord(0,args,channel, CHANNELNAME_LENGTH);
 		GetWord(1,args,nick);
 		comment=ToWord(2,args);
 	}else{
@@ -51,7 +51,7 @@ void kick(char *source,char *chanarg,char *args)
 	if(strlen(comment)>200)
 		comment[200]='\0';
 
-	if(!strcmp(channel,"*") || !*nick){
+	if(strcmp(channel,"*") == 0 || !*nick){
 		notice(source,"SYNTAX: kick [#channel] <nick|pattern> [reason]");
 		return;
 	}
@@ -74,12 +74,6 @@ void kick(char *source,char *chanarg,char *args)
 		return;
 	}
 
-	// Fetching nick of source
-	if (*source)
-		strcpy(sNick,GetNumNick(source));
-	else
-		strcpy(sNick, "");
-
 	/* check whether there are wildcards or not.
 	 * if there are wildcards, it's a masskick and nick is a match pattern
 	 * otherwise, it's an ordinary kick and nick is the nick to kick
@@ -88,7 +82,7 @@ void kick(char *source,char *chanarg,char *args)
 #ifdef DEBUG
 		printf("KICK REQUEST (NO WILDCARDS)\nSOURCE %s\nCHANNEL %s\nTARGET %s\n",
 			source,channel,nick);
-#endif		
+#endif
 		if(*source&&Access(channel,source)<KICK_LEVEL){
 			ReplyNotAccess(source,channel);
 			return;
@@ -97,28 +91,42 @@ void kick(char *source,char *chanarg,char *args)
 		user=ToUserNick(channel,nick);
 		if(!user) return;
 
+		// Check if the user is a network service
+		if (user->N->mode & LFL_ISSERVICE)
+		{
+			if (*source)
+			{
+				sprintf(buffer,replies[RPL_ISSERVICE][chan->lang], user->N->nick);
+				notice(source, buffer);
+			}
+			return;
+		}
+
 		if(*comment){
-			if(*source)
+			if(*source && GetNick(source) != NULL)
 				sprintf(buffer, "%s K %s %s :(%s) %s\n",
-					mynum,channel,user->N->num,sNick,comment);
+					myYYXXX,channel,user->N->num,GetNick(source),comment);
 			else
 				sprintf(buffer, "%s K %s %s :%s\n",
-					mynum,channel,user->N->num,comment);
+					myYYXXX,channel,user->N->num,comment);
 		}else{
-			if(*source)
+			if(*source && GetNick(source) != NULL)
 				sprintf(buffer, "%s K %s %s :From %s\n",
-					mynum,channel,user->N->num,sNick);
+					myYYXXX,channel,user->N->num,GetNick(source));
 			else
 				sprintf(buffer, "%s K %s %s :%s\n",
-					mynum,channel,user->N->num,mynick);
+					myYYXXX,channel,user->N->num,mynick);
 		}
 		sendtoserv(buffer);
 		sprintf(buffer,"I KICK %s OFF %s",nick,channel);
 		PutLog(buffer);
+		onpart(user->N->num, channel);
 	} else {
 #ifdef DEBUG
-		printf("KICK REQUEST (WITH WILDCARDS)\nSOURCE %s\nCHANNEL %s\nTARGET %s\n",
+		sprintf(buffer, "KICK REQUEST (WITH WILDCARDS)\nSOURCE %s\nCHANNEL %s\nTARGET %s\n",
 			source,channel,nick);
+		printf("%s", buffer);
+		PutLog(buffer);
 #endif
 		if(*source&&Access(channel,source)<MASS_KICK_LEVEL){
 			ReplyNotAccess(source,channel);
@@ -127,25 +135,39 @@ void kick(char *source,char *chanarg,char *args)
 
 		user=chan->users;
 		while(user){
-			sprintf(buffer,"%s!%s@%s",user->N->nick,user->N->username,user->N->site);
-			if(match(buffer,nick)&&(!*source||strcasecmp(user->N->nick,sNick))){
+			sprintf(buffer,"%s!%s@%s",user->N->nick,user->N->username,gethost(user->N));
+
+			if(match(buffer,nick)&&(!*source||strcasecmp(user->N->num,source))){
+
+				// Check if the user is a network service
+				if (user->N->mode & LFL_ISSERVICE)
+				{
+					sprintf(buffer,replies[RPL_ISSERVICE][chan->lang], user->N->nick);
+					notice(source, buffer);
+					return;
+				}
+
 				if(*comment){
-					if(*source)
-						sprintf(buffer, "%s K %s %s :(%s) %s\n",mynum,channel,user->N->num,sNick,comment);
+					if(*source && GetNick(source) != NULL)
+						sprintf(buffer, "%s K %s %s :(%s) %s\n",myYYXXX,channel,user->N->num,GetNick(source),comment);
 					else
-						sprintf(buffer, "%s K %s %s :%s\n",mynum,channel,user->N->num,comment);
+						sprintf(buffer, "%s K %s %s :%s\n",myYYXXX,channel,user->N->num,comment);
 				}else{
-					if(*source)
+					if(*source && GetNick(source) != NULL)
 						sprintf(buffer, "%s K %s %s :From %s\n",
-						        mynum,channel,user->N->num,sNick);
+						        myYYXXX,channel,user->N->num,GetNick(source));
 					else
 						sprintf(buffer, "%s K %s %s :%s\n",
-							mynum,channel,user->N->num,mynick);
+							myYYXXX,channel,user->N->num,mynick);
 				}
 				sendtoserv(buffer);
 				sprintf(buffer,"I KICK %s OFF %s",user->N->nick,channel);
+				strncpy(kicknum, user->N->num, 5);
+				user=user->next;
+				onpart(kicknum, channel);
 				PutLog(buffer);
 				found=1;
+				continue;
 			}
 			user=user->next;
 		}

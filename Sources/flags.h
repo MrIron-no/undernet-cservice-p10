@@ -34,3 +34,6 @@
 #define CFL_AUTOTOPIC	16
 
 #define LFL_ISOPER	1
+#define LFL_ISSERVICE	2
+#define LFL_ISMODEX	4
+#define LFL_REGISTERED	8

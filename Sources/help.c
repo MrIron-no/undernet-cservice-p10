@@ -300,8 +300,8 @@ static void listinit(void)
 
 void showcommands(char *source, char *chan, char *args)
 {
-  char buffer[500];
-  char channel[80];
+  char buffer[500] = "";
+  char channel[80] = "";
   register aluser *luser;
   register int useraccess;
   register int i, j;
@@ -318,7 +318,7 @@ void showcommands(char *source, char *chan, char *args)
   if (!luser)
     return;
 
-  if (!strcmp(channel, "*") && !IsValid(luser, channel))
+  if (strcmp(channel, "*") == 0 && !IsValid(luser, channel))
   {
     notice(source, "SYNTAX: showcommands <channel>");
     return;
@@ -356,7 +356,8 @@ void showcommands(char *source, char *chan, char *args)
 void showhelp(char *source, char *chan, char *args)
 {
   struct buffer_block *dyn = NULL;
-  char buffer[512], word[80], *ptr;
+  char buffer[512], word[80] = "";
+  char *ptr;
   int i, l, index = 0, found = 0, file, linecount = 0;
 
   if (CurrentSendQ > HIGHSENDQTHRESHOLD)
@@ -470,7 +471,7 @@ void showhelp(char *source, char *chan, char *args)
 void showmotd(char *source)
 {
   struct buffer_block *dyn = NULL;
-  char buffer[512];
+  char buffer[512] = "";
   int fd, l;
 
   alarm(3);
@@ -513,7 +514,7 @@ static void
  chaninfo_callback(int *fd, off_t off, int action, void *hook1, void *hook2,
   dbuser * dbu, int count)
 {
-  char buffer[512];
+  char buffer[512] = "";
   register adefchan *def;
   time_t t;
 
@@ -565,7 +566,8 @@ static void
 
 void ShowChanInfo(char *source, char *chan, char *args)
 {
-  char channel[80], *hook1, *hook2;
+  char channel[CHANNELNAME_LENGTH] = "";
+  char *hook1, *hook2;
 
   if (*args == '#')
     GetWord(0, args, channel);
@@ -575,7 +577,7 @@ void ShowChanInfo(char *source, char *chan, char *args)
     GuessChannel(source, channel);
   }
 
-  if (!strcmp(channel, "*"))
+  if (strcmp(channel, "*") == 0)
   {
     notice(source, "SYNTAX: chaninfo <channel>");
     return;
@@ -592,7 +594,7 @@ void ShowChanInfo(char *source, char *chan, char *args)
 
 void isreg(char *source, char *chan, char *args)
 {
-  char channel[80], buffer[512];
+  char channel[CHANNELNAME_LENGTH], buffer[512] = "";
   struct stat st;
 
   if (*args == '#')
@@ -603,7 +605,7 @@ void isreg(char *source, char *chan, char *args)
     GuessChannel(source, channel);
   }
 
-  if (!strcmp(channel, "*"))
+  if (strcmp(channel, "*") == 0)
   {
     notice(source, "SYNTAX: isreg <channel>");
     return;
@@ -620,8 +622,8 @@ void isreg(char *source, char *chan, char *args)
 #ifdef DOHTTP
 void http_show_help(http_socket * hsock, char *command)
 {
-  char buffer[512], buffer2[700];
-  char date[80];
+  char buffer[512], buffer2[700] = "";
+  char date[80] = "";
   struct buffer_block *dyn = NULL;
   struct tm *timeptr;
   register char *ptr, *ptr2;

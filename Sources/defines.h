@@ -24,15 +24,18 @@
  * http://gnuworld.sourceforge.net/ for more information.
  */
 
-#define NICK_LENGTH 20
+#define NICK_LENGTH 15
 #define USERNAME_LENGTH 20
 #define SITE_LENGTH 80
 #define REALNAME_LENGTH 80
-#define CHANNELNAME_LENGTH 80
+#define CHANNELNAME_LENGTH 200
 #define SERVER_NAME_LENGTH 80
 #define PASSWD_LENGTH 20
 
-#define COMMAND_PREFIX "ACAAA "
+#define NUMNICKLOG 6
+#define NUMNICKMASK 63
+
+#define COMMAND_PREFIX "X "
 #define MAX_MODE_PER_LINE 6
 
 #define MAX_DEOP_RATE 3			/* deops within 15 seconds */

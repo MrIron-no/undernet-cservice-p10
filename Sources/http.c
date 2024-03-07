@@ -85,7 +85,8 @@ static void show_list(void)
 
 void http_log(char *fmt,...)
 {
-  char buffer[1024], date[80];
+  char buffer[1024] = "";
+  char date[80] = "";
   va_list ap;
   int fd;
 
@@ -157,7 +158,7 @@ static http_socket *new_struct(void)
 
   tmp = (http_socket *) MALLOC(sizeof(http_socket));
 #ifdef DEBUG
-  printf("New http_socket struct at %p\n", tmp);
+  printf("New http_socket struct at %p\n", (void*)tmp);
 #endif
   tmp->next = NULL;
   tmp->inbuf = NULL;
@@ -292,7 +293,9 @@ void open_http(void)
 void read_http_conf(char *source)
 {
   register struct http_deny *tmp;
-  char buffer[80], ip[80], global[] = "*";
+  char buffer[80] = "";
+  char ip[80] = "";
+  char global[] = "*";
   FILE *fp;
 
   if (*source && Access(global, source) < MASTER_ACCESS)
@@ -332,7 +335,7 @@ void read_http_conf(char *source)
 
 static int check_http_deny(struct in_addr *addr)
 {
-  char tmp[5];
+  char tmp[5] = "";
   register struct http_deny *scan = HttpDeny;
 
   tmp[4] = '\0';
@@ -471,7 +474,7 @@ static void
 
 static void http_show_userlist(http_socket * hsock, char *channel, char *protocol)
 {
-  char date[80];
+  char date[80] = "";
   struct tm *timeptr;
   int *hook;
 
@@ -489,7 +492,7 @@ static void http_show_userlist(http_socket * hsock, char *channel, char *protoco
   sendto_http(hsock, "\n<H1>User list for channel %s</H1>\n", channel);
   sendto_http(hsock, "%s<p>\n", date);
 
-  if (!strcmp(channel, "*"))
+  if (strcmp(channel, "*") == 0)
   {
     sendto_http(hsock, "Userlist is empty on %s!<p>\n", mynick);
     sendto_http(hsock, "<HR>%s\n", HTTP_FOOTER);
@@ -499,7 +502,7 @@ static void http_show_userlist(http_socket * hsock, char *channel, char *protoco
   }
   else
   {
-    if (!strcmp(channel, HTTP_SECRET_WORD))
+    if (strcmp(channel, HTTP_SECRET_WORD) == 0)
     {
         strcpy(channel, "*"); /* Enable us to see the * userlist via the web */
     }
@@ -515,7 +518,7 @@ static void http_show_userlist(http_socket * hsock, char *channel, char *protoco
 
 static void http_show_banlist(http_socket * hsock, char *channel, char *protocol)
 {
-  char date[80];
+  char date[80] = "";
   register ShitUser *curr;
   struct tm *timeptr;
   int found = 0;
@@ -570,7 +573,9 @@ static void http_show_banlist(http_socket * hsock, char *channel, char *protocol
 
 static void http_show_list(http_socket * hsock, char *keylist)
 {
-  char date[80], top[512], *tok[16];
+  char date[80] = "";
+  char top[512] = "";
+  char *tok[16];
   register adefchan *def;
   int found = 0, i = 0;
   struct tm *timeptr;
@@ -678,7 +683,8 @@ static void
 
 static void http_show_chaninfo(http_socket * hsock, char *channel)
 {
-  char date[80], *hook;
+  char date[80] = "";
+  char *hook;
   struct tm *timeptr;
 
   timeptr = gmtime(&now);
@@ -709,7 +715,7 @@ static void http_show_whois(http_socket * hsock, char *nick)
   register achannelnode *chan;
   register auser *usr;
 
-  char date[80];
+  char date[80] = "";
   struct tm *timeptr;
 
   timeptr = gmtime(&now);
@@ -739,9 +745,13 @@ static void http_show_whois(http_socket * hsock, char *nick)
   else
   {
     sendto_http(hsock, "*** %s is (%s@%s)<br>\n",
-      user->nick, user->username, user->site);
+      user->nick, user->username, gethost(user));
+
+    if (user->mode & LFL_REGISTERED)
+      sendto_http(hsock, "*** %s is logged in as %s<br>", user->nick, user->account);
+
     chan = user->channel;
-    if (chan != NULL)
+    if (chan != NULL && !(user->mode & LFL_ISSERVICE))
     {
       sendto_http(hsock, "*** on channels: ");
       while (chan != NULL)
@@ -759,7 +769,11 @@ static void http_show_whois(http_socket * hsock, char *nick)
       }
       sendto_http(hsock, "<br>\n");
     }
+#ifdef HIS_SERVERNAME
+    sendto_http(hsock, "*** on irc via server %s<br>\n", HIS_SERVERNAME);
+#else
     sendto_http(hsock, "*** on irc via server %s<br>\n", user->server->name);
+#endif
 
     if (user->mode & LFL_ISOPER)
     {
@@ -813,8 +827,8 @@ void destroy_file_pipe(http_file_pipe * old)
 
 void readfrom_file(http_file_pipe * fpipe)
 {
-  char buffer[2048];
-  int length;
+  char buffer[2048] = "";
+  int length = 0;
 
   if (fpipe->hsock->status == HTTP_ERROR)
   {
@@ -841,7 +855,8 @@ void readfrom_file(http_file_pipe * fpipe)
 
 static void http_send_file(http_socket * hsock, char *fname, char *protocol)
 {
-  char file[256], date[80];
+  char file[256] = "";
+  char date[80] = "";
   struct stat sbuf;
   struct tm *timeptr;
   register char *ptr;
@@ -950,7 +965,7 @@ static void send_http_error(http_socket * hsock)
 static void parse_get(http_socket * hsock, char *path, char *protocol)
 {
   extern void http_show_help(http_socket *, char *);
-  char channel[80];
+  char channel[CHANNELNAME_LENGTH] = "";
   register char *ptr;
 
 #ifdef DEBUG
@@ -1020,7 +1035,8 @@ static void parse_get(http_socket * hsock, char *path, char *protocol)
 static int auth_raw(u_long addr)
 {
   FILE *fp;
-  char buffer[80], *ptr;
+  char buffer[80] = "";
+  char *ptr;
 
   if ((fp = fopen("raw.auth", "r")) == NULL)
     return 0;
@@ -1168,7 +1184,8 @@ static void proc_raw(http_socket * hsock, char *line)
 static void parse_post(http_socket * hsock, char *line)
 {
   extern void http_show_help(http_socket *, char *);
-  char buffer[512], tmp[10], *channel = NULL, *nick = NULL, *arg = NULL;
+  char buffer[512] = "", *channel = NULL, *nick = NULL, *arg = NULL;
+//  char tmp[10];
   register char *ptr1, *ptr2;
   int value;
   register http_post *post;
@@ -1221,10 +1238,10 @@ static void parse_post(http_socket * hsock, char *line)
   {
     if (ptr1[0] == '%' && ptr1[1] && ptr1[2])
     {
-      tmp[0] = ptr1[1];
+/*      tmp[0] = ptr1[1]; TODO.
       tmp[1] = ptr1[2];
       tmp[2] = '\0';
-      sscanf(tmp, "%x", &value);
+      sscanf(tmp, "%x", &value);*/
       *(ptr2++) = value;
       ptr1 += 2;
     }
@@ -1362,7 +1379,7 @@ void parse_http(http_socket * hsock, char *buf)
 {
   extern void parse_chat(struct http_socket *, char *);
   extern void chat_login(struct http_socket *, char *, char *);
-  char method[80], path[80], protocol[80], *ptr;
+  char method[80] = "", path[80] = "", protocol[80] = "", *ptr;
 
 #ifdef DEBUG
   printf("#IN# %s\n", buf);

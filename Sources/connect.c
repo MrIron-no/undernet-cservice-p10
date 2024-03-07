@@ -37,12 +37,12 @@ int write_to_server(irc_socket *);
 
 int connection(char *serv)
 {
-  char buffer[200];
-  int portnum;
+  char buffer[200] = "";
+  int portnum = 0;
   char *ptr;
-  struct sockaddr_in socketname;
+  struct sockaddr_in socketname = { 0 };
 #ifdef BINDADDR
-  struct sockaddr_in myname;
+  struct sockaddr_in myname = { 0 };
 #endif
   struct hostent *remote_host;
 
@@ -146,7 +146,7 @@ int wait_msg(void)
 #endif
   register dbquery **dq, *dqtmp;
   register dbsync **ds, *dstmp;
-  char buffer[200];
+  char buffer[200] = "";
 
   /* initialize the fd_sets
    */
@@ -466,7 +466,7 @@ int wait_msg(void)
   }
   else if (pingflag == 0 && (now - Irc.TS) >= (PING_FREQ - 1))
   {
-    sprintf(buffer, "%s G !%ld %s %ld", NUMERIC, now, SERVERNAME, now);
+    sprintf(buffer, "%s G !%ld %s %ld", myYY, now + TSoffset, SERVERNAME, now + TSoffset);
     sendtoserv(buffer);
     pingflag = 1;
   }
@@ -522,7 +522,7 @@ int read_from_server(int reset)
   char *inchar;
   int end;
 #ifdef HISTORY
-  char buffer[600];
+  char buffer[1300] = "";
 #endif
 
   if (reset)
@@ -665,7 +665,7 @@ int read_from_server(int reset)
 
 int write_to_server(irc_socket * isock)
 {
-  char buf[1024];
+  char buf[1024] = "";
   int length;
   int count;
 

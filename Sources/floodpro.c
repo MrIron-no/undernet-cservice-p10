@@ -28,7 +28,7 @@
 
 int CheckFlood(char *source, char *channel, int length)
 {
-  char buffer[200];
+  char buffer[200] = "", banbuffer[200] = "";
   register achannel *chan;
   register auser *user;
   register amsg *msg, *prev;
@@ -38,6 +38,10 @@ int CheckFlood(char *source, char *channel, int length)
   user = ToUser(channel, source);
 
   if (!chan || !chan->on || !user)
+    return 0;
+
+  /* Check if source is a network service. If yes - ignore. */
+  if (user->N->mode & LFL_ISSERVICE)
     return 0;
 
   /* BEGINNING OF FLOOD PROTECTION ROUTINE */
@@ -86,14 +90,14 @@ int CheckFlood(char *source, char *channel, int length)
   {
     notice(source, "### FLOOD PROTECTION ACTIVATED ###");
     sprintf(buffer, "%s!%s@%s %d", user->N->nick,
-      user->N->username, user->N->site, PUBLIC_FLOOD_SUSPEND_TIME);
+      user->N->username, gethost(user->N), PUBLIC_FLOOD_SUSPEND_TIME);
     suspend("", channel, buffer);
 
-    count = IsShit(channel, source, NULL, NULL);
+    count = IsShit(channel, user->N, NULL, NULL);
 #ifdef DEBUG
     printf("Argh! %s has a shit level %d\n", source, count);
 #endif
-    sprintf(buffer, "FLOODPRO ACTIVATED BY %s ON %s", GetNumNick(source), channel);
+    sprintf(buffer, "FLOODPRO ACTIVATED BY %s ON %s", user->N->nick, channel);
     PutLog(buffer);
 
     switch (count)
@@ -104,7 +108,7 @@ int CheckFlood(char *source, char *channel, int length)
     case 3:
     case 4:
       PutLog("First warning");
-      sprintf(buffer, "%s That was not very smart!", GetNumNick(source));
+      sprintf(buffer, "%s That was not very smart!", user->N->nick);
       break;
 
     case 5:
@@ -113,21 +117,22 @@ int CheckFlood(char *source, char *channel, int length)
     case 8:
     case 9:
       PutLog("Second warning");
-      sprintf(buffer, "%s You're pushing your luck too far!", GetNumNick(source));
+      sprintf(buffer, "%s You're pushing your luck too far!", user->N->nick);
       break;
 
     default:
-      sprintf(buffer, "%s That was one time too many", GetNumNick(source));
+      sprintf(buffer, "%s That was one time too many", user->N->nick);
     }
 
-    kick("", channel, buffer);
-
-    sprintf(buffer, "%s %d %d *** FLOOD ***",
+    sprintf(banbuffer, "%s %d %d *** FLOOD ***",
       user->N->nick,
       PUBLIC_FLOOD_SHITLIST_TIME,
       (count < 10) ? count + 5 :
       PUBLIC_FLOOD_SHITLIST_LEVEL);
-    AddToShitList("", channel, buffer, 0);
+
+    kick("", channel, buffer);
+
+    AddToShitList("", channel, banbuffer, 0);
 
     return 1;
   }

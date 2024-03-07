@@ -26,7 +26,7 @@
 
 #include "h.h"
 
-aserver **FindServer(aserver ** head, char *num)
+aserver **FindServer(aserver ** head, char *YY)
 {
   register aserver **tmp;
 
@@ -35,11 +35,11 @@ aserver **FindServer(aserver ** head, char *num)
 
   while (*head != NULL)
   {
-    if (!strcmp((*head)->num, num))
+    if (strcmp((*head)->YY, YY) == 0)
     {
       return head;
     }
-    if ((tmp = FindServer(&(*head)->down, num)) != NULL)
+    if ((tmp = FindServer(&(*head)->down, YY)) != NULL)
     {
       return tmp;
     }
@@ -78,9 +78,9 @@ aserver **FindServerName(aserver ** head, char *name)
   return NULL;
 }
 
-aserver *ToServer(char *num)
+aserver *ToServer(char *YY)
 {
-  return (*FindServer(&ServerList, num));
+  return (*FindServer(&ServerList, YY));
 }
 
 void onserver(char *arg1, char *arg2, char *arg3, char *args)
@@ -93,35 +93,38 @@ void onserver(char *arg1, char *arg2, char *arg3, char *args)
   register aserver *head;
   register aserver *tmp;
   register int i;
-  char newserver[200], TS[80], numYYYYY[10], uplink[10];
-  char *numYY = MALLOC(sizeof(numYYYYY));
+  char newserver[SERVER_NAME_LENGTH] = "";
+  char TS[11] = "";
+  char YYXXX[6] = "";
+  char YY[3] = "";
 
-  if (!strcmp(arg1,"SERVER"))
+  if (strcmp(arg1, "SERVER") == 0)
   {
-    strcpy(newserver,arg2);
+    strncpy(newserver, arg2, SERVER_NAME_LENGTH);
     GetWord(1, args, TS);
-    GetWord(3, args, numYYYYY);
-    strncpy(numYY, numYYYYY, 2);
-    numYY[2] = '\0';
+    GetWord(3, args, YYXXX);
+    strncpy(YY, YYXXX, 2);
+    YY[2] = '\0';
 
-    strcpy(myuplink,numYY);
+    // Storing uplink in memory.
+    strcpy(myuplinkYY, YY);
+    strncpy(myuplinkname, arg2, SERVER_NAME_LENGTH);
 
     head = NULL;
   } 
   else 
   {
-    strcpy(newserver,arg3);
-    strcpy(uplink, arg1);
+    strncpy(newserver, arg3, SERVER_NAME_LENGTH);
     GetWord(2, args, TS);
-    GetWord(4, args, numYYYYY);
-    strncpy(numYY, numYYYYY, 2);
-    numYY[2] = '\0';
+    GetWord(4, args, YYXXX);
+    strncpy(YY, YYXXX, 2);
+    YY[2] = '\0';
 
     head = ToServer(arg1);
   }
 
 #ifdef BACKUP
-  if (!strcasecmp(newserver, mynum))
+  if (strcmp(newserver, myYY) == 0)
   {
     quit(MAIN_NICK " is back", 0);
   }
@@ -129,9 +132,8 @@ void onserver(char *arg1, char *arg2, char *arg3, char *args)
 
   tmp = (aserver *) MALLOC(sizeof(aserver));
   tmp->name = (char *)MALLOC(strlen(newserver) + 1);
-  tmp->num = (char *)MALLOC(strlen(numYY) +1);
   strcpy(tmp->name, newserver);
-  strcpy(tmp->num, numYY);
+  strcpy(tmp->YY, YY);
 
   tmp->TS = atol(TS);
   if (head == NULL)
@@ -141,7 +143,7 @@ void onserver(char *arg1, char *arg2, char *arg3, char *args)
     TSoffset = tmp->TS - now;
 #ifdef DEBUG
     printf("New connection with %s (%s): my time: %ld  others' time %ld (%ld)\n",
-      tmp->name, tmp->num, now, tmp->TS, TSoffset);
+      tmp->name, tmp->YY, now, tmp->TS, TSoffset);
 #endif
   }
   else
@@ -159,7 +161,8 @@ void onsquit(char *source, char *theserver, char *args)
 {
   register aserver *serv, **s;
   register int i;
-  char TS[80];
+  char TS[12] = "";
+  char buffer[200] = "";
 
 #ifdef FAKE_UWORLD
   if (!strcasecmp(theserver, UFAKE_SERVER) && Uworld_status == 1)
@@ -167,7 +170,6 @@ void onsquit(char *source, char *theserver, char *args)
     GetWord(0, args, TS);
     if (atol(TS) == UworldServTS)
     {
-      char buffer[200];
       sprintf(buffer, "%s squitted", UFAKE_NICK);
       PutLog(buffer);
       Uworld_status = 0;
@@ -180,7 +182,6 @@ void onsquit(char *source, char *theserver, char *args)
 
   if (s == NULL)
   {
-    char buffer[200];
     sprintf(buffer, "ERROR: SQUIT unknown server %s (from %s)",
       theserver, source);
     PutLog(buffer);
@@ -225,8 +226,6 @@ void onsquit(char *source, char *theserver, char *args)
 
   TTLALLOCMEM -= strlen(serv->name) + 1;
   free(serv->name);
-  TTLALLOCMEM -= strlen(serv->num) + 1;
-  free(serv->num);
   *s = serv->next;
   TTLALLOCMEM -= sizeof(aserver);
   free(serv);
@@ -235,14 +234,27 @@ void onsquit(char *source, char *theserver, char *args)
 void showmap(char *source)
 {
   int count = 0;
+  int hide = 0;
+  register aluser *user;
+
+#ifdef HIS_SERVERNAME
+  hide = 1;
+#endif
 
   if (CurrentSendQ > HIGHSENDQTHRESHOLD)
   {
     notice(source, "Cannot process your request at this time. Try again later.");
     return;
   }
-  notice(source, SERVERNAME);
-  showserv(source, ServerList, &count);
+
+  user = ToLuser(source);
+  if ((!user->mode & LFL_ISOPER) && hide)
+    notice(source, "This command has been disabled.");
+  else
+  {
+    notice(source, SERVERNAME);
+    showserv(source, ServerList, &count);
+  }
   CheckFloodFlood(source, count);
 }
 
@@ -250,7 +262,7 @@ void showserv(char *source, aserver * server, int *count)
 {
   static char prefix[80] = "";
   static int offset = 0;
-  char buffer[200];
+  char buffer[200] = "";
   register asuser *suser;
   register int nbusers = 0, i;
 
@@ -297,7 +309,7 @@ void showserv(char *source, aserver * server, int *count)
 
 void onsettime(char *source, char *value)
 {
-  char buffer[200];
+  char buffer[200] = "";
 
   TSoffset = atol(value) - now;
   sprintf(buffer, "SETTIME from %s (%s) (%ld)", source, value, TSoffset);
@@ -309,8 +321,27 @@ void onsettime(char *source, char *value)
 
 void showversion(char *source)
 {
-  char buffer[200];
+  char buffer[200] = "";
 
-  sprintf(buffer, "%s 351 %s :%s\n", NUMERIC, source, VERSION);
+  sprintf(buffer, "%s 351 %s :%s\n", myYY, source, VERSION);
   sendtoserv(buffer);
+}
+
+static const char convert2y[] = {
+  'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P',
+  'Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f',
+  'g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v',
+  'w','x','y','z','0','1','2','3','4','5','6','7','8','9','[',']'
+};
+
+const char* inttobase64( char* buf, unsigned int v, unsigned int count )
+{
+  buf[count] = '\0';
+  while (count > 0)
+  {
+    buf[ --count ] = convert2y[(v & NUMNICKMASK)];
+    v >>= NUMNICKLOG;
+  }
+
+  return buf;
 }

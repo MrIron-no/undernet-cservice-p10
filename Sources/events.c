@@ -31,7 +31,9 @@ void InitEvent(void)
   AddEvent(EVENT_SAVESHITLIST, now + SHITLIST_SAVE_FREQ + 300, "");
   AddEvent(EVENT_SAVEDEFCHANNELS, now + DEFS_SAVE_FREQ + 600, "");
   AddEvent(EVENT_SYNC, now + SYNC_FREQ + 900, "");
+#ifdef MAX_IDLE_TIME
   AddEvent(EVENT_CHECK_IDLE, now + CHECK_IDLE_FREQ, "");
+#endif
   AddEvent(EVENT_RENAME_LOGFILE, now + RENAME_LOGFILE_FREQ, "");
   AddEvent(EVENT_SYNCDB, now + CACHE_TIMEOUT, "");
 #ifdef CHANNEL_LOG
@@ -131,10 +133,12 @@ void CheckEvent(void)
       CleanIgnores();
       break;
 
+#ifdef MAX_IDLE_TIME
     case EVENT_CHECK_IDLE:
       CheckIdleChannels();
       AddEvent(EVENT_CHECK_IDLE, now + CHECK_IDLE_FREQ, "");
       break;
+#endif
 
     case EVENT_RENAME_LOGFILE:
       PutLog("Closing log file");

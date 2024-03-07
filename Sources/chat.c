@@ -54,22 +54,26 @@ void chat_sendtoall(char *from, char *msg)
 
 static void login_ok(struct http_socket *hsock, RegUser * reg)
 {
-  char buffer[512], nick[15];
+  char buffer[512] = "", nick[15] = "", charXXX[5] = "";
   struct chat_user *cu = (struct chat_user *)hsock->hook;
   register http_socket *scan;
   int count = 0;
 
-  sprintf(buffer, "1 %ld %s %s %s", now, cu->user + 1, cu->host, VirtualServer.name);
+  // Setting unique numeric:
+  dccUsers++; // Keeping count of number of connecting DCC users since start. Provides for an unique numeric for each connecting users. 
+  inttobase64(charXXX, dccUsers, 3);
+
+  sprintf(buffer, "1 %ld %s %s AAAAAA __%s :%s", now, cu->user + 1, cu->host, charXXX, VirtualServer.name);
 
   strcpy(nick, cu->user);
 
-  while (ToLuser(nick) != NULL)
+  while (ToLuserNick(nick) != NULL)
     sprintf(nick, "+%d%s", ++count, cu->user + 1);
 
   nick[9] = '\0';
-  onnick(VirtualServer.name, nick, buffer);
+  onnick("__", nick, buffer);
 
-  cu->luser = ToLuser(nick);
+  cu->luser = ToLuserNick(nick);
 
   cu->luser->valchan = (avalchan *) MALLOC(sizeof(avalchan));
   cu->luser->valchan->name = (char *)MALLOC(strlen(reg->channel) + 1);
@@ -112,7 +116,7 @@ static void
   register RegUser *reg;
   struct http_socket *hsock = (struct http_socket *)hook1;
   struct chat_user *cu;
-  char userhost[200];
+  char userhost[200] = "";
 
   if (dbu != NULL)
   {
@@ -148,7 +152,7 @@ static void
 
 void chat_login(struct http_socket *hsock, char *user, char *password)
 {
-  char userhost[200], channel[] = "*", buffer[200];
+  char userhost[200] = "", channel[] = "*", buffer[200] = "";
   struct chat_user *cu;
   register RegUser *ruser;
 
@@ -167,7 +171,7 @@ void chat_login(struct http_socket *hsock, char *user, char *password)
   {
     if (!strcasecmp(ruser->channel, channel) &&
       *ruser->match == '+' && match(userhost, ruser->match) &&
-      !strcmp(ruser->passwd, password))
+      strcmp(ruser->passwd, password) == 0)
       break;
     ruser = ruser->next;
   }
@@ -193,17 +197,16 @@ void chat_notice(char *user, char *msg)
   register http_socket *scan = HttpList;
   register struct chat_user *cu;
 
-#ifdef DEBUG
-  printf("chat: ->%s %s\n", user, msg);
-#endif
-
   while (scan != NULL)
   {
     cu = (struct chat_user *)scan->hook;
     if (scan->status == HTTP_CHAT && cu->luser &&
-      !strcasecmp(cu->luser->nick, user))
+      !strcasecmp(cu->luser->num, user))
     {
       sendto_http(scan, "-%s- %s\n", mynick, msg);
+#ifdef DEBUG
+      printf("chat: ->%s %s\n", cu->luser->nick, msg);
+#endif
       break;
     }
     scan = scan->next;
@@ -213,7 +216,7 @@ void chat_notice(char *user, char *msg)
 
 void parse_chat(struct http_socket *hsock, char *line)
 {
-  char buffer[200], global[] = "*", *ptr;
+  char buffer[200] = "", global[] = "*", *ptr;
 
   if (hsock == NULL || hsock->hook == NULL ||
     ((struct chat_user *)hsock->hook)->luser == NULL)
@@ -229,7 +232,7 @@ void parse_chat(struct http_socket *hsock, char *line)
   if ((*line == '/') || (*line == '.'))
   {
     sprintf(buffer, "%s@%s", mynick, SERVERNAME);
-    parse_command(((struct chat_user *)hsock->hook)->luser->nick,
+    parse_command(((struct chat_user *)hsock->hook)->luser->num,
       buffer, global, line + 1);
   }
   else
@@ -239,27 +242,27 @@ void parse_chat(struct http_socket *hsock, char *line)
 
 void chat_close(http_socket * hsock, char *comment)
 {
-  char buffer[512];
+  char buffer[512] = "";
   struct chat_user *cu = (struct chat_user *)hsock->hook;
 
   if (cu->luser)
   {
     sprintf(buffer, "*** LEAVE: %s@%s", cu->luser->nick + 1, cu->host);
     chat_sendtoall(NULL, buffer);
-    onquit(cu->luser->nick);
+    onquit(cu->luser->num);
   }
 }
 
 
 void DccMe(char *source, char *arg)
 {
-  char global[] = "*", buffer[512];
+  char global[] = "*", buffer[512] = "";
   if(Access(global, source) >= 600)
   {
     unsigned long addr = inet_addr(BINDADDR);
     addr = ntohl(addr);
     sprintf(buffer, "%s P %s :\001DCC CHAT chat %lu %u\001\n",
-            mynum, source, addr, HTTP_PORT);
+            myYYXXX, source, addr, HTTP_PORT);
     sendtoserv(buffer);
   }
 }

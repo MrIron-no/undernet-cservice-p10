@@ -1,6 +1,6 @@
-# From original .csvignore
 Sources/version.c
 Sources/cksum
+version.c
 
 # Object files
 *.o
@@ -35,6 +35,7 @@ cs
 showdb
 show_old_managers
 fixdb
+Sources/cksum
 
 # Logs & div
 *.log
@@ -54,6 +55,12 @@ config.h
 # Web
 HTTP/*.#
 HTTP/index.html
+HTTP/index.html.new
 raw.auth
 
+# Update
+lastupgrade
+*.patch
+
 .gdbinit
+.vscode/*

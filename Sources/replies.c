@@ -35,8 +35,8 @@ alang Lang[NO_LANG] =
 {
   {L_ENGLISH, "en", "english"},
   {L_DUTCH, "nl", "dutch"},
-  {L_FRENCH, "fr", "français"},
-  {L_SPANISH, "es", "español"},
+  {L_FRENCH, "fr", "franï¿½ais"},
+  {L_SPANISH, "es", "espaï¿½ol"},
   {L_GERMAN, "de", "deutsch"}
 };
 
@@ -62,7 +62,7 @@ void ReplyNotAccess(char *nick, char *channel)
 {
   static int index = 0;
   register int i;
-  char buffer[200];
+  char buffer[200] = "";
 
   for (i = rand() % 5 + 1; i > 0; i--)
     if (notaccessreply[++index] == NULL)
@@ -76,7 +76,7 @@ void RandomChannel(char *source)
 {
   register int hash, offset;
   register achannel *chan;
-  char buffer[200];
+  char buffer[200] = "";
 
   hash = rand() % 1000;
   offset = rand() % 100;
@@ -108,7 +108,8 @@ void RandomChannel(char *source)
 
 void Say(char *source, char *args)
 {
-  char target[80], buffer[512], global[] = "*";
+  char target[80] = "", buffer[512] = "", global[] = "*";
+  register aluser *user;
 
   if (Access(global, source) < 900)
   {
@@ -122,17 +123,28 @@ void Say(char *source, char *args)
   {
     notice(source, "Syntax: say [#channel] [whatever]");
     return;
-  } else if (*target != '#')
-    strcpy(target, GetNickNum(target));
+  }
+  else if (*target != '#')
+  {
+    user = ToLuserNick(target);
 
-  sprintf(buffer, "%s P %s :%s\n", mynum, target, args);
+    if (!user)
+    {
+      notice(source, "No such nick.");
+      return;
+    }
+
+    strcpy(target, user->num);
+  }
+
+  sprintf(buffer, "%s P %s :%s\n", myYYXXX, target, args);
   sendtoserv(buffer);
 }
 
 
 void ServNotice(char *source, char *args)
 {
-  char buffer[1048], target[80], global[] = "*";
+  char buffer[1048] = "", target[80] = "", global[] = "*";
 
   if (Access(global, source) < 600)
   {
@@ -148,7 +160,7 @@ void ServNotice(char *source, char *args)
     return;
   }
 
-  sprintf(buffer, "[Channel Service: %s] %s", GetNumNick(source), args);
+  sprintf(buffer, "[Channel Service: %s] %s", GetNick(source), args);
   servnotice(target, buffer);
 }
 
@@ -166,7 +178,7 @@ char *replies[][NO_LANG] =
 /* RPL_NOTCHANOP */
   {"I am not channel operator",	/* english */
     "Ik ben geen channel operator",	/* dutch */
-    "Je ne suis pas opérateur de canal",	/* french */
+    "Je ne suis pas opï¿½rateur de canal",	/* french */
     "No soy operador del canal",	/* spanish */
     "Ich bin kein Betreiber auf diesem Kanal"	/* german */
   },
@@ -175,14 +187,14 @@ char *replies[][NO_LANG] =
   {"This channel is in OpOnly Mode",	/* english */
     "Dit kanaal is in OpOnly Mode",	/* dutch */
     "Ce canal est en mode OpOnly",	/* french */
-    "Ese canal está en modo OpOnly",	/* spanish */
+    "Ese canal estï¿½ en modo OpOnly",	/* spanish */
     "Dieser Kanal is im OpOnly-Modus"	/* german */
   },
 
 /* RPL_OPSELFONLY */
   {"You can only op yourself in OpOnly mode",	/* english */
     "In OpOnly mode mag je alleen jezelf operator maken",	/* dutch */
-    "Vous ne pouvez opper que vous-même en mode OpOnly",	/* french */
+    "Vous ne pouvez opper que vous-mï¿½me en mode OpOnly",	/* french */
     "Solo puedes ser operador en modo OpOnly",	/* spanish */
     "Sie koennen nur sich selbst zum Betreiber machen (Kanal im OpOnly-Modus)"	/* german */
   },
@@ -198,15 +210,15 @@ char *replies[][NO_LANG] =
 /* RPL_ALREADYONCHANNEL */
   {"This user is already on channel",	/* english */
     "Deze persoon is al op dat kanaal",		/* dutch */
-    "Cet usager est déjà sur le canal",		/* french */
-    "Ese usuario ya está en el canal",	/* spanish */
+    "Cet usager est dï¿½jï¿½ sur le canal",		/* french */
+    "Ese usuario ya estï¿½ en el canal",	/* spanish */
     "Dieser Benutzer ist bereits auf dem Kanal"		/* german */
   },
 
 /* RPL_IINVITED */
   {"I invited %s to %s",	/* english */
     "%s is uitgenodigd naar %s te komen",	/* dutch */
-    "J'ai invité %s sur %s",	/* french */
+    "J'ai invitï¿½ %s sur %s",	/* french */
     "Yo he invitado a %s en %s",	/* spanish */
     "Ich haben %s eingeladen, auf %s zu kommen"		/* german */
   },
@@ -222,7 +234,7 @@ char *replies[][NO_LANG] =
 /* RPL_ALWAYSOPWASACTIVE */
   {"AlwaysOp was active! It's now deactivated",		/* english */
     "AlwaysOp was actief! Het is nu uitgeschakeld",	/* dutch */
-    "AlwaysOp était actif! Il est maintenant désactivé",	/* french */
+    "AlwaysOp ï¿½tait actif! Il est maintenant dï¿½sactivï¿½",	/* french */
     "AlwaysOp estaba activado! Ahora ya esta desactivado",	/* spanish */
     "AlwaysOp war aktiv! Es wurde ausgeschalten"	/* german */
   },
@@ -231,7 +243,7 @@ char *replies[][NO_LANG] =
   {"This channel is in AlwaysOp mode!",		/* english */
     "Dit kanaal is in AlwaysOp mode!",	/* dutch */
     "Ce canal est en mode AlwaysOp!",	/* french */
-    "Este canal está en modo AlwaysOp!",	/* spanish */
+    "Este canal estï¿½ en modo AlwaysOp!",	/* spanish */
     "Dieser Kanal is im AlwaysOp-Modus!"	/* german */
   },
 
@@ -246,8 +258,8 @@ char *replies[][NO_LANG] =
 /* RPL_KICK2ND */
   {"Please STOP kicking me!",	/* english */
     "STOP mij te KICKen!",	/* dutch */
-    "Veuillez arrêter de me kicker!",	/* french */
-    "Por favor ¡para de kickearme!",	/* spanish */
+    "Veuillez arrï¿½ter de me kicker!",	/* french */
+    "Por favor ï¿½para de kickearme!",	/* spanish */
     "Bitte hoeren Sie auf, mich zu kicken!"	/* german */
   },
 
@@ -262,8 +274,8 @@ char *replies[][NO_LANG] =
 /* RPL_BADFLOODLIMIT */
   {"value of FLOODPRO must be in the range [3-20] or 0 to turn it off",
     "FLOODPRO moet een waarde hebben tussen 3 en 20 of 0 om het uit te schakelen",
-    "la valeur de FLOODPRO doit être entre 3 et 20 ou 0 pour le désactiver",
-    "El valor de FLOODPRO tiene que estar entre 3 y 20 ó 0 para desactivarlo",
+    "la valeur de FLOODPRO doit ï¿½tre entre 3 et 20 ou 0 pour le dï¿½sactiver",
+    "El valor de FLOODPRO tiene que estar entre 3 y 20 ï¿½ 0 para desactivarlo",
     "der Wert fon FLOODPRO muss im Bereich von 3 und 20 sein (oder 0 um es abzuschalten)"
   },
 
@@ -271,15 +283,15 @@ char *replies[][NO_LANG] =
   {"value of FLOODPRO is now %d",	/* english */
     "De waarde van FLOODPRO is nu %d",	/* dutch */
     "la valeur de FLOODPRO est maintenant %d",	/* french */
-    "El valor de FLOOPRO está ahora %d",	/* spanish */
+    "El valor de FLOOPRO estï¿½ ahora %d",	/* spanish */
     "FLOODPRO hat jetzt den Wert %d"	/* german */
   },
 
 /* RPL_BADNICKFLOODLIMIT */
   {"value of NICKFLOODPRO must be in the range [3-10] or 0 to turn it off",
     "NICKFLOODPRO moet een waarde hebben tussen 3 en 10 of 0 om het uit te schakelen",
-    "la valeur de NICKFLOODPRO doit être entre 3 et 10 ou 0 pour le désactiver",
-    "El valor de NICKFLOOPRO tiene que estar entre 3 y 10 ó 0 para desactivarlo",
+    "la valeur de NICKFLOODPRO doit ï¿½tre entre 3 et 10 ou 0 pour le dï¿½sactiver",
+    "El valor de NICKFLOOPRO tiene que estar entre 3 y 10 ï¿½ 0 para desactivarlo",
     "Werte fuer NICKFLOODPRO muessen im Bereich von 3 bis 10 sein. Oder 0 um es abzuschalten"
   },
 
@@ -287,15 +299,15 @@ char *replies[][NO_LANG] =
   {"value of NICKFLOODPRO is now %d",	/* english */
     "De waarde van NICKFLOODPRO is nu %d",	/* dutch */
     "la valeur de NICKFLOODPRO est maintenant %d",	/* french */
-    "El valor de NICKFLOOPRO está ahora en %d",		/* spanish */
+    "El valor de NICKFLOOPRO estï¿½ ahora en %d",		/* spanish */
     "der Wert fuer NICKFLOODPRO ist jetzt %d"	/* german */
   },
 
 /* RPL_BADMASSDEOPLIMIT */
   {"value of MASSDEOPPRO must be in the range [3-10] or 0 to turn it off",
     "MASSDEOPPRO moet een waarde hebben tussen 3 en 10 of 0 om het uit te schakelen",
-    "la valeur de MASSDEOPPRO doit être entre 3 et 10 ou 0 pour le désactiver",
-    "El valor de MASSDEOPPRO tiene que estar entre 3 y 10 ó 0 para desactivarlo",
+    "la valeur de MASSDEOPPRO doit ï¿½tre entre 3 et 10 ou 0 pour le dï¿½sactiver",
+    "El valor de MASSDEOPPRO tiene que estar entre 3 y 10 ï¿½ 0 para desactivarlo",
     "der Wert von MASSDEOPPRO muss zwischen 3 und 10 liegen, oder 0 um es abzuschalten"
   },
 
@@ -303,7 +315,7 @@ char *replies[][NO_LANG] =
   {"value of MASSDEOPPRO is now %d",	/* english */
     "De waarde van MASSDEOPPRO is nu %d",	/* dutch */
     "la valeur de MASSDEOPPRO est maintenant %d",	/* french */
-    "El valor de MASSDEOPPRO está ahora en %d",		/* spanish */
+    "El valor de MASSDEOPPRO estï¿½ ahora en %d",		/* spanish */
     "MASSDEOPPRO ist jetzt %d"	/* german */
   },
 
@@ -311,7 +323,7 @@ char *replies[][NO_LANG] =
   {"value of NOOP is now ON",	/* english */
     "NOOP mode is nu ingeschakeld",	/* dutch */
     "la valeur de NOOP est maintenant ON",	/* french */
-    "El valor de NOOP está ahora en ON",	/* spanish */
+    "El valor de NOOP estï¿½ ahora en ON",	/* spanish */
     "NOOP hat jetzt den Wert EIN"	/* german */
   },
 
@@ -319,14 +331,14 @@ char *replies[][NO_LANG] =
   {"value of NOOP is now OFF",	/* english */
     "NOOP mode is nu uit",	/* dutch */
     "la valeur de NOOP est maintenant OFF",	/* french */
-    "El valor de NOOP está ahora en OFF",	/* spanish */
+    "El valor de NOOP estï¿½ ahora en OFF",	/* spanish */
     "NOOP hat jetzt den Wert AUS"	/* german */
   },
 
 /* RPL_BADNOOP */
   {"value of NOOP must be ON or OFF",	/* english */
     "Kies 'ON' of 'OFF' voor de waarde van NOOP",	/* dutch */
-    "la valeur de NOOP doit être ON ou OFF",	/* french */
+    "la valeur de NOOP doit ï¿½tre ON ou OFF",	/* french */
     "El valor de NOOP debe ser ON o OFF",	/* spanish */
     "NOOP kann nur EIN oder AUS sein"	/* german */
   },
@@ -350,7 +362,7 @@ char *replies[][NO_LANG] =
 /* RPL_BADALWAYSOP */
   {"value of ALWAYSOP must be ON or OFF",	/* english */
     "Kies 'ON' of 'OFF' voor de waarde van ALWAYSOP",	/* dutch */
-    "la valeur de ALWAYSOP doit être ON ou OFF",	/* french */
+    "la valeur de ALWAYSOP doit ï¿½tre ON ou OFF",	/* french */
     "El valor de ALWAYSOP debe ser ON o OFF",	/* spanish */
     "Werte fuer ALWAYSOP sind EIN oder AUS"	/* german */
   },
@@ -374,7 +386,7 @@ char *replies[][NO_LANG] =
 /* RPL_BADOPONLY */
   {"value of OPONLY must be ON or OFF",		/* english */
     "Kies 'ON' of 'OFF' voor de waarde van OPONLY",	/* dutch */
-    "la valeur de OPONLY doit être ON ou OFF",	/* french */
+    "la valeur de OPONLY doit ï¿½tre ON ou OFF",	/* french */
     "El valor de OPONLY debe ser ON o OFF",	/* spanish */
     "Werte fuer OPONLY sind EIN oder AUS"	/* german */
   },
@@ -398,7 +410,7 @@ char *replies[][NO_LANG] =
 /* RPL_BADAUTOTOPIC */
   {"value of AUTOTOPIC must be ON or OFF",	/* english */
     "Kies 'ON' of 'OFF' voor de waarde van AUTOTOPIC",	/* dutch */
-    "la valeur de AUTOTOPIC doit être ON ou OFF",	/* french */
+    "la valeur de AUTOTOPIC doit ï¿½tre ON ou OFF",	/* french */
     "El valor de AUTOTOPIC debe ser ON o OFF",	/* spanish */
     "Werte fuer AUTOTOPIC sind EIN oder AUS"	/* german */
   },
@@ -430,7 +442,7 @@ char *replies[][NO_LANG] =
 /* RPL_BADUSERFLAGS */
   {"New value can be 1-AUTOOP or 0-NO AUTOOP",
     "De nieuwe waarde kan zijn 1-AUTOOP, 2-PROTECT ou 3-BOTH",
-    "La nouvelle valeur peut être 1-AUTOOP ou 0-PAS DE AUTOOP",
+    "La nouvelle valeur peut ï¿½tre 1-AUTOOP ou 0-PAS DE AUTOOP",
     "El nuevo valor puede ser 1-AUTOOP o 0- NOAUTOOP",	/* spanish */
     "Der neue Wert kann 1-AUTOOP, 2-PROTECT oder 3-BEIDE sein."
   },
@@ -454,7 +466,7 @@ char *replies[][NO_LANG] =
 /* RPL_SETLANG */
   {"Default language is now %s (%s)",	/* english */
     "De default taal is nu %s (%s)",	/* dutch */
-    "La langue par défaut est maintenant %s (%s)",	/* french */
+    "La langue par dï¿½faut est maintenant %s (%s)",	/* french */
     "El idioma configurado por defecto es ahora %s (%s)",	/* spanish */
     "Die neue Default-Sprache ist %s (%s)"	/* german */
   },
@@ -462,7 +474,7 @@ char *replies[][NO_LANG] =
 /* RPL_STATUS1 */
   {"Channel %s has %d user%s (%d operator%s)",	/* english */
     "Kanaal %s heeft %d deelnemer%s (%d operator%s)",	/* dutch */
-    "Canal %s a %d usager%s (%d opérateur%s)",	/* french */
+    "Canal %s a %d usager%s (%d opï¿½rateur%s)",	/* french */
     "El canal %s tiene %d usuarios%s (%d operadores%s)",	/* spanish */
     "Kanal %s hat %d Benutzer (%d Betreiber)"	/* german */
 /* ### NOTE the german version does not use plurals! 
@@ -480,7 +492,7 @@ char *replies[][NO_LANG] =
 /* RPL_STATUS3 */
   {"Default user flags%s",	/* english */
     "Default 'user flags'%s",	/* dutch */
-    "Flags d'usager par défaut%s",	/* french */
+    "Flags d'usager par dï¿½faut%s",	/* french */
     "Flags por defectos son %s",	/* spanish */
     "Default-Flags fuer Benutzer %s"	/* german */
   },
@@ -488,7 +500,7 @@ char *replies[][NO_LANG] =
 /* RPL_STATUS4 */
   {"Default language is %s",	/* english */
     "Default taal is %s",	/* dutch */
-    "Langue par défaut %s",	/* french */
+    "Langue par dï¿½faut %s",	/* french */
     "Idioma por defecto %s",	/* spanish */
     "Default-Sprache ist %s"	/* german */
   },
@@ -497,14 +509,14 @@ char *replies[][NO_LANG] =
   {"Channel has been idle for %d second%s",	/* english */
     "Het kanaal is %d second%s idle",	/* dutch */
     "Le canal est inactif depuis %d seconde%s",		/* french */
-    "El canal no está activo desde hace %d segundos%s",		/* spanish */
+    "El canal no estï¿½ activo desde hace %d segundos%s",		/* spanish */
     "Der Kanal ist seit %d Sekunden inaktiv."	/* german */
   },
 
 /* RPL_SETCHANDEFS */
   {"Channel defaults set.",	/* english */
     "Kanaal defaults geregistreerd.",	/* dutch */
-    "L'état du canal est enregistré",	/* french */
+    "L'ï¿½tat du canal est enregistrï¿½",	/* french */
     "Los nuevos cambios han sido registrados",	/* spanish */
     "Default-Werte fuer den Kanal wurden gesetzt"	/* german */
   },
@@ -513,7 +525,7 @@ char *replies[][NO_LANG] =
   {"That channel is not in my default channel list",	/* english */
     "Dat kanaal staat niet in mijn default kanaal lijst",	/* dutch */
     "Ce canal n'est pas sur ma liste",	/* french */
-    "Ese canal no está en mi lista por defecto",	/* spanish */
+    "Ese canal no estï¿½ en mi lista por defecto",	/* spanish */
     "Dieser Kanal ist nicht auf meiner Liste"	/* german */
   },
 
@@ -536,15 +548,15 @@ char *replies[][NO_LANG] =
 /* RPL_NOOP */
   {"Sorry. This channel is in NoOp mode!",	/* english */
     "Sorry. Dit kanaal is in NoOp mode!",	/* dutch */
-    "Désolé. Ce canal est en mode NoOp!",	/* french */
-    "Lo siento, ¡Ese canal está en modo NoOp!",		/*  spanish */
+    "Dï¿½solï¿½. Ce canal est en mode NoOp!",	/* french */
+    "Lo siento, ï¿½Ese canal estï¿½ en modo NoOp!",		/*  spanish */
     "Tut mir leid, aber dieser Kanal ist im NoOp-Modus!"	/* german */
   },
 
 /* RPL_CANTBEOP */
   {"Sorry. You are not allowed to be chanop",	/* english */
     "Sorry. Het is niet toegestaan dat u kanaal operator bent",		/* dutch */
-    "Désolé. Il ne vous est pas permis d'être opérateur",	/* french */
+    "Dï¿½solï¿½. Il ne vous est pas permis d'ï¿½tre opï¿½rateur",	/* french */
     "Lo siento. No estas autorizado para ser operador en el canal",	/* spanish */
     "Tut mir leid, aber Sie duerfen nicht Betreiber werden."	/*german */
   },
@@ -552,47 +564,23 @@ char *replies[][NO_LANG] =
 /* RPL_CANTBEOPPED */
   {"This user is not allowed to be chanop",	/* english */
     "Deze gebruiker is het niet toegestaan kanaal operator te zijn",	/* dutch */
-    "Cet usager n'a pas le droit d'être opérateur",	/* french */
-    "Ese usuario no está autorizado para ser operador en el canal",	/* spanish */
+    "Cet usager n'a pas le droit d'ï¿½tre opï¿½rateur",	/* french */
+    "Ese usuario no estï¿½ autorizado para ser operador en el canal",	/* spanish */
     "Dieser Benutzer darf nicht Betreiber werden."	/* german */
-  },
-
-/* RPL_DEOPPED1ST */
-  {"You are not allowed to DEOP me!",	/* english */
-    "Je mag me niet deoppen!",	/* dutch */
-    "Vous ne pouvez pas me deopper!",	/* french */
-    "¡No me puedes quitar el op!",	/* spanish */
-    "Sie duerfen mich nicht deoppen!"	/* german */
-  },
-
-/* RPL_DEOPPED2ND */
-  {"Please STOP deopping me!",	/* english */
-    "STOP met me te de-oppen!",	/* dutch */
-    "Veuillez arrêter de me deopper!",	/* french */
-    "Por favor, ¡para de quitarme el op!",	/* spanish */
-    "Bitte hoeren Sie auf, mich zu deoppen!"	/* german */
-  },
-
-/* RPL_DEOPPED3RD */
-  {"I warned you!",		/* english */
-    "Je was gewaarschuwd!",	/* dutch */
-    "Je vous aurai prévenu!",	/* french */
-    "¡Te he hecho una advertencia!",	/* spanish */
-    "Sie wurden gewarnt!"	/* german */
   },
 
 /* RPL_USERISPROTECTED */
   {"This user is protected",	/* english */
     "Deze gebruiker is beschermd",	/* dutch */
-    "Cet usager est protégé",	/* french */
-    "Este usuario está protegido",	/* spanish */
+    "Cet usager est protï¿½gï¿½",	/* french */
+    "Este usuario estï¿½ protegido",	/* spanish */
     "Dieser Benutzer ist geschuetzt"	/* german */
   },
 
 /* RPL_YOUREOPPEDBY */
   {"You're opped by %s",	/* english */
     "U bent kanaal operator gemaakt door %s",	/* dutch */
-    "Vous êtes oppé par %s",	/* french */
+    "Vous ï¿½tes oppï¿½ par %s",	/* french */
     "El %s te ha puesto de operador en el canal",	/*spanish */
     "Sie wurden von %s zum Betreiber gemacht."	/* german */
   },
@@ -601,15 +589,23 @@ char *replies[][NO_LANG] =
   {"User %s is not on channel %s!",	/* english */
     "%s bevindt zich niet op kanaal %s!",	/* dutch */
     "%s n'est pas sur %s!",	/* french */
-    "El usuario %s no está presente en el canal %s!",	/* spanish */
+    "El usuario %s no estï¿½ presente en el canal %s!",	/* spanish */
     "%s ist nicht auf dem Kanal %s!"	/* german */
   },
 
 /* RPL_YOUREDEOPPEDBY */
   {"You're deopped by %s",	/* english */
     "Het kanaal operatorschap is u ontnomen door %s",	/* dutch */
-    "Vous êtes déoppé par %s",	/* french */
-    "El %s te quitó el status de op%s",		/* spanish */
+    "Vous ï¿½tes dï¿½oppï¿½ par %s",	/* french */
+    "El %s te quitï¿½ el status de op%s",		/* spanish */
     "%s hat ihnen den Betreiberstatus entzogen"		/* german */
+  },
+
+/* RPL_ISSERVICE */
+  {"I don't think %s would appreciate that.",	/* english */
+    "Ik denk niet dat %s dat op prijs zou stellen.",	/* dutch */
+    "Je ne pense pas que %s apprÃ©cierait Ã§a.",	/* french */
+    "No creo que a %s le guste eso.",		/* spanish */
+    "Ich glaube nicht, dass %s das zu schÃ¤tzen wissen wÃ¼rde."		/* german */
   }
 };

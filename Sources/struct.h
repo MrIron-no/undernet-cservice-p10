@@ -110,7 +110,7 @@ typedef struct achannelnode {
 
 typedef struct aserver {
 	char *name;
-	char *num;
+	char YY[3];
 	time_t TS;
 	struct asuser *users[100];
 	struct aserver *up;
@@ -124,10 +124,12 @@ typedef struct asuser {
 } asuser;
 
 typedef struct aluser {
-	char *num;
+	char num[6];
 	char *nick;
 	char *username;
 	char *site;
+	char *account;
+	char *hiddenhost;
 	time_t time;
 	char mode;
 	struct aserver *server;
@@ -162,14 +164,14 @@ typedef struct aban {
 
 typedef struct adeop {
 	time_t time;
-	char num[10];
+	char num[6];
 	struct adeop *next;
 } adeop;
 
 typedef struct anickchange {
 	time_t time;
 	char nick[NICK_LENGTH];
-	char num[10];
+	char num[6];
 	struct anickchange *next;
 } anickchange;
 

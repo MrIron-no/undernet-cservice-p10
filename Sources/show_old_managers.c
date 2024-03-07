@@ -51,7 +51,7 @@ void fix_user_file(char *file, char *channel)
     {
       continue;
     }
-    if (!strcmp(dbu.match, "!DEL!"))
+    if (strcmp(dbu.match, "!DEL!") == 0)
       continue;
 
     if (dbu.access == 500 && (now - dbu.lastseen) < HOWLONG)
@@ -74,7 +74,7 @@ void fix_user_file(char *file, char *channel)
     {
       continue;
     }
-    if (!strcmp(dbu.match, "!DEL!"))
+    if (strcmp(dbu.match, "!DEL!") == 0)
       continue;
 
     if (dbu.access != 500)
@@ -90,7 +90,7 @@ void fix_user_db(void)
 {
   DIR *dp;
   struct dirent *ent;
-  char dir[300], file[300], channel[80], *ptr;
+  char dir[300] = "", file[300] = "", channel[80] = "", *ptr;
   int count;
 
   for (count = 0; count < 1000; count++)
@@ -104,7 +104,7 @@ void fix_user_db(void)
     }
     while ((ent = readdir(dp)) != NULL)
     {
-      if (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, ".."))
+      if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
 	continue;
       strcpy(channel, ent->d_name);
       for (ptr = channel; *ptr; ptr++)

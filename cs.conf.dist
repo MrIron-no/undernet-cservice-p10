@@ -19,7 +19,7 @@ PORT 4400
 SERVERNAME channels.undernet.org
 SERVERINFO Undernet Channel Service
 PASSWORD pizza
-NUMERIC AC
+NUMERIC 100
 #
 # Files and directories
 #

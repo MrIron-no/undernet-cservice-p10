@@ -1,4 +1,3 @@
-
 /* @(#)$Id: main.c,v 1.21 2000/04/25 00:04:27 seks Exp $ */
 
 /* Undernet Channel Service (X)
@@ -63,12 +62,16 @@ char mynick[NICK_LENGTH] = DEFAULT_NICKNAME;
 char myuser[USERNAME_LENGTH] = DEFAULT_USERNAME;
 char mysite[SITE_LENGTH] = DEFAULT_HOSTNAME;
 char myrealname[REALNAME_LENGTH] = DEFAULT_REALNAME;
-char mynum[20];
-char myuplink[10] = "";
-char uworldservernum[10] = "";
+char myYYXXX[6];
+char myYY[3];
+char myuplinkYY[3] = "";
+char myuplinkname[SERVER_NAME_LENGTH] = "";
+char uworldYY[3] = "";
 char *TmpPtr;
 int logfile;
 int bursting = 0;
+int burstCommands = 0;
+time_t burstStartTime;
 time_t now;
 time_t logTS = 0;
 time_t TSoffset = 0;
@@ -96,6 +99,7 @@ syncchan *SyncChan = NULL;
 #ifdef DOHTTP
 http_socket *HttpList = NULL;
 http_file_pipe *FilePipes = NULL;
+int dccUsers = 0;
 #endif
 misc_socket *MiscList = NULL;
 irc_socket Irc =
@@ -111,13 +115,14 @@ const unsigned int glob_cksum1 = BINCKSUM1;
 const unsigned int glob_cksum2 = 0;
 
 #ifdef FAKE_UWORLD
-char ufakenum[10];
+char ufakeYYXXX[6];
+char ufakeYY[3];
 int Uworld_status = 0;
 time_t UworldTS, UworldServTS;
 #endif
 
 #ifdef NICKSERV
-char nservnum[10];
+char nservYYXXX[6];
 int NServ_status = 1;
 #endif
 
@@ -163,19 +168,29 @@ void regist(void)
   // QuitAll(); 
 
   bursting = 1;
+  burstStartTime = now;
+
+  /* Setting numerics. */
+  inttobase64(myYY, NUMERIC, 2);
+  sprintf(myYYXXX, "%sAAA", myYY);
 
   /* Then send reg stuff to server.. */
   sprintf(buffer, "PASS :%s\nSERVER %s 1 %ld %ld J10 %s]]] +s :%s\n",
-    PASSWORD, SERVERNAME, t, t, NUMERIC, SERVERINFO);
+    PASSWORD, SERVERNAME, t, t, myYY, SERVERINFO);
   sendtoserv(buffer);
 }
 
 void signon(void)
 {
   char buffer[512];
-  sprintf(buffer, "%s N %s 1 31337 %s %s %s AAAAAA %s :%s\n", NUMERIC, mynick, myuser, mysite, UMODE, mynum, myrealname);
+  sprintf(buffer, "%s N %s 1 31337 %s %s %s AAAAAA %s :%s\n", myYY, mynick, myuser, mysite, UMODE, myYYXXX, myrealname);
   sendtoserv(buffer);
-
+#ifdef BACKUP
+  /* see above */
+  sprintf(buffer, "%s N %s 1 31337 %s %s %s AAAAAA %s :%s\n", myYY, MAIN_NICK, myuser, mysite, UMODE, myYYXXX, MAIN_REALNAME);
+  sendtoserv(buffer);
+  sprintf(buffer, "%s A :^BTemporarily down.. please use %s^B\n", myYYXXX, mynick);
+#endif
 #ifdef FAKE_UWORLD
   if (Uworld_status == 1)
     IntroduceUworld();
@@ -193,12 +208,14 @@ void IntroduceUworld(void)
   UworldServTS = now;
   UworldTS = logTS;	/* force nick collision */
 
-  sprintf(ufakenum, "%sAAA", UFAKE_NUMERIC);
+  inttobase64(ufakeYY, UFAKE_NUMERIC, 2);
+  sprintf(ufakeYYXXX, "%sAAA", ufakeYY);
+
   sprintf(buffer, "%s S %s 2 0 %ld J10 %sAAA +s :%s\n"
-    "%s N %s 2 31337 %s %s +o AAAAAA %s :%s\n%s EB\n%s EA\n",
-    NUMERIC, UFAKE_SERVER, UworldServTS, UFAKE_NUMERIC, UFAKE_INFO,
-    UFAKE_NUMERIC, UFAKE_NICK, UFAKE_NICK, UFAKE_HOST, ufakenum, UFAKE_INFO, 
-    UFAKE_NUMERIC, UFAKE_NUMERIC);
+    "%s N %s 2 31337 %s %s +iodkw AAAAAA %s :%s\n%s EB\n%s EA\n",
+    myYY, UFAKE_SERVER, UworldServTS, ufakeYY, UFAKE_INFO,
+    ufakeYY, UFAKE_NICK, UFAKE_NICK, UFAKE_HOST, ufakeYYXXX, UFAKE_INFO, 
+    ufakeYY, ufakeYY);
   sendtoserv(buffer);
 }
 
@@ -207,8 +224,8 @@ void KillUworld(char *msg)
   char buffer[200];
   sprintf(buffer, "%s Q :%s\n"
     "%s SQ %s %ld :%s\n",
-    ufakenum, msg,
-    UFAKE_NUMERIC, SERVERNAME, UworldServTS, msg);
+    ufakeYYXXX, msg,
+    ufakeYY, SERVERNAME, UworldServTS, msg);
   sendtoserv(buffer);
 }
 #endif
@@ -218,10 +235,10 @@ void IntroduceNickserv(void)
 {
   char buffer[512];
 
-  sprintf(nservnum, "%sAAB", NUMERIC);
+  sprintf(nservYYXXX, "%sAAB", myYY);
   sprintf(buffer, "%s N %s 1 31337 %s %s +kd AAAAAA %s :%s\n",
-    NUMERIC, NSERV_NICK, NSERV_USER, NSERV_HOST,
-    nservnum, NSERV_INFO);
+    myYY, NSERV_NICK, NSERV_USER, NSERV_HOST,
+    nservYYXXX, NSERV_INFO);
   sendtoserv(buffer);
   NServ_status = 1;
 }
@@ -229,7 +246,7 @@ void IntroduceNickserv(void)
 void KillNickserv(char *msg)
 {
   char buffer[200];
-  sprintf(buffer, "%s Q :%s\r\n", nservnum, msg);
+  sprintf(buffer, "%s Q :%s\r\n", nservYYXXX, msg);
   sendtoserv(buffer);
   NServ_status = 0;
 }
@@ -382,11 +399,11 @@ int quit(char *msg, int flag)
   if (!msg || !*msg)
     sprintf(buffer, "%s Q :%s\n"
       "%s SQ %s 0 :die request\n",
-      mynum, mynick, NUMERIC, SERVERNAME);
+      myYYXXX, mynick, myYY, SERVERNAME);
   else
     sprintf(buffer, "%s Q :%s\n"
       "%s SQ %s 0 :%s\n",
-      mynum, msg, NUMERIC, SERVERNAME, msg); // TODO: This is supposed to send the name of the uplink.
+      myYYXXX, msg, myYY, SERVERNAME, msg);
 
   if (Irc.fd >= 0)
   {
@@ -413,7 +430,7 @@ int quit(char *msg, int flag)
 
 int restart(char *msg)		/* added by Kev */
 {
-  char buffer[600];
+  char buffer[600] = "";
   int i;
 
   SaveUserList("", NULL);	/* save necessary data... */
@@ -427,11 +444,11 @@ int restart(char *msg)		/* added by Kev */
   if (!msg || !*msg)	/* send out QUIT/SQUIT stuff... */
     sprintf(buffer, "%s Q :restarting...\n"
       "%s SQ %s 0 :restart request\n",
-      mynum, NUMERIC, SERVERNAME);
+      myYYXXX, myYY, SERVERNAME);
   else
     sprintf(buffer, "%s Q :%s\n"
       "%s SQ %s 0 :%s\n",
-      mynum, msg, NUMERIC, SERVERNAME, msg);
+      myYYXXX, msg, myYY, SERVERNAME, msg);
 
   if (Irc.fd >= 0)
   {	/* clear buffer... */
@@ -469,27 +486,28 @@ int restart(char *msg)		/* added by Kev */
 
 void notice(char *target, char *msg)
 {
-  char buffer[200];
-//#ifdef DOHTTP
-//  extern chat_notice(char *, char *);
-//#endif
+  char buffer[1024] = "";
 
 #ifdef DOHTTP
-  if (*target == '+')
+  extern void chat_notice(char *, char *);
+#endif
+
+#ifdef DOHTTP
+  if (*target == '_') // TODO: Proper tracking of Virtual Server connections.
   {
     chat_notice(target, msg);
     return;
   }
 #endif
 
-  sprintf(buffer, "%s O %s :%s\n", mynum, target, msg);
+  sprintf(buffer, "%s O %s :%s\n", myYYXXX, target, msg);
   sendtoserv(buffer);
 }
 
 void servnotice(char *target, char *msg)
 {
-  char buffer[200];
-  sprintf(buffer, "%s O %s :%s\n", NUMERIC, target, msg);
+  char buffer[1024];
+  sprintf(buffer, "%s O %s :%s\n", myYY, target, msg);
   sendtoserv(buffer);
 }
 
@@ -499,7 +517,7 @@ void broadcast(char *msg, int evenwallop)
 #ifdef DOHTTP
   extern void chat_sendtoall(char *, char *);
 #endif
-  char buffer[1024];
+  char buffer[1024] = "";
   achannel *chan;
 
   chan = ToChannel(BROADCAST_CHANNEL);
@@ -511,7 +529,7 @@ void broadcast(char *msg, int evenwallop)
   else if (evenwallop)
   {
     sprintf(buffer, "%s WA :%s\n",
-      NUMERIC, msg);
+      myYY, msg);
     sendtoserv(buffer);
   }
 #ifdef DOHTTP
@@ -552,6 +570,35 @@ void GetWord(int nb, char *string, char *output)
   *ptr2 = 0;
 }
 
+void GetnWord(int nb, char *string, char *output, int n) 
+{
+  register char *ptr1;
+  register char *ptr2;
+  register int count = 0;
+
+  ptr1 = ToWord(nb, string);
+  ptr2 = output;
+  while (*ptr1 && *ptr1 != ' ' && count++ < n)
+    *(ptr2++) = *(ptr1++);
+  *ptr2 = 0;
+}
+
+int StringSize(const char *sentence)
+{
+    int counted = 0;
+
+    int inword = 0;
+
+    do switch(*sentence) {
+        case '\0': 
+        case ' ': case '\t': case '\n': case '\r':
+            if (inword) { inword = 0; counted++; }
+            break;
+        default: inword = 1;
+    } while(*sentence++);
+
+    return counted;
+}
 
 char *time_remaining(time_t t)
 {
@@ -576,27 +623,31 @@ char *time_remaining(time_t t)
   return s;
 }
 
+// Credit: Srvx
 void pong(char *who, char *remotets)
 {
-  char buffer[80];
-  time_t offset;
+  char buffer[256] = "";
+  char *delim;
+  struct timeval orig;
+  struct timeval sys_now;
+  int diff = 0;
 
-  if (remotets[0] == '!')
-    remotets++;
+  orig.tv_sec = strtoul(remotets + 1, &delim, 10);
+  orig.tv_usec = (*delim == '.') ? strtoul(delim + 1, NULL, 10) : 0;
+  gettimeofday(&sys_now, NULL);
+  diff = (sys_now.tv_sec - orig.tv_sec) * 1000 + (sys_now.tv_usec - orig.tv_usec) / 1000;
 
-  offset = atol(remotets) - now;
-
-  sprintf(buffer, "%s Z %s !%s %ld %ld\n", NUMERIC, who, remotets, offset, now);
+  sprintf(buffer, "%s Z %s %s %d %lu.%06lu\n", myYY, who, remotets, diff, (unsigned long)sys_now.tv_sec, (unsigned long)sys_now.tv_usec);
   sendtoserv(buffer);
 }
 
 void rpong(char *who, char *args)
 {
-  char buffer[80];
+  char buffer[80] = "";
   register aserver *server;
   server = ToServer(who);
 
-  sprintf(buffer, "%s RO %s %s\n", NUMERIC, server->name, args);
+  sprintf(buffer, "%s RO %s %s\n", myYY, server->name, args);
   sendtoserv(buffer);
 }
 
@@ -615,7 +666,7 @@ void checkpid(void)
 {
   int file;
   pid_t pid = 0;
-  char fmt[5];
+  char fmt[5] = "";
 
   if (sizeof(pid_t) == sizeof(long))
      strcpy(fmt, "%ld");
@@ -627,7 +678,7 @@ void checkpid(void)
   alarm(0);
   if (file >= 0)
   {
-    char buf[32];
+    char buf[32] = "";
     alarm(2);
     if (read(file, buf, 31) >= 0)
     {
@@ -644,7 +695,7 @@ void checkpid(void)
 
   if (pid == 0 || kill(pid, 0) != 0)
   {
-    char buf[31];
+    char buf[31] = "";
     alarm(2);
     file = open(PIDFILE, O_WRONLY | O_CREAT | O_TRUNC, 0600);
     alarm(0);
@@ -679,35 +730,47 @@ void checkpid(void)
 
 void proc(char *source, char *function, char *target, char *body)
 {
-  char buffer[200];
+  char buffer[512] = "";
 
-//  printf("source: %s, function: %s, target: %s, body: %s\n", source, function, target, body);
+  if (bursting) burstCommands++;
 
-  if (!strcmp(source, "SERVER") || !strcmp(function, "S"))
+  if (strcmp(source, "SERVER") == 0 || strcmp(function, "S") == 0)
   {
     onserver(source, function, target, body);
 
   }
-  else if (!strcmp(function, "G"))
+  else if (strcmp(function, "G") == 0)
   {
     pong(source, target);
 
   }
-  else if (!strcmp(function, "RI"))
+  else if (strcmp(function, "RI") == 0)
   {
     rpong(source, body);
 
   }
-  else if (!strcmp(function, "EB"))
+  else if (strcmp(function, "EB") == 0)
   {
-    if (strcmp(source, myuplink)) return;
+    if (strcmp(source, myuplinkYY) != 0) return;
 
-    sprintf(buffer, "%s EA\n", NUMERIC);
+    sprintf(buffer, "%s EA\n", myYY);
     sendtoserv(buffer);
+
+#ifdef DEBUG
+    printf("**************** BURSTING COMPLETED ****************\n");
+    printf("\tReceived bytes:\t\t%lld\n", TTLREADBYTES);
+    printf("\tSent bytes:\t\t%lld\n", TTLSENTBYTES);
+    printf("\tBurst time:\t\t%ld seconds\n", now - burstStartTime);
+    printf("\tProcessed commands:\t%d\n", burstCommands);
+    printf("****************************************************\n");
+#endif
+
+    sprintf(buffer, "Completet ned burst in %ld seconds, read %lld bytes and processed %d commands", now - burstStartTime, TTLREADBYTES, burstCommands);
+    PutLog(buffer);
 
     bursting = 0;
   }
-  else if (!strcmp(source, "ERROR") || !strcmp(function, "Y"))
+  else if (strcmp(source, "ERROR") == 0 || strcmp(function, "Y") == 0)
   {
     PutLog(function);
     PutLog(target);
@@ -719,7 +782,7 @@ void proc(char *source, char *function, char *target, char *body)
     };
 
   }
-  else if (!strcmp(function, "SQ"))
+  else if (strcmp(function, "SQ") == 0)
   {
     onsquit(source, target, body);
     if (ServerList == NULL)
@@ -729,86 +792,97 @@ void proc(char *source, char *function, char *target, char *body)
       PutLog(body);
       if (reconnect(server))
       {
-	try_later(server);
-	return;
+	      try_later(server);
+	      return;
       }
     }
   }
-  else if (!strcmp(function, "P"))
+  else if (strcmp(function, "P") == 0)
   {
     privmsg(source, target, body);
 
   }
-  else if (!strcmp(function, "O"))
+  else if (strcmp(function, "O") == 0)
   {	/* only for flood pro */
     onnotice(source, target, body);
 
   }
-  else if (!strcmp(function, "J") || !strcmp(function, "C"))
+  else if (strcmp(function, "J") == 0 || strcmp(function, "C") == 0)
   {
     onjoin(function, source, target, body);
 
   }
-  else if (!strcmp(function, "B"))
+  else if (strcmp(function, "B") == 0)
   {
     onburst(source, target, body);
 
   }
-  else if (!strcmp(function, "I"))
+  else if (strcmp(function, "I") == 0)
   {
     oninvite(source, body);
 
   }
-  else if (!strcmp(function, "L"))
+  else if (strcmp(function, "L") == 0)
   {
     onpart(source, target);
 
   }
-  else if (!strcmp(function, "D"))
+  else if (strcmp(function, "D") == 0)
   {
     onkill(source, target, body);
 
   }
-  else if (!strcmp(function, "Q"))
+  else if (strcmp(function, "Q") == 0)
   {
     onquit(source);
 
   }
-  else if (!strcmp(function, "K"))
+  else if (strcmp(function, "K") == 0)
   {
     onkick(source, target, body);
 
   }
-  else if (!strcmp(function, "M"))
+  else if (strcmp(function, "M") == 0)
   {
     ModeChange(source, target, body);
 
   }
-  else if (!strcmp(function, "N"))
+  else if (strcmp(function, "CM") == 0)
+  {
+    onclearmode(source, target, body);
+
+  }
+  else if (strcmp(function, "N") == 0)
   {
     onnick(source, target, body);
 
   }
-  else if (!strcmp(function, "T"))
+  else if (strcmp(function, "AC") == 0)
+  {
+    onaccount(source, target, body);
+
+  }
+  else if (strcmp(function, "T") == 0)
   {
     ontopic(source, target, body);
 
   }
-  else if (!strcmp(function, "WHOIS"))
+  else if (strcmp(function, "W") == 0)
   {
     onwhois(source, body + 1);
 
   }
-  else if (!strcmp(function, "SE"))
+  else if (strcmp(function, "SE") == 0)
   {
     onsettime(source, target);
 
   }
-  else if (!strcmp(function, "V"))
+  else if (strcmp(function, "V") == 0)
   {
     showversion(source);
+
   }
-  else if (!strcmp(function, "436"))
+  else if (strcmp(function, "436") == 0) // TODO: Is this obsolete?
   {
     if (!strcasecmp(target, mynick))
     {
@@ -836,9 +910,8 @@ int main(int argc, char **argv)
   char conf[256] = "./cs.conf";
 
   cksum(argv[0], &sum1, &sum2);
-  sprintf(mynum, "%sAAA", NUMERIC);
 
-  if (argc == 3 && !strcmp(argv[1], "-f"))
+  if (argc == 3 && strcmp(argv[1], "-f") == 0)
   {
     strncpy(conf, argv[2], 255);
     conf[255] = '\0';
@@ -978,6 +1051,7 @@ int main(int argc, char **argv)
   memset(&VirtualServer, 0, sizeof(aserver));
   VirtualServer.name = (char *)malloc(15);
   strcpy(VirtualServer.name, "virtual.server");
+  strcpy(VirtualServer.YY, "__");
 
   LoadUserList("");
   LoadShitList("");

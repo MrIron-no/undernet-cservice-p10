@@ -50,12 +50,12 @@ int sl_hash(char *channel)
 
 void AddToShitList(char *source, char *ch, char *args, int force)
 {
-  char buffer[1024];
-  char srcuh[200];
-  char channel[80];
-  char pattern[200];
-  char strtime[80];
-  char strlevel[80];
+  char buffer[1024] = "";
+  char srcuh[200] = "";
+  char channel[CHANNELNAME_LENGTH] = "";
+  char pattern[200] = "";
+  char strtime[80] = "";
+  char strlevel[80] = "";
   char *reason;
   time_t exp;
   int shitlevel;
@@ -87,7 +87,7 @@ void AddToShitList(char *source, char *ch, char *args, int force)
     }
   }
 
-  if (!strcmp(channel, "*"))
+  if (strcmp(channel, "*") == 0)
   {
     notice(source, "SYNTAX: ban <#channel> <nick|address> "
       "<duration in hours> <level> <reason>");
@@ -162,7 +162,10 @@ void AddToShitList(char *source, char *ch, char *args, int force)
 
   if ((luser = ToLuser(source)) != NULL)
   {
-    sprintf(srcuh, "%s!%s@%s", luser->nick, luser->username, luser->site);
+    if ((luser->mode & LFL_REGISTERED) && (luser->mode & LFL_ISMODEX))
+      sprintf(srcuh, "%s!%s@%s", luser->nick, luser->username, luser->hiddenhost);
+    else
+      sprintf(srcuh, "%s!%s@%s", luser->nick, luser->username, luser->site);
   }
   else
   {
@@ -174,6 +177,13 @@ void AddToShitList(char *source, char *ch, char *args, int force)
   luser = ToLuserNick(pattern);
   if (luser != NULL)
   {
+    if (luser->mode & LFL_ISSERVICE)
+    {
+      sprintf(buffer, replies[RPL_ISSERVICE][chan->lang], pattern);
+      notice(source, buffer);
+      return;
+    }
+
     MakeBanMask(luser, pattern);
     exact = 0;
   }
@@ -315,7 +325,7 @@ void AddToShitList(char *source, char *ch, char *args, int force)
 #endif
     mban("", channel, pattern);
 
-    sprintf(buffer, "%s (%s) %s", pattern, GetNumNick(source), reason);
+    sprintf(buffer, "%s (%s) %s", pattern, GetNick(source), reason);
     kick("", channel, buffer);
   }
 
@@ -326,7 +336,7 @@ void AddToShitList(char *source, char *ch, char *args, int force)
 
 void RemShitList(char *source, char *ch, char *args, int force)
 {
-  char channel[80];
+  char channel[CHANNELNAME_LENGTH] = "";
   char pattern[2][200];
   register aluser *luser;
   register ShitUser *curr;
@@ -335,7 +345,7 @@ void RemShitList(char *source, char *ch, char *args, int force)
 
   if (*args == '#')
   {
-    GetWord(0, args, channel);
+    GetnWord(0, args, channel, CHANNELNAME_LENGTH);
     args = ToWord(1, args);
   }
   else
@@ -354,7 +364,7 @@ void RemShitList(char *source, char *ch, char *args, int force)
     }
   }
 
-  if (!strcmp(channel, "*"))
+  if (strcmp(channel, "*") == 0)
   {
     notice(source, "SYNTAX: unban <#channel> <nick|address>");
     return;
@@ -385,7 +395,7 @@ void RemShitList(char *source, char *ch, char *args, int force)
   if (luser != NULL)
   {
     sprintf(pattern[1], "%s!%s@%s",
-      luser->nick, luser->username, luser->site);
+      luser->nick, luser->username, gethost(luser));
     exact = 0;
   }
   else
@@ -497,29 +507,29 @@ void CleanShitList(char *source, char *channel)
   PutLog(buffer);
 }
 
-int IsShit(char *channel, char *user, char *out, char *reason)
+int IsShit(char *channel, aluser *luser, char *out, char *reason)
 {
   register ShitUser *curr;
-  register aluser *luser;
-  char uh[200];
+  char uh[200] = "", hh[200] = "";
+  int hiddenhost = 0;
 
-  if (strchr(user, '!') != NULL)
+  sprintf(uh, "%s!%s@%s", luser->nick, luser->username, luser->site);
+
+  // Fethcing hidden host as we are checking both...
+  if ((luser->mode & LFL_REGISTERED) && (luser->mode & LFL_ISMODEX))
   {
-    strcpy(uh, user);
-  }
-  else
-  {
-    luser = ToLuser(user);
-    sprintf(uh, "%s!%s@%s", luser->nick, luser->username, luser->site);
-  }
+    sprintf(hh, "%s!%s@%s", luser->nick, luser->username, luser->hiddenhost);
+    hiddenhost = 1;
+  } else
+    strcpy(hh, uh);
 
   curr = ShitList[sl_hash(channel)];
 
 #ifdef DEBUG
-  printf("IsShit(%s,%s,%s)\n", channel, user, out);
+  printf("IsShit(%s,%s)\n", channel, luser->nick);
 #endif
 
-  while (curr && (!match(channel, curr->channel) || !match(uh, curr->match)))
+  while (curr && (!match(channel, curr->channel) || (!match(uh, curr->match) && !match(hh, curr->match))))
     curr = curr->next;
 
 #ifdef DEBUG
@@ -530,7 +540,12 @@ int IsShit(char *channel, char *user, char *out, char *reason)
   if (curr)
   {
     if (out != NULL)
-      strcpy(out, curr->match);
+    {
+	if (hiddenhost)
+		sprintf(out, "*!*@%s", luser->hiddenhost);
+	else
+		strcpy(out, curr->match);
+    }
     if (reason != NULL)
       strcpy(reason, curr->reason);
     return (curr->level);
@@ -545,13 +560,13 @@ void ShowShitList(char *source, char *ch, char *args)
 {
   register ShitUser *curr;
   struct tm *tp;
-  char buffer[1024], global[] = "*";
-  char channel[80];
+  char buffer[1024] = "", global[] = "*";
+  char channel[CHANNELNAME_LENGTH] = "";
   int found = 0;
 
   if (*args == '#')
   {
-    GetWord(0, args, channel);
+    GetnWord(0, args, channel, CHANNELNAME_LENGTH);
     args = ToWord(1, args);
   }
   else
@@ -560,7 +575,7 @@ void ShowShitList(char *source, char *ch, char *args)
     GuessChannel(source, channel);
   }
 
-  if (!strcmp(channel, "*") || !*args)
+  if (strcmp(channel, "*") == 0 || !*args)
   {
     notice(source, "SYNTAX: lbanlist [#channel] <search pattern>");
     return;
@@ -572,7 +587,6 @@ void ShowShitList(char *source, char *ch, char *args)
     notice(source, "You are not on that channel");
     return;
   }
-
 
   curr = ShitList[sl_hash(channel)];
   while (curr)
@@ -631,11 +645,11 @@ void ShowShitList(char *source, char *ch, char *args)
 
 void SaveShitList(char *source, char *channel)
 {
-  char buffer[80];
+  char buffer[80] = "";
 
-  ShitDisk tmp;
+  ShitDisk tmp = { 0 };
   register ShitUser *user;
-  register int file;
+  register int file = 0;
   int i;
 
   if (*source && Access(channel, source) < SAVE_SHITLIST_LEVEL)
@@ -661,7 +675,7 @@ void SaveShitList(char *source, char *channel)
     return;
   }
 
-  sprintf(buffer, "%s A :Busy saving precious ban list\n", mynum);
+  sprintf(buffer, "%s A :Busy saving precious ban list\n", myYYXXX);
   sendtoserv(buffer);
   dumpbuff();
 
@@ -693,7 +707,7 @@ void SaveShitList(char *source, char *channel)
 	remove(SHITLIST_FILE ".new");
 	alarm(0);
 	active = 0;
-	sprintf(buffer, "%s A\n", mynum);
+	sprintf(buffer, "%s A\n", myYYXXX);
     	sendtoserv(buffer);
 	return;
       }
@@ -710,7 +724,7 @@ void SaveShitList(char *source, char *channel)
   if (*source)
     notice(source, "banlist saved.");
   active = 0;
-  sprintf(buffer, "%s A\n", mynum);
+  sprintf(buffer, "%s A\n", myYYXXX);
   sendtoserv(buffer);
 }
 

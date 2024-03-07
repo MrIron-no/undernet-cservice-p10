@@ -58,7 +58,8 @@ static int active=0;
 
 void SearchChan(char *source,char *ch,char *args)
 {
-	char buffer[200],keylist[512];
+	char buffer[200] = "";
+	char keylist[512] = "";
 	char *tok[16];
 	adefchan *list[11];
 	register adefchan *curr;
@@ -105,8 +106,8 @@ void SearchChan(char *source,char *ch,char *args)
 
 void AddChan(char *source,char *ch,char *args)
 {
-	char buffer[200];
-	char channel[80];
+	char buffer[200] = "";
+	char channel[80] = "";
 	register adefchan *curr,**scan;
 	register achannel *chan;
 	register int found=0;
@@ -118,7 +119,7 @@ void AddChan(char *source,char *ch,char *args)
 		GuessChannel(source,channel);
 	}
 
-	if(!strcmp(channel,"*")){
+	if(strcmp(channel,"*") == 0){
 		notice(source,"SYNTAX: addchan <channel>");
 		return;
 	}
@@ -148,7 +149,8 @@ void AddChan(char *source,char *ch,char *args)
 
 			/* The channel *IS NOT* in the list */
 			if(curr==NULL){
-				curr=(adefchan *)MALLOC(sizeof(adefchan));
+				TTLALLOCMEM += sizeof(adefchan);
+				curr=(adefchan *)calloc(1, sizeof(adefchan));
 	                        scan=&DefChanList;
 	                        while(*scan && strcasecmp((*scan)->name,chan->name)<0)
 	                                scan=&(*scan)->next;
@@ -188,8 +190,8 @@ void AddChan(char *source,char *ch,char *args)
 
 void RemChan(char *source, char *ch, char *arg)
 {
-	char buffer[200];
-	char channel[80];
+	char buffer[200] = "";
+	char channel[80] = "";
 	register adefchan *chan,*prev;
 
 	if(*arg=='#'){
@@ -199,7 +201,7 @@ void RemChan(char *source, char *ch, char *arg)
 		GuessChannel(source,channel);
 	}
 
-	if(!strcmp(channel,"*")){
+	if(strcmp(channel,"*") == 0){
 		notice(source,"SYNTAX: remchan <channel>");
 		return;
 	}
@@ -214,7 +216,8 @@ void RemChan(char *source, char *ch, char *arg)
 		prev=chan;
 
 	if(!chan){
-		notice(source,replies[RPL_NOTDEF][L_DEFAULT]);
+		if (*source)
+			notice(source,replies[RPL_NOTDEF][L_DEFAULT]);
 		return;
 	}
 
@@ -238,12 +241,12 @@ void RemChan(char *source, char *ch, char *arg)
 
 void SaveDefs(char *source)
 {
-	char buffer[80];
-	register int file;
+	register int file = 0;
 	register adefchan *curr;
-	adefchan buff;
-	filehdr hdr;
+	adefchan buff = { 0 };
+	filehdr hdr = { 0 };
 	char global[]="*";
+	char buffer[200] = "";
 
 	if(*source&&Access(global,source)<SAVE_DEFAULTS_LEVEL){
 		notice(source,"Your admin Access is too low!");
@@ -257,7 +260,7 @@ void SaveDefs(char *source)
 		return;
 	active=1;
 
-	sprintf(buffer, "%s A :Busy saving precious channel list\n", mynum);
+	sprintf(buffer, "%s A :Busy saving precious channel list\n", myYYXXX);
 	sendtoserv(buffer);
         dumpbuff();
 
@@ -282,7 +285,7 @@ void SaveDefs(char *source)
 			remove(DEFAULT_CHANNELS_FILE".new");
 			alarm(0);
 			active=0;
-			sprintf(buffer, "%s A\n", mynum);
+			sprintf(buffer, "%s A\n", myYYXXX);
 			sendtoserv(buffer);
 			return;
 		}
@@ -309,7 +312,7 @@ void SaveDefs(char *source)
 				remove(DEFAULT_CHANNELS_FILE".new");
 				alarm(0);
 				active=0;
-				sprintf(buffer, "%s A\n", mynum);
+				sprintf(buffer, "%s A\n", myYYXXX);
 				sendtoserv(buffer);
 				return;
 			}
@@ -324,7 +327,7 @@ void SaveDefs(char *source)
 			notice(source,"Done.");
 	}
 	active=0;
-	sprintf(buffer, "%s A\n", mynum);
+	sprintf(buffer, "%s A\n", myYYXXX);
 	sendtoserv(buffer);
 }
 

@@ -52,13 +52,13 @@ fixdb: match.o
 	${CC} fixdb.c match.o -DMAIN -o ../fixdb
 
 showdb: match.o
-	${CC} -Wall showdb.c match.o -DMAIN -o ../showdb
+	${CC} ${CFLAGS} showdb.c match.o -DMAIN -o ../showdb
 
 show_old_managers: match.o
-	${CC} -Wall -o ../show_old_managers show_old_managers.c match.o -DMAIN
+	${CC} ${CFLAGS} -o ../show_old_managers show_old_managers.c match.o -DMAIN
 
 clean:
-	$(RM) -f *.o *.bak
+	$(RM) -f *.o *.bak cksum
 
 depend:
 	-gcc -MM ${CFLAGS} ${SOURCES} > make.dep

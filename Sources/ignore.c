@@ -54,8 +54,8 @@ void rem_silence(char *);
 
 int CheckPrivateFlood(char *source, int length, char *type)
 {
-  char buffer[250];
-  char userhost[200];
+  char buffer[250] = "";
+  char userhost[200] = "";
   char global[] = "*";
   register aluser *user;
   register aprivmsg *msg, *prev;
@@ -68,15 +68,10 @@ int CheckPrivateFlood(char *source, int length, char *type)
     return 1;
   }
 
-  /* Don't check flood from admins */
-  if (IsValid(user, global) && Access(global, source) >= 1)
+  /* Don't check flood from admins and network services */
+  if ((IsValid(user, global) && Access(global, source) >= 1) || user->mode & LFL_ISSERVICE)
      return 0;
 
-  if (!strcasecmp(user->username, DEFAULT_USERNAME) &&
-    !strcasecmp(user->site, DEFAULT_HOSTNAME))
-  {
-    return 0;
-  }
 
   /* clean messages older than 30 seconds */
   prev = NULL;
@@ -108,7 +103,7 @@ int CheckPrivateFlood(char *source, int length, char *type)
   }
 
   /* now add the current message in the list */
-  sprintf(userhost, "%s@%s", user->username, user->site);
+  sprintf(userhost, "%s@%s", user->username, gethost(user)); // TODO: Also add real host?
   msg = (aprivmsg *) MALLOC(sizeof(aprivmsg));
   strcpy(msg->user, userhost);
   msg->time = now;
@@ -153,7 +148,7 @@ int CheckPrivateFlood(char *source, int length, char *type)
 
 void AddIgnore(char *source, char *mask, int t)
 {
-  char buffer[250];
+  char buffer[250] = "";
   char *site;
   aignore *curr;
   int count;
@@ -210,7 +205,7 @@ void AddIgnore(char *source, char *mask, int t)
 
 void CleanIgnores(void)
 {
-  char buffer[250];
+  char buffer[250] = "";
   aignore *curr, *prev;
 
   prev = NULL;
@@ -245,9 +240,10 @@ void CleanIgnores(void)
   }
 }
 
-int IsIgnored(char *num)
+int IsIgnored(char *num) // TODO: Also check real host?
 {
-  char userhost[200];
+  char userhost[200] = "";
+  char hiddenhost[200] = "";
   register aignore *curr;
   register aluser *user;
   register int found = 0;
@@ -258,11 +254,15 @@ int IsIgnored(char *num)
   }
 
   sprintf(userhost, "%s!%s@%s", user->nick, user->username, user->site);
+  if ((user->mode & LFL_REGISTERED) && (user->mode & LFL_ISMODEX))
+    sprintf(hiddenhost, "%s!%s@%s", user->nick, user->username, user->hiddenhost);
+  else
+    strcpy(hiddenhost, userhost);
 
   curr = IgnoreList;
   while (curr != NULL && !found)
   {
-    if (compare(userhost, curr->mask))
+    if (compare(userhost, curr->mask) || compare(hiddenhost, curr->mask))
     {
       add_silence(num, curr->mask);
       found++;
@@ -275,7 +275,7 @@ int IsIgnored(char *num)
 
 void ShowIgnoreList(char *source, char *channel, char *args)
 {
-  char buffer[250];
+  char buffer[250] = "";
   aignore *curr = IgnoreList;
   time_t m;
 
@@ -297,16 +297,16 @@ void ShowIgnoreList(char *source, char *channel, char *args)
   }
 }
 
-void add_silence(char *num, char *mask)
+void add_silence(char *num, char *mask) // TODO: Should this only silence the real host?
 {
-  char buffer[200];
+  char buffer[200] = "";
 
-  sprintf(buffer, "%s U %s :%s\n", mynum, num, mask);
+  sprintf(buffer, "%s U %s %s\n", myYYXXX, num, mask);
   sendtoserv(buffer);
 #ifdef FAKE_UWORLD
   if (Uworld_status == 1)
   {
-    sprintf(buffer, "%s U %s :%s\n", ufakenum, num, mask);
+    sprintf(buffer, "%s U %s %s\n", ufakeYYXXX, num, mask);
     sendtoserv(buffer);
   }
 #endif
@@ -314,14 +314,14 @@ void add_silence(char *num, char *mask)
 
 void rem_silence(char *mask)
 {
-  char buffer[200];
+  char buffer[200] = "";
 
-  sprintf(buffer, "%s U * -%s\n", mynum, mask);
+  sprintf(buffer, "%s U * -%s\n", myYYXXX, mask);
   sendtoserv(buffer);
 #ifdef FAKE_UWORLD
   if (Uworld_status == 1)
   {
-    sprintf(buffer, "%s U * -%s\n", ufakenum, mask);
+    sprintf(buffer, "%s U * -%s\n", ufakeYYXXX, mask);
     sendtoserv(buffer);
   }
 #endif
@@ -330,8 +330,8 @@ void rem_silence(char *mask)
 
 int CheckFloodFlood(char *source, int length)
 {
-  char buffer[250];
-  char userhost[200];
+  char buffer[250] = "";
+  char userhost[200] = "";
   char global[] = "*";
   register aluser *user;
   register aprivmsg *msg, *prev;
@@ -344,15 +344,10 @@ int CheckFloodFlood(char *source, int length)
     return 1;
   }
 
-  /* Don't check flood from admins */
-  if (IsValid(user, global) && Access(global, source) >= 1)
+  /* Don't check flood from admins or network services */
+  if ((IsValid(user, global) && Access(global, source) >= 1) || user->mode & LFL_ISSERVICE)
      return 0;
 
-  if (!strcasecmp(user->username, DEFAULT_USERNAME) &&
-    !strcasecmp(user->site, DEFAULT_HOSTNAME))
-  {
-    return 0;
-  }
 
   /* clean messages older than 30 seconds */
   prev = NULL;
@@ -384,7 +379,7 @@ int CheckFloodFlood(char *source, int length)
   }
 
   /* now add the current message in the list */
-  sprintf(userhost, "%s@%s", user->username, user->site);
+  sprintf(userhost, "%s@%s", user->username, gethost(user)); // TODO: Should this also add the real host?
   msg = (aprivmsg *) MALLOC(sizeof(aprivmsg));
   strcpy(msg->user, userhost);
   msg->time = now;
@@ -426,8 +421,8 @@ int CheckFloodFlood(char *source, int length)
 
 int CheckAdduserFlood(char *source, char *channel)
 {
-  char buffer[250];
-  char userhost[200];
+  char buffer[250] = "";
+  char userhost[200] = "";
   char global[] = "*";
   register aluser *user;
   register aprivmsg *msg, *prev;
@@ -479,7 +474,7 @@ int CheckAdduserFlood(char *source, char *channel)
     }
   }
 
-  sprintf(userhost, "%s@%s", user->username, user->site);
+  sprintf(userhost, "%s@%s", user->username, gethost(user)); // TODO: Should this also add the real host?
 
   /* now add the current message in the list */
   msg = (aprivmsg *) MALLOC(sizeof(aprivmsg));
@@ -495,7 +490,7 @@ int CheckAdduserFlood(char *source, char *channel)
   count = 0;
   for (msg = AddUserFloodList; msg != NULL; msg = msg->next)
   {
-    if (!strcmp(channel, msg->user))
+    if (!strcasecmp(channel, msg->user))
     {
       count++;
     }
@@ -522,8 +517,8 @@ int CheckAdduserFlood(char *source, char *channel)
 
 void AdminRemoveIgnore(char *source, char *ch, char *args)
 {
-  char mask[200], global[] = "*";
-  char buffer[250];
+  char mask[200] = "", global[] = "*";
+  char buffer[250] = "";
   aignore **curr, *tmp;
   int change = 0;
 
@@ -566,7 +561,7 @@ void AdminRemoveIgnore(char *source, char *ch, char *args)
 
   if (change)
   {
-    sprintf(buffer, "%s removed ignore for [%s]", source, mask);
+    sprintf(buffer, "%s removed ignore for [%s]", GetNick(source), mask);
     broadcast(buffer, 1);
   }
 }

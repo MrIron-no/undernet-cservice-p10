@@ -86,7 +86,7 @@ void do_channel(char *channel)
     if(strcasecmp(channel,dbu.channel))
       continue;
 
-    if(!strcmp(dbu.match,"!DEL!"))
+    if(strcmp(dbu.match,"!DEL!") == 0)
       continue;
 
     salt[0] = salts[random()%64];

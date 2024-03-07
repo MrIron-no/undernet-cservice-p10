@@ -37,7 +37,7 @@ static void nserv_notice(char *num, char *msg)
 {
   char buffer[1024];
 
-  sprintf(buffer,"%s O %s :%s\r\n", nservnum, num, msg);
+  sprintf(buffer,"%s O %s :%s\r\n", nservYYXXX, num, msg);
   sendtoserv(buffer);
 }
 
@@ -60,7 +60,7 @@ static struct aregnick *nserv_find(char *nick)
 
   scan = NServ_DB [ nserv_hash(nick) ];
 
-  while(scan != NULL && strcmp(scan->nick,nick))
+  while(scan != NULL && strcasecmp(scan->nick,nick))
     scan = scan->next;
 
   return scan;
@@ -72,7 +72,7 @@ static struct aregnick **nserv_find_ptr(char *nick)
 
   scan = & NServ_DB [ nserv_hash(nick) ];
 
-  while(*scan != NULL && strcmp((*scan)->nick,nick))
+  while(*scan != NULL && strcasecmp((*scan)->nick,nick))
     scan = &(*scan)->next;
 
   return scan;
@@ -96,7 +96,7 @@ void nserv_nickserv(char *source, char *args)
     return;
   }
 
-  if(!strcmp(args,"on"))
+  if(!strcasecmp(args,"on"))
   {
     if(NServ_status == 1)
     {
@@ -110,9 +110,9 @@ void nserv_nickserv(char *source, char *args)
       notice(source,buffer);
     }
   }
-  else if(!strcmp(args,"off"))
+  else if(!strcasecmp(args,"off"))
   {
-    sprintf(buffer,"Deactivated by %s", GetNumNick(source));
+    sprintf(buffer,"Deactivated by %s", GetNick(source));
     KillNickserv(buffer);
     sprintf(buffer,"%s is deactivated!", NSERV_NICK);
     notice(source,buffer);
@@ -128,8 +128,8 @@ void nserv_addnick(char *source, char *args)
 {
   register aluser *luser;
   register struct aregnick *reg;
-  char buffer[512], nick[80], password[80], mask[80], email[80];
-  int idx;
+  char buffer[512] = "", nick[80] = "", password[80] = "", mask[80] = "", email[80] = "";
+  int idx = 0;
   
   if((luser=ToLuser(source))==NULL)
   {
@@ -179,7 +179,8 @@ void nserv_addnick(char *source, char *args)
   reg->created = now;
   reg->modified = now;
 
-  reg->mask = (struct aregmask *) malloc(sizeof(struct aregmask));
+  TTLALLOCMEM += sizeof(struct aregmask);
+  reg->mask = (struct aregmask *) calloc(1, sizeof(struct aregmask));
   strcpy(reg->mask->mask, mask);
   reg->mask->lastused = (time_t) 0;
   reg->mask->next = NULL;
@@ -368,7 +369,7 @@ void nserv_remmask(char *source, char *args)
 
   rmask = & reg->mask;
 
-  while(*rmask != NULL && strcmp((*rmask)->mask, mask))
+  while(*rmask != NULL && strcasecmp((*rmask)->mask, mask))
     rmask = &(*rmask)->next;
 
   if(*rmask == NULL)
@@ -432,7 +433,7 @@ void nserv_nickinfo(char *source, char *args)
   sprintf(buffer,"Modification: %.24s",ctime(&reg->modified));
   nserv_notice(source,buffer);
 
-  if((!strcmp(source,reg->nick) && luser->regnick && luser->reglimit == 0)
+  if((!strcasecmp(source,reg->nick) && luser->regnick && luser->reglimit == 0)
       || (luser->mode&LFL_ISOPER))
   {
     sprintf(buffer,"Password: %s",reg->password);
@@ -488,7 +489,7 @@ void nserv_identify(char *source, char *args)
 
   if(luser->reglimit == 0)
   {
-    nserv_notice(source,"Vous vous êtes déjà identifié");
+    nserv_notice(source,"Vous vous ï¿½tes dï¿½jï¿½ identifiï¿½");
     return;
   }
 
@@ -498,7 +499,7 @@ void nserv_identify(char *source, char *args)
   while(rmask != NULL && !match(buffer,rmask->mask))
     rmask = rmask->next;
 
-  if(rmask && !strcmp(password,luser->regnick->password))
+  if(rmask && (strcmp(password,luser->regnick->password) == 0))
   {
     luser->reglimit = 0;
     rmask->lastused = now;
@@ -516,7 +517,7 @@ void nserv_ghost(char *source, char *args)
   register aluser *luser, *luser2;
   register struct aregnick *reg;
   register struct aregmask *rmask;
-  char buffer[512], nick[80], password[80];
+  char buffer[512] = "", nick[80] = "", password[80] = "";
   
   if((luser=ToLuser(source))==NULL)
   {
@@ -539,7 +540,7 @@ void nserv_ghost(char *source, char *args)
     return;
   }
 
-  if(!strcmp(nick,luser->nick))
+  if(!strcasecmp(nick,luser->nick))
   {
     nserv_notice(source,"Oh yes? You don't look like a ghost!");
     return;
@@ -569,10 +570,10 @@ void nserv_ghost(char *source, char *args)
   while(rmask != NULL && !match(buffer,rmask->mask))
     rmask = rmask->next;
 
-  if(rmask && !strcmp(password,luser->regnick->password)) // TODO: This crashes. 
+  if(rmask && (strcmp(password,luser2->regnick->password) == 0))
   {
     sprintf(buffer, "%s D %s :Ghost kill demanded by %s\r\n",
-            nservnum, luser2->num, GetNumNick(source)); // TODO: Not sure this works?
+            nservYYXXX, luser2->num, GetNick(source));
     sendtoserv(buffer);
     onquit(luser2->num);
 
@@ -619,7 +620,7 @@ void nserv_nicknewpass(char *source, char *args)
     strcpy(nick,source);
   }
 
-  if(strcmp(nick,source) && !(luser->mode&LFL_ISOPER))
+  if(strcmp(nick,source) != 0 && !(luser->mode & LFL_ISOPER))
   {
     nserv_notice(source,"You cannot change someone else's password");
     return;
@@ -710,7 +711,7 @@ void nserv_save(void)
 {
   register struct aregnick *reg;
   register struct aregmask *mask;
-  register int i;
+  register int i = 0;
   FILE *fp;
 
   fp = fopen(NSERV_FILE".new","w");
@@ -789,12 +790,12 @@ void nserv_checkregnick(char *nick)
 
   /* timeout for receiving valid password has expired */
   nserv_notice(nick,"You have not identified, therefore you must leave!");
-  /*sprintf(buffer,"%s Q :%s (Not verified)\r\n",luser->num, mynick);
+  /*sprintf(buffer,"%s D :%s (Not verified)\r\n",luser->num, mynick);
   sendtoserv(buffer);*/
   sprintf(buffer,
           "%s GL * +%s@%s %d %ld %ld :Not identified for the nick %s. "
           "Access restricted to the server for %d seconds.\r\n",
-          nservnum,luser->username,luser->site,NSERV_GLINETIME,now, now + NSERV_GLINETIME,nick,
+          nservYYXXX,luser->username,luser->site,NSERV_GLINETIME,now, now + NSERV_GLINETIME,nick,
           NSERV_GLINETIME);
     sendtoserv(buffer);
   onquit(luser->num);
@@ -823,7 +824,7 @@ void nserv_quit(aluser *user)
 
 void nserv_nick(char *newnick, aluser *user)
 {
-  char buffer[200];
+  char buffer[200] = "";
 
   nserv_quit(user);
 

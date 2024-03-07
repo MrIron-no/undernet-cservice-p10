@@ -96,8 +96,7 @@ void read_conf(char *conf)
     }
     else if (!strncasecmp(buffer, "NUMERIC ", 8))
     {
-      strncpy(NUMERIC, buffer + 8, 5);
-      NUMERIC[4] = '\0';
+      NUMERIC = atoi(buffer + 8);
     }
     else if (!strncasecmp(buffer, "HOMEDIR ", 8))
     {
@@ -244,9 +243,9 @@ void read_conf(char *conf)
     else if (!strncasecmp(buffer, "NSERV_STAT ", 11))
     {
 #ifdef NICKSERV
-      if (!strncmp(buffer + 11, "on", 2))
+      if (!strncasecmp(buffer + 11, "on", 2))
 	NServ_status = 1;
-      else if (!strncmp(buffer + 11, "off", 3))
+      else if (!strncasecmp(buffer + 11, "off", 3))
 	NServ_status = 0;
       else
 	fprintf(stderr, "NSERV_STAT: Unknown value. Must be ON or OFF\n");

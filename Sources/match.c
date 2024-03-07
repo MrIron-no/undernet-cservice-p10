@@ -43,7 +43,7 @@ int mycasecmp(char *s1, char *s2)
 }
 
 
-char *strcasestr2(register char *s1, char *s2)
+char *mystrcasestr(register char *s1, char *s2)
 {
   register char *a, *b;
 
@@ -69,7 +69,7 @@ char *strcasestr2(register char *s1, char *s2)
  */
 int xmatch(char *pat1, char *pat2)
 {
-  if (!strcmp(pat1, "*") || !strcmp(pat2, "*"))
+  if (!strcasecmp(pat1, "*") || !strcasecmp(pat2, "*"))
     return 1;
   while (*pat1 && *pat2)
   {
@@ -83,8 +83,8 @@ int xmatch(char *pat1, char *pat2)
     {
       pat1++;
       pat2++;
-      if ((!*pat1 && !strcmp(pat2, "*")) ||
-	(!*pat2 && !strcmp(pat1, "*")))
+      if ((!*pat1 && !strcasecmp(pat2, "*")) ||
+	(!*pat2 && !strcasecmp(pat1, "*")))
 	return 1;
     }
     else
@@ -107,10 +107,64 @@ static int matchX(char *pat1, char *pat2)
 }
 
 
-int match(register char *string, register char *mask)
-{    
+int match(register char *instring, register char *inmask)
+{
   char *stack[200][2] = {{NULL, NULL}};
+  char *string = NULL, *mask = NULL, *ptr = NULL;
+  char tmpstring[200], tmpmask[200], buffer[500];
   register short quote, level = 0;
+
+  // We create ipv6 masks with ::/112, ::/96, ::/80 and ::/64. In order to
+  // use this match() function, these must be replaced with '*'.
+  // I'm sure there are better ways of doing this...
+  strcpy(tmpstring, instring);
+  strcpy(tmpmask, inmask);
+
+  if (strstr(tmpstring, ":/112") != NULL)
+  {
+    ptr = strstr(tmpstring, ":/112");
+    strcpy(ptr, "*");
+  }
+  else if (strstr(tmpstring, ":/96") != NULL)
+  {
+    ptr = strstr(tmpstring, ":/96");
+    strcpy(ptr, "*");
+  }
+  else if (strstr(tmpstring, ":/80") != NULL)
+  {
+    ptr = strstr(tmpstring, ":/80");
+    strcpy(ptr, "*");
+  }
+  else if (strstr(tmpstring, ":/64") != NULL)
+  {
+    ptr = strstr(tmpstring, ":/64");
+    strcpy(ptr, "*");
+  }
+
+  string = tmpstring;
+
+  if (strstr(tmpmask, ":/112") != NULL)
+  {
+    ptr = strstr(tmpmask, ":/112");
+    strcpy(ptr, "*");
+  }
+  else if (strstr(tmpmask, ":/96") != NULL)
+  {
+    ptr = strstr(tmpmask, ":/96");
+    strcpy(ptr, "*");
+  }
+  else if (strstr(tmpmask, ":/80") != NULL)
+  {
+    ptr = strstr(tmpmask, ":/80");
+    strcpy(ptr, "*");
+  }
+  else if (strstr(tmpmask, ":/64") != NULL)
+  {
+    ptr = strstr(tmpmask, ":/64");
+    strcpy(ptr, "*");
+  }
+
+  mask = tmpmask;
 
   while (*string)
   {  
@@ -157,7 +211,7 @@ int match(register char *string, register char *mask)
  */
 int compare(char *p1, char *p2)
 {
-  char tmp1[200], tmp2[200];
+  char tmp1[200] = "", tmp2[200] = "";
   register char *s1 = tmp1, *s2 = tmp2;
   register int ip1, ip2, in_uh = 0;
 
@@ -237,7 +291,7 @@ int key_match(char *s, char *tok[])
 
   for (k = 0; tok[k] != NULL; k++)
   {
-    if (!strcasestr2(s, tok[k]))
+    if (!mystrcasestr(s, tok[k]))
       return 0;
   }
 

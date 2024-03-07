@@ -33,10 +33,12 @@ extern char mynick[NICK_LENGTH];
 extern char myuser[USERNAME_LENGTH];
 extern char mysite[SITE_LENGTH];
 extern char myrealname[REALNAME_LENGTH];
-extern char mynum[10];
+extern char myYY[3];
+extern char myYYXXX[6];
 extern char server[SERVER_NAME_LENGTH];
-extern char myuplink[20];
-extern char uworldservernum[10];
+extern char myuplinkYY[3];
+extern char myuplinkname[SERVER_NAME_LENGTH];
+extern char uworldYY[3];
 extern int bursting;
 extern int logfile;
 extern RegUser *UserList[1000];
@@ -53,6 +55,7 @@ extern syncchan *SyncChan;
 #ifdef DOHTTP
 extern http_socket *HttpList;
 extern http_file_pipe *FilePipes;
+extern int dccUsers;
 #endif
 extern misc_socket *MiscList;
 extern irc_socket Irc;
@@ -69,13 +72,14 @@ extern unsigned long long HTTPTTLSENTBYTES;
 extern alang Lang[NO_LANG];
 extern char *replies[][NO_LANG];
 #ifdef FAKE_UWORLD
-extern char ufakenum[10];
+extern char ufakeYY[3];
+extern char ufakeYYXXX[6];
 extern int Uworld_status;
 extern time_t UworldTS,UworldServTS;
 #endif
 #ifdef NICKSERV
 extern int NServ_status;
-extern char nservnum[10];
+extern char nservYYXXX[6];
 #endif
 extern unsigned long MEM_buffers;
 extern unsigned long NB_avail_buffer_blocks;
@@ -87,7 +91,7 @@ extern char DB_Save_Nick[NICK_LENGTH];
 
 /*#define MALLOC(X)  ((TmpPtr=(char *)malloc(X))? \
 	TmpPtr : (char *)quit("ERROR: malloc() failed", 1));\
-	TTLALLOCMEM+=X*/ 
+	TTLALLOCMEM+=X*/
 
 #define MALLOC(X)  malloc(X);\
 	TTLALLOCMEM+=X
@@ -111,4 +115,3 @@ extern char DB_Save_Nick[NICK_LENGTH];
 #define tolowertmp(X) ( ((X)>='A'&&(X)<='^') || ((unsigned char)(X)>=0xc0&&(unsigned char)(X)<=0xdf&&(unsigned char)(X)!=0xd7)? ((X)|32) : (X) )
 
 #define strcasecmp mycasecmp
-#define strcmp mycasecmp

@@ -49,7 +49,7 @@ void fix_user_file(char *file, char *channel)
     {
       continue;
     }
-    if (!strcmp(dbu.match, "!DEL!"))
+    if (strcmp(dbu.match, "!DEL!") == 0)
       continue;
 
     printf("%-14s %-9s %03d %-26s %.24s\n",
@@ -62,7 +62,7 @@ void fix_user_db(void)
 {
   DIR *dp;
   struct dirent *ent;
-  char dir[300], file[300], channel[80], *ptr;
+  char dir[300] = "", file[300] = "", channel[80] = "", *ptr;
   int count;
 
   for (count = 0; count < 1000; count++)
@@ -76,7 +76,7 @@ void fix_user_db(void)
     }
     while ((ent = readdir(dp)) != NULL)
     {
-      if (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, ".."))
+      if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
 	continue;
       strcpy(channel, ent->d_name);
       for (ptr = channel; *ptr; ptr++)

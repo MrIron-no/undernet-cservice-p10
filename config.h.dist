@@ -74,12 +74,12 @@ extern char UMODE[10];
 char SERVERNAME[80] = "channels.undernet.org";
 char SERVERINFO[80] = "Channel Service";
 char PASSWORD[80] = "pizza";
-char NUMERIC[5] = "AC";
+int NUMERIC = 100;
 #else
 extern char SERVERNAME[80];
 extern char SERVERINFO[80];
 extern char PASSWORD[80];
-extern char NUMERIC[5];
+extern int NUMERIC;
 #endif
 
 /* HOMEDIR is X's home directory.
@@ -228,7 +228,7 @@ extern char UWORLD2_SERVER[80];
 # define UFAKE_NICK	UWORLD2
 # define UFAKE_HOST	DEFAULT_HOSTNAME
 # define UFAKE_SERVER	UWORLD2_SERVER
-# define UFAKE_NUMERIC	"AD"
+# define UFAKE_NUMERIC	101
 # define UFAKE_INFO	"Uworld"
 #endif
 

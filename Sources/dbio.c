@@ -30,7 +30,7 @@
 char *make_dbfname(char *channel)
 {
   static char fname[700];
-  char tmp[600];
+  char tmp[600] = "";
   register char *ptr;
 
   strcpy(tmp, channel);
@@ -229,7 +229,7 @@ void read_db(dbquery * query)
       break;
     case DBGETUHPASS:
       if (status == 1 && match(query->info, buffer[0].match) &&
-	!strcmp(query->passwd, buffer[0].passwd))
+	strcmp(query->passwd, buffer[0].passwd) == 0)
       {
 	close(query->fd);
 	query->fd = -1;
@@ -640,14 +640,14 @@ void do_cold_sync_slice(void)
 
 void do_cold_sync(void)
 {
-  char buffer[80];
+  char buffer[200] = "";
   register dbsync *sync;
   register syncchan *schan;
   register RegUser **reg;
   register int i;
 
   /* SET AWAY MESSAGE */
-  sprintf(buffer, "%s A :Busy saving precious user list\n", mynum);
+  sprintf(buffer, "%s A :Busy saving precious user list\n", myYYXXX);
   sendtoserv(buffer);
   dumpbuff();
 
@@ -685,7 +685,7 @@ void do_cold_sync(void)
 	reg = &(*reg)->next;
     }
   }
-  sprintf(buffer, "%s A\n", mynum);
+  sprintf(buffer, "%s A\n", myYYXXX);
   sendtoserv(buffer);
 }
 
@@ -696,7 +696,7 @@ void do_cold_sync(void)
 void db_test_callback(int *fd, off_t off, int action, void *hook1, void *hook2,
   dbuser * dbu, int count)
 {
-  char buffer[512];
+  char buffer[512] = "";
 
   sprintf(buffer, "off: %ld act: %d hook=%p cnt: %d", off, action, hook1, count);
   notice((char *)hook1, buffer);
@@ -719,7 +719,8 @@ void db_test_callback(int *fd, off_t off, int action, void *hook1, void *hook2,
 
 void db_test(char *source, char *chan, char *args)
 {
-  char channel[80], type[80], info[80], *hook;
+  char channel[80], type[80], info[80] = "";
+  char *hook;
 
   GetWord(0, args, channel);
   GetWord(1, args, type);
@@ -727,28 +728,28 @@ void db_test(char *source, char *chan, char *args)
   hook = (char *)malloc(strlen(source) + 1);
   strcpy(hook, source);
 
-  if (!strcmp(type, "nick"))
+  if (strcmp(type, "nick") == 0)
     db_fetch(channel, DBGETNICK, info, NULL, 0, hook, NULL, db_test_callback);
 
-  else if (!strcmp(type, "alluh"))
+  else if (strcmp(type, "alluh") == 0)
     db_fetch(channel, DBGETALLUH, info, NULL, 0, hook, NULL, db_test_callback);
 
-  else if (!strcmp(type, "1stuh"))
+  else if (strcmp(type, "1stuh") == 0)
     db_fetch(channel, DBGET1STUH, info, NULL, 0, hook, NULL, db_test_callback);
 
-  else if (!strcmp(type, "count"))
+  else if (strcmp(type, "count") == 0)
     db_fetch(channel, DBCOUNTUH, info, NULL, 0, hook, NULL, db_test_callback);
 
-  else if (!strcmp(type, "1stcmp"))
+  else if (strcmp(type, "1stcmp") == 0)
     db_fetch(channel, DBGET1STCMP, info, NULL, 0, hook, NULL, db_test_callback);
 
-  else if (!strcmp(type, "allcmp"))
+  else if (strcmp(type, "allcmp") == 0)
     db_fetch(channel, DBGETALLCMP, info, NULL, 0, hook, NULL, db_test_callback);
 
-  else if (!strcmp(type, "cntcmp"))
+  else if (strcmp(type, "cntcmp") == 0)
     db_fetch(channel, DBCNTCMP, info, NULL, 0, hook, NULL, db_test_callback);
 
-  else if (!strcmp(type, "sync"))
+  else if (strcmp(type, "sync") == 0)
     db_sync(channel);
 }
 #endif

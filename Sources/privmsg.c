@@ -85,7 +85,7 @@ void privmsg(char *source, char *target, char *body)
     if (!IsIgnored(source) && !CheckPrivateFlood(source, strlen(body), "MSG-"))
     {
 #ifdef FAKE_UWORLD
-      if (!strcasecmp(target, ufakenum))
+      if (strcmp(target, ufakeYYXXX) == 0)
       {
 	parse_uworld_command(source, body + 1);
       }
@@ -98,8 +98,8 @@ void privmsg(char *source, char *target, char *body)
 
 void parse_command(char *source, char *target, char *channel, char *commandline)
 {
-  char buffer[1024];
-  char command[80];
+  char buffer[1024] = "";
+  char command[80] = "";
   char global[] = "*";
   register aluser *user;
 
@@ -120,261 +120,261 @@ void parse_command(char *source, char *target, char *channel, char *commandline)
     strcasecmp(command, "newpass"))
   {
     sprintf(buffer, "COMMAND FROM %s!%s@%s on %s: %s",
-      user->nick, user->username, user->site,
+      user->nick, user->username, gethost(user),
       channel, commandline);
     PutLog(buffer);
   }
   else
   {
     sprintf(buffer, "COMMAND FROM %s!%s@%s on %s: %s XXXXXXX",
-      user->nick, user->username, user->site,
+      user->nick, user->username, gethost(user),
       channel, command);
     PutLog(buffer);
   }
 
-  if (!strcmp(command, "showcommands"))
-    showcommands(source, channel, ToWord(1, commandline));
+  if (!strcasecmp(command, "showcommands"))
+      showcommands(source, channel, ToWord(1, commandline));
 
-  else if (!strcmp(command, "pass") || !strcmp(command, "login"))
-    validate(source, target, ToWord(1, commandline));
+  else if (!strcasecmp(command, "pass") || !strcasecmp(command, "login"))
+      validate(source, target, ToWord(1, commandline));
 
-  else if (!strcmp(command, "deauth"))
-    DeAuth(source, channel, ToWord(1, commandline));
+  else if (!strcasecmp(command, "deauth"))
+      DeAuth(source, channel, ToWord(1, commandline));
 
-    else if (!strcmp(command, "die") && Access(global, source) >= LEVEL_DIE)
-       quit(ToWord(1, commandline), 0);
+  else if (!strcasecmp(command, "die") && Access(global, source) >= LEVEL_DIE)
+      quit(ToWord(1, commandline), 0);
 
-      else if (!strcmp(command, "restart") && Access(global, source) >= LEVEL_DIE)
-	 restart(ToWord(1, commandline));	/* added by Kev; restarts */
+  else if (!strcasecmp(command, "restart") && Access(global, source) >= LEVEL_DIE)
+      restart(ToWord(1, commandline));	/* added by Kev; restarts */
 
-      else if (!strcmp(command, "search"))
-	SearchChan(source, channel, ToWord(1, commandline));
+  else if (!strcasecmp(command, "search"))
+      SearchChan(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "join"))
-	join(source, channel, ToWord(1, commandline));
+  else if (!strcasecmp(command, "join"))
+      join(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "part"))
+  else if (!strcasecmp(command, "part"))
 	part(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "op"))
+  else if (!strcasecmp(command, "op"))
 	op(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "deop"))
+  else if (!strcasecmp(command, "deop"))
 	deop(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "banlist"))
+  else if (!strcasecmp(command, "banlist"))
 	showbanlist(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "kick"))
+  else if (!strcasecmp(command, "kick"))
 	kick(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "invite"))
+  else if (!strcasecmp(command, "invite"))
 	invite(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "topic"))
+  else if (!strcasecmp(command, "topic"))
 	topic(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "adduser"))
+  else if (!strcasecmp(command, "adduser"))
 	AddUser(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "remuser"))
+  else if (!strcasecmp(command, "remuser"))
 	RemoveUser(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "modinfo"))
+  else if (!strcasecmp(command, "modinfo"))
 	ModUserInfo(source, target, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "newpass"))
+  else if (!strcasecmp(command, "newpass"))
 	ChPass(source, target, ToWord(1, commandline));
 
-      else if (!strcmp(command, "set"))
+  else if (!strcasecmp(command, "set"))
 	SetChanFlag(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "access"))
+  else if (!strcasecmp(command, "access"))
 	showaccess(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "suspend"))
+  else if (!strcasecmp(command, "suspend"))
 	suspend(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "unsuspend"))
+  else if (!strcasecmp(command, "unsuspend"))
 	unsuspend(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "saveuserlist"))
+  else if (!strcasecmp(command, "saveuserlist"))
 	SaveUserList(source, channel);
 
-      else if (!strcmp(command, "lbanlist"))
+  else if (!strcasecmp(command, "lbanlist"))
 	ShowShitList(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "ban"))
+  else if (!strcasecmp(command, "ban"))
 	AddToShitList(source, channel, ToWord(1, commandline), 0);
 
-      else if (!strcmp(command, "unban"))
+  else if (!strcasecmp(command, "unban"))
 	RemShitList(source, channel, ToWord(1, commandline), 0);
 
-      else if (!strcmp(command, "cleanbanlist"))
+  else if (!strcasecmp(command, "cleanbanlist"))
 	CleanShitList(source, ToWord(1, commandline));
 
-      else if (!strcmp(command, "addchan"))
+  else if (!strcasecmp(command, "addchan"))
 	AddChan(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "remchan"))
+  else if (!strcasecmp(command, "remchan"))
 	RemChan(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "savedefs"))
+  else if (!strcasecmp(command, "savedefs"))
 	SaveDefs(source);
 
-      else if (!strcmp(command, "loaddefs"))
+  else if (!strcasecmp(command, "loaddefs"))
 	LoadDefs(source);
 
-      else if (!strcmp(command, "saveshitlist"))
+  else if (!strcasecmp(command, "savebanlist"))
 	SaveShitList(source, channel);
 
-      else if (!strcmp(command, "loadshitlist"))
+  else if (!strcasecmp(command, "loadbanlist"))
 	LoadShitList(source);
 
-      else if (!strcmp(command, "status"))
+  else if (!strcasecmp(command, "status"))
 	showstatus(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "map"))
+  else if (!strcasecmp(command, "map"))
 	showmap(source);
 
-      else if (!strcmp(command, "help"))
+  else if (!strcasecmp(command, "help"))
 	showhelp(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "chaninfo"))
+  else if (!strcasecmp(command, "chaninfo"))
 	ShowChanInfo(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "motd"))
+  else if (!strcasecmp(command, "motd"))
 	showmotd(source);
 
-      else if (!strcmp(command, "isreg"))
+  else if (!strcasecmp(command, "isreg"))
         isreg(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "core"))
+  else if (!strcasecmp(command, "core"))
 	dumpcore(source);
 
 #ifdef RUSAGE_SELF
-      else if (!strcmp(command, "rusage"))
+  else if (!strcasecmp(command, "rusage"))
 	show_rusage(source);
 #endif
 
-      else if (!strcmp(command, "showignore"))
+  else if (!strcasecmp(command, "showignore"))
 	ShowIgnoreList(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "remignore"))
+  else if (!strcasecmp(command, "remignore"))
 	AdminRemoveIgnore(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "calmdown"))
+  else if (!strcasecmp(command, "calmdown"))
 	CalmDown(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "operjoin"))
+  else if (!strcasecmp(command, "operjoin"))
 	OperJoin(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "operpart"))
+  else if (!strcasecmp(command, "operpart"))
 	OperPart(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "clearmode"))
+  else if (!strcasecmp(command, "clearmode"))
 	ClearMode(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "purge"))
+  else if (!strcasecmp(command, "purge"))
 	purge(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "register"))
+  else if (!strcasecmp(command, "register"))
 	RegChan(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "verify"))
+  else if (!strcasecmp(command, "verify"))
 	verify(source, ToWord(1, commandline));
 
 #ifdef UPGRADE
-      else if (!strcmp(command, "upgrade"))
+  else if (!strcasecmp(command, "upgrade"))
 	upgrade(source, ToWord(1, commandline));
 #endif
 
-      else if (!strcmp(command, "random"))
+  else if (!strcasecmp(command, "random"))
 	RandomChannel(source);
 
-      else if (!strcmp(command, "say"))
+  else if (!strcasecmp(command, "say"))
 	Say(source, ToWord(1, commandline));
 
-      else if (!strcmp(command, "servnotice"))
+  else if (!strcasecmp(command, "servnotice"))
 	ServNotice(source, ToWord(1, commandline));
 
-      else if (!strcmp(command, "fuck"))
+  else if (!strcasecmp(command, "fuck"))
 	notice(source, "This command is obsolete");
 
 #ifdef DEBUG
-      else if (!strcmp(command, "db"))
+  else if (!strcasecmp(command, "db"))
 	db_test(source, channel, ToWord(1, commandline));
 #endif
 
 #ifdef DOHTTP
-      else if (!strcmp(command, "rehash"))
+  else if (!strcasecmp(command, "rehash"))
 	read_http_conf(source);
 #endif
 #ifdef FAKE_UWORLD
-      else if (!strcmp(command, "uworld"))
+  else if (!strcasecmp(command, "uworld"))
 	Uworld_switch(source, channel, ToWord(1, commandline));
 
-      else if (!strcmp(command, "opersuspend"))
+  else if (!strcasecmp(command, "opersuspend"))
 	OperSuspend(source, ToWord(1, commandline));
 #endif
 
 #ifdef DEBUG
-      else if (!strcmp(command, "showusers"))
+  else if (!strcasecmp(command, "showusers"))
 	showusers(ToWord(1, commandline));
 
-      else if (!strcmp(command, "showchannels"))
+  else if (!strcasecmp(command, "showchannels"))
 	showchannels();
 #endif
 
 #ifdef NICKSERV
-      else if (!strcmp(command, "nickserv"))
+      else if (!strcasecmp(command, "nickserv"))
 	nserv_nickserv(source, ToWord(1, commandline));
 
-      else if (!strcmp(command, "addnick"))
+      else if (!strcasecmp(command, "addnick"))
 	nserv_addnick(source, ToWord(1, commandline));
 
-      else if (!strcmp(command, "remnick"))
+      else if (!strcasecmp(command, "remnick"))
 	nserv_remnick(source, ToWord(1, commandline));
 
-      else if (!strcmp(command, "addmask"))
+      else if (!strcasecmp(command, "addmask"))
 	nserv_addmask(source, ToWord(1, commandline));
 
-      else if (!strcmp(command, "remmask"))
+      else if (!strcasecmp(command, "remmask"))
 	nserv_remmask(source, ToWord(1, commandline));
 
-      else if (!strcmp(command, "nickinfo"))
+      else if (!strcasecmp(command, "nickinfo"))
 	nserv_nickinfo(source, ToWord(1, commandline));
 
-      else if (!strcmp(command, "identify"))
+      else if (!strcasecmp(command, "identify"))
 	nserv_identify(source, ToWord(1, commandline));
 
-      else if (!strcmp(command, "ghost"))
+      else if (!strcasecmp(command, "ghost"))
 	nserv_ghost(source, ToWord(1, commandline));
 
-      else if (!strcmp(command, "nicknewpass"))
+      else if (!strcasecmp(command, "nicknewpass"))
 	nserv_nicknewpass(source, ToWord(1, commandline));
 
-      else if (!strcmp(command, "nicknewemail"))
+      else if (!strcasecmp(command, "nicknewemail"))
 	nserv_nicknewemail(source, ToWord(1, commandline));
 #endif
 #ifdef DOHTTP
-      else if (!strcmp(command, "dccme"))
+  else if (!strcasecmp(command, "dccme"))
 	DccMe(source, ToWord(1, commandline));
 #endif
 }
 
 void parse_ctcp(char *source, char *target, char *body)
 {
-  char func[80];
-  char buffer[1024];
-  char tmp[80];
+  char func[80] = "";
+  char buffer[1024] = "";
+  char tmp[80] = "";
 
   GetWord(0, body, func);
   body = ToWord(1, body);
 
-  if (strcmp(func, "ACTION"))
+  if (strcasecmp(func, "ACTION"))
   {
-    sprintf(buffer, "CTCP %s from %s [%s]", func, GetNumNick(source), body);
+    sprintf(buffer, "CTCP %s from %s [%s]", func, GetNick(source), body);
     PutLog(buffer);
   }
 

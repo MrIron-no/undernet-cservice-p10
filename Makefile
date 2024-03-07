@@ -25,14 +25,15 @@
 CC = gcc
 RM = /bin/rm
 
-CFLAGS = -Wall -g -O0
+#CFLAGS = -Wall -g -O0
+CFLAGS = -Wpedantic -ggdb -O0 -pedantic-errors
 #CFLAGS = -O6
 
-#DEFINES = -DDEBUG
+DEFINES = -DDEBUG
 #DEFINES = -DBACKUP
 #DEFINES = -DDEBUG_MALLOC -DHISTORY
 #DEFINES= -DHISTORY
-DEFINES=
+#DEFINES=
 
 # necessary for Solaris
 #LIBS = -lsocket -lnsl

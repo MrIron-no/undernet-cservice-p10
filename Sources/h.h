@@ -24,6 +24,7 @@
  * http://gnuworld.sourceforge.net/ for more information.
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>

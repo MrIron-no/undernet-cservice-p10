@@ -40,7 +40,7 @@ time_t now;
 void SpecLog(char *text)
 {
   int fd;
-  char date[80], buffer[1024];
+  char date[80], buffer[1024] = "";
   strcpy(date, ctime(&now));
   *strchr(date, '\n') = '\0';
 
@@ -55,7 +55,7 @@ void SpecLog(char *text)
 
 void fix_user_file(char *file, char *channel)
 {
-  char tmpfile[512], buffer[300];
+  char tmpfile[512], buffer[300] = "";
   struct node *List = NULL, *tmp;
   dbuser dbu;
   int fd;
@@ -79,7 +79,7 @@ void fix_user_file(char *file, char *channel)
     if (strcasecmp(channel, dbu.channel))
       continue;
 
-    if (!strcmp(dbu.match, "!DEL!"))
+    if (strcmp(dbu.match, "!DEL!") == 0)
       continue;
 
     if (dbu.lastseen + USERLIST_EXP_TIME <= now)
@@ -123,7 +123,8 @@ void fix_user_db(void)
 {
   DIR *dp;
   struct dirent *ent;
-  char dir[256], file[256], channel[80], *ptr;
+  char dir[256], file[300], channel[80] = "";
+  char *ptr;
   int count;
 
   for (count = 0; count < 1000; count++)
@@ -137,7 +138,7 @@ void fix_user_db(void)
     }
     while ((ent = readdir(dp)) != NULL)
     {
-      if (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, ".."))
+      if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
 	continue;
       strcpy(channel, ent->d_name);
       for (ptr = channel; *ptr; ptr++)

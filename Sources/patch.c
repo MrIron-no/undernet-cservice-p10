@@ -46,10 +46,10 @@ void upgrade(char *source, char *args)
 void open_patch_socket(char *source)
 {
 	misc_socket *msock;
-	struct sockaddr_in socketname;
+	struct sockaddr_in socketname = { 0 };
 	struct hostent *remote_host;
-	char pserver[80]=PATCH_SERVER, buffer[200], *ptr;
-	int port;
+	char pserver[80]=PATCH_SERVER, buffer[200]="", *ptr;
+	int port = 0;
 
 	if((ptr=strchr(pserver,':'))==NULL){
 		notice(source,"PATCH_SERVER needs to be \"server:port\"!");
@@ -114,7 +114,7 @@ void open_patch_socket(char *source)
 int readfrom_misc(misc_socket *msock)
 {
 	void parse_misc(misc_socket *,char *);
-	char buf[1024];
+	char buf[1024] = "";
 	int length;
 	if((length=read(msock->fd,buf,1023))<=0){
 		if(errno==EWOULDBLOCK || errno==EAGAIN){
@@ -144,7 +144,7 @@ int readfrom_misc(misc_socket *msock)
 
 int flush_misc_buffer(misc_socket *msock)
 {
-	char buf[1024];
+	char buf[1024] = "";
 	int length;
 	int count;
 
@@ -179,13 +179,13 @@ int flush_misc_buffer(misc_socket *msock)
 long sendto_misc(misc_socket *msock, char *format, ...)
 {
 	va_list args;
-	char string[1024];
+	char string[1024] = "";
 
 	va_start(args,format);
 	vsprintf(string,format,args);
-#ifdef DEBUG
+/*#ifdef DEBUG
 	vprintf(format,args);
-#endif
+#endif*/
 	va_end(args);
 
 	return copy_to_buffer(&msock->outbuf,string,strlen(string));
@@ -195,7 +195,7 @@ long sendto_misc(misc_socket *msock, char *format, ...)
 void send_misc_handshake(misc_socket *msock)
 {
 	struct stat stlast;
-	char tag[80], buffer[200];
+	char tag[80] = "", buffer[200] = "";
 	FILE *fp;
 
 	if(msock->type==MISC_GETPATCH){
@@ -293,7 +293,7 @@ void parse_misc(misc_socket *msock, char *line)
 
 	if(msock->type==MISC_GETPATCH){
 		if(msock->status==MISC_HANDSHAKE){
-			if(strcmp(RECPATCHPASS,line)){
+			if(strcmp(RECPATCHPASS,line) != 0){
 				close(msock->fd);
 				msock->fd=-1;
 				msock->status=MISC_ERROR;

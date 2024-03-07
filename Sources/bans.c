@@ -28,9 +28,9 @@
 
 void ban(char *source, char *chan, char *nicklist)
 {
-  char buffer[300];
-  char OneNick[NICK_LENGTH];
-  char channel[CHANNELNAME_LENGTH];
+  char buffer[300] = "";
+  char OneNick[NICK_LENGTH] = "";
+  char channel[CHANNELNAME_LENGTH] = "";
   register auser *user;
   register aluser *luser;
   register achannel *ch;
@@ -47,7 +47,7 @@ void ban(char *source, char *chan, char *nicklist)
     GuessChannel(source, channel);
   }
 
-  if (!strcmp(channel, "*"))
+  if (strcmp(channel, "*") == 0)
   {
     notice(source, "SYNTAX: ban <channel> <nick1|addr1> [nick2|addr2] [...]");
     return;
@@ -55,7 +55,7 @@ void ban(char *source, char *chan, char *nicklist)
 
 #ifdef DEBUG
   printf("BAN REQUEST FOR %s\nON CHANNEL %s\nBY %s (%d)\n",
-    nicklist, channel, GetNumNick(source), Access(channel, source));
+    nicklist, channel, GetNick(source), Access(channel, source));
 #endif
 
   if (*source && Access(channel, source) < BAN_LEVEL)
@@ -92,17 +92,17 @@ void ban(char *source, char *chan, char *nicklist)
     luser = ToLuserNick(OneNick);
     if (luser)
       sprintf(buffer, "%s!%s@%s", luser->nick,
-	luser->username, luser->site);
+	luser->username, gethost(luser));
     if (luser)
     {
       sprintf(buffer, "I BAN %s!%s@%s ON %s", luser->nick,
-	luser->username, luser->site, channel);
+	luser->username, gethost(luser), channel);
       PutLog(buffer);
 
-      user = ToUser(channel, OneNick);
+      user = ToUserNick(channel, OneNick);
       if (user && user->chanop)
       {
-	changemode(channel, "-o", user->N->nick, 0);
+	changemode(channel, "-o", user->N->num, 0);
       }
 
       MakeBanMask(luser, buffer);
@@ -115,15 +115,15 @@ void ban(char *source, char *chan, char *nicklist)
 
 void mban(char *source, char *ch, char *args)
 {
-  char buffer[200];
-  char channel[80];
+  char buffer[512] = "";
+  char channel[CHANNELNAME_LENGTH] = "";
   register int found = 0;
   register achannel *chan;
   register auser *user;
 
   if (*args == '#')
   {
-    GetWord(0, args, channel);
+    GetnWord(0, args, channel, CHANNELNAME_LENGTH);
     args = ToWord(1, args);
   }
   else
@@ -132,7 +132,7 @@ void mban(char *source, char *ch, char *args)
     GuessChannel(source, channel);
   }
 
-  if (!strcmp(channel, "*"))
+  if (strcmp(channel, "*") == 0)
   {
     notice(source, "SYNTAX: mban <channel> <nick!username@hostname>");
     return;
@@ -169,17 +169,17 @@ void mban(char *source, char *ch, char *args)
   while (user)
   {
     sprintf(buffer, "%s!%s@%s",
-      user->N->nick, user->N->username, user->N->site);
-    if (match(buffer, args))
+      user->N->nick, user->N->username, gethost(user->N));
+    if (match(buffer, args) && !(user->N->mode & LFL_ISSERVICE))
     {
       sprintf(buffer, "I BAN %s!%s@%s on %s (%s)", user->N->nick,
-	user->N->username, user->N->site, channel, args);
+	      user->N->username, gethost(user->N), channel, args);
       PutLog(buffer);
 
       if (user->chanop)
       {
-	changemode(channel, "-o", user->N->nick, 0);
-	user->chanop = 0;
+      	changemode(channel, "-o", user->N->num, 0);
+	      user->chanop = 0;
       }
 
       /*MakeBanMask(user->N,buffer); */
@@ -202,9 +202,9 @@ void unban(char *source, char *ch, char *list)
   register aban *bans;
   register aluser *luser;
   register achannel *chan;
-  char channel[CHANNELNAME_LENGTH];
-  char buffer[512];
-  char one[200];
+  char channel[CHANNELNAME_LENGTH] = "";
+  char buffer[512] = "";
+  char one[200] = "";
   register int found;
   register int i, exact;
 
@@ -253,7 +253,7 @@ void unban(char *source, char *ch, char *list)
     if (luser != NULL)
     {
       sprintf(one, "%s!%s@%s", luser->nick, luser->username,
-	luser->site);
+	      gethost(luser));
       exact = 0;
     }
     else
@@ -293,8 +293,8 @@ void unban(char *source, char *ch, char *list)
 
 void showbanlist(char *source, char *ch, char *args)
 {
-  char buffer[200];
-  char channel[80];
+  char buffer[200] = "";
+  char channel[80] = "";
   register achannel *chan;
   register aban *curr;
 
@@ -308,7 +308,7 @@ void showbanlist(char *source, char *ch, char *args)
     GuessChannel(source, channel);
   }
 
-  if (!strcmp(channel, "*"))
+  if (strcmp(channel, "*") == 0)
   {
     notice(source, "SYNTAX: banlist <channel>");
     return;
@@ -344,11 +344,12 @@ void showbanlist(char *source, char *ch, char *args)
 
 void MakeBanMask(aluser * luser, char *output)
 {
-  register int isip = 1;
-  register int i, j;
+  register int isipv4 = 1;
+  register int isipv6 = 0;
+  register int i = 0, j = 0, k = 0;
   int a1, a2, a3, a4;
-  char hostmask[200];
-  register char *ptr;
+  char hostmask[200] = "", temp[200] = "";
+  register char *ptr, *token;
 
   if (luser == NULL)
   {
@@ -356,72 +357,101 @@ void MakeBanMask(aluser * luser, char *output)
     return;
   }
 
-  /* check if hostname is a numeric IP address
+  /* check if user has hidden host
    */
-  for (i = 0; luser->site[i] != '\0' && isip; i++)
-  {
-    if (!isdigit(luser->site[i]) && luser->site[i] != '.')
-      isip = 0;
-  }
 
-  if (isip)
+  if (luser->mode & (LFL_REGISTERED & LFL_ISMODEX))
   {
-    sscanf(luser->site, "%d.%d.%d.%d", &a1, &a2, &a3, &a4);
-
-    if (a1 <= 127)
-    {	/* class A */
-      /*sprintf(hostmask,"%d.*",a1); *shrugs* */
-      sprintf(hostmask, "%d.%d.*", a1, a2);
-    }
-    else if (a1 <= 191)
-    {	/* class B */
-      sprintf(hostmask, "%d.%d.*", a1, a2);
-    }
-    else
-    {	/* class C */
-      sprintf(hostmask, "%d.%d.%d.*", a1, a2, a3);
-    }
+    sprintf(output, "*!*@%s", luser->hiddenhost);
   }
   else
-  {	/* not numeric address */
-    ptr = luser->site + strlen(luser->site);
-    i = 0;
+  {
 
-    if (!strcasecmp(luser->site + strlen(luser->site) - 3, ".AU") ||
-      !strncasecmp(luser->site + strlen(luser->site) - 7, ".NET.", 4) ||
-      !strncasecmp(luser->site + strlen(luser->site) - 7, ".COM.", 4) ||
-      !strncasecmp(luser->site + strlen(luser->site) - 7, ".EDU.", 4) ||
-      !strncasecmp(luser->site + strlen(luser->site) - 6, ".AC.", 3))
-      j = 3;
-    else
-      j = 2;
-
-    while (i != j && ptr != luser->site)
+    /* check if hostname is a numeric IP address
+     */
+    for (i = 0; luser->site[i] != '\0'; i++)
     {
-      if (*ptr == '.')
-	i++;
-      ptr--;
+      if (!isdigit(luser->site[i]) && luser->site[i] != '.')
+        isipv4 = 0;
+
+      if (luser->site[i] == ':')
+	      isipv6 = 1;
     }
-    if (i == j)
-      ptr += 2;
 
-    if (ptr == luser->site)
-      strcpy(hostmask, ptr);
+    if (isipv4)
+    {
+      sscanf(luser->site, "%d.%d.%d.%d", &a1, &a2, &a3, &a4);
+
+      if (a1 <= 127)
+      {	/* class A */
+        /*sprintf(hostmask,"%d.*",a1); *shrugs* */
+        sprintf(hostmask, "%d.%d.*", a1, a2);
+      }
+      else if (a1 <= 191)
+      {	/* class B */
+        sprintf(hostmask, "%d.%d.*", a1, a2);
+      }
+      else
+      {	/* class C */
+        sprintf(hostmask, "%d.%d.%d.*", a1, a2, a3);
+      }
+    }
+    else if (isipv6)
+    {
+      strcpy(temp, luser->site);
+      token = strtok(temp, ":");
+
+      while (token != NULL && k < 4)
+      {
+	      strcat(hostmask, token);
+	      strcat(hostmask, ":");
+
+	      token = strtok(NULL, ":");
+	      k++;
+      }
+      strcat(hostmask, ":/64");
+    }
     else
-      sprintf(hostmask, "*.%s", ptr);
-  }
+    {	/* not numeric address */
+      ptr = luser->site + strlen(luser->site);
+      i = 0;
 
-  if (!strncasecmp(luser->username, "^wld", 4))
-  {
-    /* special case for telnet users */
-    sprintf(output, "*!^wld*@%s", hostmask);
-  }
-  else
-  {
-    ptr = luser->username;
-    while (strlen(ptr) == 10 || *ptr == '~')
-      ptr++;
+      if ((strlen(luser->site) > 3 && !strcasecmp(luser->site + strlen(luser->site) - 3, ".AU")) ||
+        (strlen(luser->site) > 7 && !strncasecmp(luser->site + strlen(luser->site) - 7, ".NET.", 4)) ||
+        (strlen(luser->site) > 7 && !strncasecmp(luser->site + strlen(luser->site) - 7, ".COM.", 4)) ||
+        (strlen(luser->site) > 7 && !strncasecmp(luser->site + strlen(luser->site) - 7, ".EDU.", 4)) ||
+        (strlen(luser->site) > 6 && !strncasecmp(luser->site + strlen(luser->site) - 6, ".AC.", 3)))
+        j = 3;
+      else
+        j = 2;
 
-    sprintf(output, "*!*%s@%s", ptr, hostmask);
+      while (i != j && ptr != luser->site)
+      {
+        if (*ptr == '.')
+  	  i++;
+        ptr--;
+      }
+      if (i == j)
+        ptr += 2;
+
+      if (ptr == luser->site)
+        strcpy(hostmask, ptr);
+      else
+        sprintf(hostmask, "*.%s", ptr);
+    }
+
+    if (!strncasecmp(luser->username, "^wld", 4))
+    {
+      /* special case for telnet users */
+      sprintf(output, "*!^wld*@%s", hostmask);
+    }
+    else
+    {
+      ptr = luser->username;
+      while (strlen(ptr) == 10 || *ptr == '~')
+        ptr++;
+
+      sprintf(output, "*!*%s@%s", ptr, hostmask);
+    }
   }
 }

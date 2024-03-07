@@ -28,9 +28,9 @@
 
 void op(char *source, char *chan, char *nicklist)
 {
-  char buffer[200];
-  char channel[80];
-  char nick[80];
+  char channel[CHANNELNAME_LENGTH] = "";
+  char nick[80] = "";
+  char buffer[512] = "";
   register auser *user;
   register achannel *ch;
   register int i;
@@ -38,17 +38,17 @@ void op(char *source, char *chan, char *nicklist)
   /* if the 1st arg is a channel name.. use it instead of 'chan' */
   if (*nicklist == '#')
   {
-    GetWord(0, nicklist, channel);
+    GetnWord(0, nicklist, channel, CHANNELNAME_LENGTH);
     nicklist = ToWord(1, nicklist);
   }
   else
   {
-    strncpy(channel, chan, 79);
-    channel[79] = '\0';
+    strncpy(channel, chan, CHANNELNAME_LENGTH - 1);
+    channel[CHANNELNAME_LENGTH] = '\0';
     GuessChannel(source, channel);
   }
 
-  if (!strcmp(channel, "*"))
+  if (strcmp(channel, "*") == 0)
   {
     notice(source, "SYNTAX: op <channel> <nick1> [nick2] [nick3] [...]");
     return;
@@ -68,7 +68,7 @@ void op(char *source, char *chan, char *nicklist)
   }
 
   if (*source && (ch->flags & CFL_OPONLY) &&
-    *nicklist && strcasecmp(nicklist, source))
+    *nicklist && strcasecmp(nicklist, GetNick(source)))
   {
     notice(source, replies[RPL_OPSELFONLY][ch->lang]);
     return;
@@ -91,10 +91,12 @@ void op(char *source, char *chan, char *nicklist)
 
   if (!*nicklist)
   {
-	nicklist = GetNumNick(source);
+	  strcpy(nick, GetNick(source));
   }
-
-  GetWord(0, nicklist, nick);
+  else
+  {
+    GetWord(0, nicklist, nick);
+  }
 
   i = 0;
   while (*nick)
@@ -117,34 +119,36 @@ void op(char *source, char *chan, char *nicklist)
 
     if (user)
     {
-      sprintf(buffer, "%s!%s@%s", user->N->nick, user->N->username, user->N->site);
-      if (ch->flags & CFL_STRICTOP && Access(channel, user->N->nick) < OP_LEVEL)
+      if (ch->flags & CFL_STRICTOP && Access(channel, user->N->num) < OP_LEVEL)
       {
 	if (*source)
 	{
 	  notice(source, "StrictOp is active and user is not authenticated");
 	}
       }
-      else if (IsShit(channel, buffer, NULL, NULL) < NO_OP_SHIT_LEVEL)
+      else if (IsShit(channel, user->N, NULL, NULL) < NO_OP_SHIT_LEVEL)
       {
 	if (user && !user->chanop)
 	{
 	  user->chanop = 1;
 	  changemode(channel, "+o", user->N->num, 0);
-	  if (*source && strcasecmp(source, user->N->num))
+	  if (*source && strcmp(source, user->N->num) != 0)
 	  {
-	    sprintf(buffer, replies[RPL_YOUREOPPEDBY][ch->lang], GetNumNick(source));
+	    sprintf(buffer, replies[RPL_YOUREOPPEDBY][ch->lang], GetNick(source));
 	    notice(user->N->num, buffer);
 	  }
 	}
       }
       else
       {
-	sprintf(buffer, "%s: %s", nick, replies[RPL_CANTBEOPPED][ch->lang]);
-	notice(source, buffer);
+        if (*source)
+        {
+	        sprintf(buffer, "%s: %s", nick, replies[RPL_CANTBEOPPED][ch->lang]);
+	        notice(source, buffer);
+        }
       }
     }
-    else
+    else if (!user && *source)
     {
       sprintf(buffer, replies[RPL_USERNOTONCHANNEL][ch->lang], nick, channel);
       notice(source, buffer);
@@ -158,9 +162,9 @@ void op(char *source, char *chan, char *nicklist)
 
 void deop(char *source, char *ch, char *nicklist)
 {
-  char channel[CHANNELNAME_LENGTH];
-  char nick[80];
-  char buffer[200];
+  char channel[CHANNELNAME_LENGTH] = "";
+  char nick[80] = "";
+  char buffer[512] = "";
   register auser *user;
   register achannel *chan;
   register int i;
@@ -168,7 +172,7 @@ void deop(char *source, char *ch, char *nicklist)
   /* if the 1st arg is a channel name.. use it instead of 'channel' */
   if (*nicklist == '#')
   {
-    GetWord(0, nicklist, channel);
+    GetnWord(0, nicklist, channel, CHANNELNAME_LENGTH);
     nicklist = ToWord(1, nicklist);
   }
   else
@@ -177,7 +181,7 @@ void deop(char *source, char *ch, char *nicklist)
     GuessChannel(source, channel);
   }
 
-  if (!strcmp(channel, "*"))
+  if (strcmp(channel, "*") == 0)
   {
     notice(source, "SYNTAX: deop <channel> <nick1> [nick2] [nick3] [...]");
     return;
@@ -222,20 +226,25 @@ void deop(char *source, char *ch, char *nicklist)
   GetWord(i, nicklist, nick);
   while (*nick)
   {
-printf("running while %s", nick);
     user = ToUserNick(channel, nick);
     if (user)
     {
-      sprintf(buffer, "%s!%s@%s",
-	user->N->nick, user->N->username, user->N->site);
+
+      // We don't deop a network service.
+      if (user->N->mode & LFL_ISSERVICE)
+      {
+        sprintf(buffer, replies[RPL_ISSERVICE][chan->lang], user->N->nick);
+        notice(source, buffer);
+        return;
+      }
+
       if (user && user->chanop)
       {
 	user->chanop = 0;
 	changemode(channel, "-o", user->N->num, 0);
-printf("running changemode -o %s\n", user->N->num);
-	if (*source && strcasecmp(source, user->N->num))
+	if (*source && strcmp(source, user->N->num) != 0)
 	{
-	  sprintf(buffer, replies[RPL_YOUREDEOPPEDBY][chan->lang], GetNumNick(source));
+	  sprintf(buffer, replies[RPL_YOUREDEOPPEDBY][chan->lang], GetNick(source));
 	  notice(user->N->num, buffer);
 	}
       }
@@ -257,7 +266,7 @@ void massdeop(char *channel)
   user = chan->users;
   while (user != NULL)
   {
-    if (user->chanop)
+    if (user->chanop && !(user->N->mode & LFL_ISSERVICE))
     {
       changemode(channel, "-o", user->N->num, 0);
       user->chanop = 0;

@@ -46,16 +46,18 @@ You can reach me at <csfeedback@robin.pfft.net> for questions or comments,
 but I reserve the right to completely ignore you if I feel like it.
 
 IRCU P10 FORK:
-I started off with a nostalgic project of rewriting the old Undernet channel service 
-bot X/W to be compatible with the current P10 protocol of ircu. It has been tested on
-FreeBSD only. The bot has not been tested in debth, and the above recommendation of not
-using it in a production environment is repeated. 
+I started off with a nostalgic project of rewriting the old Undernet Channel Service 
+bot X/W to be compatible with the current P10 protocol of ircu. The bot has not been tested in debth, 
+and the above recommendation of not using it in a production environment is repeated. 
 
 The purpose of the project has been to keep the bot as authentic as possible, and hence
 no new features have been added. There is however two exceptions: 
-- a REGISTER admin command  has been added to allow channel registrations over IRC command.
-- the bot will login to GNUWorld's mod.ccontrol to op itself via the REOP command. If neither
+- a REGISTER admin command has been added to allow channel registrations over IRC command.
+- the bot will login to GNUWorld's mod.ccontrol (UWorld) to op itself via the REOP command. If neither
 ccontrol nor FAKE UWORLD is available, the bot will op itself through servermode. 
+
+For protocol compatability the bot will not reveal real hosts in an umode +x/account environment, 
+and the possibility to hide server names and disable the MAP command for non-opers have been included.
 
 The original HTTP interface should work if DOHTTP is defined in config.h. Make sure that HTTP_REDIRECT
 is not defined, as this will redirect any attempts to the defined website. The index.html.dist file in HTTP/ 
@@ -63,17 +65,20 @@ must be replaced/renamed to index.html. The original way of registering new chan
 to the HTTP connection which should still work with the following steps:
 1. Add a file called raw.auth in the root folder of the bot, including the IP address you will be connecting from.
 2. Telnet to the IP address and HTTP port. Type the command 'CSRAW'. Answer the PING request with a PONG and the same prompt.
-3a. The command "ISREG <#channel>" will respond YES or NO whether the channel is registered.
-3b. The command "REG <#channel> <realname> <mask> 0 <admin nick> [password]" will register the channel (I don't know
+2a. The command "ISREG <#channel>" will respond YES or NO whether the channel is registered.
+2b. The command "REG <#channel> <realname> <mask> 0 <admin nick> [password]" will register the channel (I don't know
     what the 0 was supposed to be, but it doesn't appear to be used).
+  
+The DCC CHAT feature works for users added to * with a + before their ident, and their connecting IP as the hostmask. 
+Initiate the DCC session by sending a /DCC CHAT followed by /msg <bot> DCCME. Once connected, type "CHAT <user>/<password>"
+where user is the +ident without the '+'. I have not (yet) tested the XCHAT java code which at a glance seems to allow for 
+initiating a DCC CHAT session from a website.
 
-KNOWN BUGS:
+KNOWN BUGS/TODO:
 
-1. The Chat function has not been reviewed.
-2. NickServ has not been tested in detail. The ghost command causes a crash.
-3. Fake Uworld OPCOM command needs to be updated to pass the mode with numerics instead of nicknames. 
-4. MALLOC definition returning compiling errors and has therefore partly been deactivated.
-5. Several netsplits occuring in close proximity may cause the bot to crash.
+1. MALLOC definition returning compiling errors and has therefore been simplified to not trigger quit().
+2. The BACKUP feature has not been tested/reviewed. 
+3. NickServ crashes when it tries to deop unreg'd users (sic).
 
 Enjoy this piece of history! 
 
