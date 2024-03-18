@@ -360,7 +360,7 @@ void MakeBanMask(aluser * luser, char *output)
   /* check if user has hidden host
    */
 
-  if (luser->mode & (LFL_REGISTERED & LFL_ISMODEX))
+  if ((luser->mode & LFL_REGISTERED) && (luser->mode & LFL_ISMODEX))
   {
     sprintf(output, "*!*@%s", luser->hiddenhost);
   }

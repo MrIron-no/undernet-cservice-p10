@@ -445,7 +445,7 @@ static void
     else
       strcpy(hiddenhost, userhost);
 
-    if (reg != NULL && (match(userhost, reg->match) || ((luser->mode & LFL_REGISTERED) && (luser->mode & LFL_ISMODEX) && match(hiddenhost, reg->match))))
+    if (reg != NULL && (match(userhost, reg->match) || (((luser->mode & LFL_REGISTERED) && (luser->mode & LFL_ISMODEX)) && match(hiddenhost, reg->match))))
     {
       successful_auth(luser, dbu->channel, reg);
     }

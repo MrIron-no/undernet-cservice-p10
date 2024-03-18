@@ -124,7 +124,7 @@ char *GetNick(char *num)
 
 char *gethost(aluser *user)
 {
-	if (user->mode & (LFL_REGISTERED & LFL_ISMODEX))
+	if ((user->mode & LFL_REGISTERED) && (user->mode & LFL_ISMODEX))
 		return user->hiddenhost;
 	else
 		return user->site;
@@ -301,7 +301,7 @@ void onnick(char *source, char *newnick, char *body)
 	    strcpy(user->account, account);
     }
 
-    if (mode & (LFL_ISMODEX & LFL_REGISTERED))
+    if ((mode & LFL_ISMODEX) && (mode & LFL_REGISTERED))
     {
 	    snprintf(hiddenhost, 80, "%s%s", user->account, HIDDEN_HOST_SUFFIX);
 
@@ -324,7 +324,7 @@ void onnick(char *source, char *newnick, char *body)
 	    printf(" (Network Service)");
     if (mode & LFL_REGISTERED)
 	    printf(" (account: %s)", account);
-    if (mode & (LFL_ISMODEX & LFL_REGISTERED))
+    if ((mode & LFL_ISMODEX) && (mode & LFL_REGISTERED))
 	    printf(" (hidden host: %s)", user->hiddenhost);
     printf("\n");
 #endif
@@ -567,7 +567,7 @@ void onquit(char *num)
     TTLALLOCMEM -= strlen(user->account) + 1;
     free(user->account);
   }
-  if (user->mode & (LFL_REGISTERED & LFL_ISMODEX))
+  if ((user->mode & LFL_REGISTERED) && (user->mode & LFL_ISMODEX))
   {
     TTLALLOCMEM -= strlen(user->hiddenhost) + 1;
     free(user->hiddenhost);
