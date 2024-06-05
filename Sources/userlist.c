@@ -530,6 +530,9 @@ void validate(char *source, char *target, char *args)
   sprintf(userhost, "%s!%s@%s", luser->nick, luser->username, luser->site);
   if ((luser->mode & LFL_REGISTERED) && (luser->mode & LFL_ISMODEX))
     sprintf(hiddenhost, "%s!%s@%s", luser->nick, luser->username, luser->hiddenhost);
+  /* Even if the auth'd user is not +x, we recognise what would have been its hidden host had they been +x */
+  else if (luser->mode & LFL_REGISTERED)
+    sprintf(hiddenhost, "%s!%s@%s%s", luser->nick, luser->username, luser->account, HIDDEN_HOST_SUFFIX);
   else
     strcpy(hiddenhost, userhost);
 
@@ -1761,7 +1764,9 @@ void RegChan(char *source, char *ch, char *args)
   char realname[NICK_LENGTH] = "";
   char mask[80] = "";
   char passwd[40] = "";
-  char *ptr, *ptr2;
+  char *ptr, *ptr2, *pwd;
+
+  int nopasswd = 0;
 
   GetnWord(0, args, channel, CHANNELNAME_LENGTH);
   GetWord(1, args, realname);
@@ -1774,34 +1779,84 @@ void RegChan(char *source, char *ch, char *args)
     return;
   }
 
-  if (!*channel || *channel != '#' || !*realname || !*mask)
+  if (!*channel || *channel != '#' || !*realname)
   {
-    notice(source, "SYNTAX: register <channel> <nick> [mask] <password>");
+    notice(source, "SYNTAX: register <#channel> <nick> [mask] [password]");
     return;
   }
 
-  if (!*passwd)
+  if (!*mask && !*passwd)
   {
-    strcpy(passwd, mask);
+    /* Neither hostmask nor password - check that nick is online and use its current hostmask. */
     luser = ToLuserNick(realname);
     if (luser == NULL)
     {
-      *mask = '\0';
+      sprintf(buffer, "I cannot find %s, please specify a nick!user@host mask", realname);
+      notice(source, buffer);
+      return;
     }
     else
     {
       MakeBanMask(luser, mask);
     }
+    nopasswd = 1;
+  }
+  else if (!*passwd)
+  {
+    /* We only have one argument. If the nick is not online, the argument must be the hostmask. */
+    luser = ToLuserNick(realname);
+    if (luser == NULL)
+    {
+      ptr = strchr(mask, '@');
+      ptr2 = strchr(mask, '!');
+
+      if (ptr == NULL || ptr2 == NULL || ptr2 > ptr ||
+        strchr(ptr2 + 1, '!') || strchr(ptr + 1, '@'))
+      {
+        notice(source, "Invalid nick!user@host mask");
+        return;
+      }
+
+      /* The nick is offline, and we have a hostmask. Generate password. */
+      nopasswd = 1;
+    }
+    else
+    {
+      /* The nick is online. Check whether the argument is a hostmask. If not, it must be the password. */
+      ptr = strchr(mask, '@');
+      ptr2 = strchr(mask, '!');
+
+      if (ptr == NULL || ptr2 == NULL || ptr2 > ptr ||
+        strchr(ptr2 + 1, '!') || strchr(ptr + 1, '@'))
+      {
+        /* The argument is not a hostmask. It's the password. */
+        strcpy(passwd, mask);
+        MakeBanMask(luser, mask);
+      }
+      else
+      {
+        nopasswd = 1;
+      }
+    }
+  }
+  else
+  {
+    /* We have two arguments. Check that we have a valid hostmask. */
+    ptr = strchr(mask, '@');
+    ptr2 = strchr(mask, '!');
+
+    if (ptr == NULL || ptr2 == NULL || ptr2 > ptr ||
+      strchr(ptr2 + 1, '!') || strchr(ptr + 1, '@'))
+    {
+      notice(source, "Invalid nick!user@host mask");
+      return;
+    }
   }
 
-  ptr = strchr(mask, '@');
-  ptr2 = strchr(mask, '!');
-
-  if (ptr == NULL || ptr2 == NULL || ptr2 > ptr ||
-    strchr(ptr2 + 1, '!') || strchr(ptr + 1, '@'))
+  if (nopasswd)
   {
-    notice(source, "Invalid nick!user@host mask");
-    return;
+    pwd = randstring(8);
+    strcpy(passwd, pwd);
   }
 
   for (ptr = mask; *ptr; ptr++)
@@ -1834,9 +1889,21 @@ void RegChan(char *source, char *ch, char *args)
     return;
   }
 
+  if (strlen(passwd) < 6)
+  {
+    notice(source, "A password MUST be at least 6 characters long");
+    return;
+  }
+
+  if (strlen(passwd) > 19)
+  {
+    notice(source, "Password is too long (max 19 characters)");
+    return;
+  }
+
   if (!*channel || *channel != '#' || !*realname || !*mask || !*passwd)
   {
-    notice(source, "SYNTAX: register <channel> <nick> [mask] <password>");
+    notice(source, "SYNTAX: register <#channel> <nick> [mask] [password]");
     return;
   }
 
@@ -1869,16 +1936,8 @@ void RegChan(char *source, char *ch, char *args)
     strcpy(reg->modif, source);
     reg->channel = (char *)MALLOC(strlen(channel) + 1);
     strcpy(reg->channel, channel);
-    if (passwd[0] != '\0')
-    {
-       reg->passwd = (char *)MALLOC(strlen(passwd) + 1);
-       strcpy(reg->passwd, passwd);
-    }
-    else
-    {
-       reg->passwd = (char *)MALLOC(1);
-       reg->passwd[0] = '\0';
-    }
+    reg->passwd = (char *)MALLOC(strlen(passwd) + 1);
+    strcpy(reg->passwd, passwd);
     reg->access = 500;
     reg->suspend = 0;
     reg->lastseen = now;
@@ -1896,7 +1955,7 @@ void RegChan(char *source, char *ch, char *args)
 //  AddChan("", channel, "");
     join("", channel, "");
 
-    sprintf(buffer, "Channel %s has been registered to %s!%s", channel, realname, mask);
+    sprintf(buffer, "Channel %s has been registered to %s!%s with password '%s'", channel, realname, mask, passwd);
     notice(source, buffer);
     SpecLog(buffer);
   }

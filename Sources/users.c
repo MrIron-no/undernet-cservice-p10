@@ -210,8 +210,10 @@ void onnick(char *source, char *newnick, char *body)
 			    mode |= LFL_REGISTERED;
 			    GetWord(5, body, account);
 		    	GetWord(6, body, temp);
-			    if (isdigit(*temp)) // TODO: It's an account_ts. This has not yet been tested.
-				    numPos++;
+
+          // If there is an account_id, delete it.
+          for (int j = 0; j < strlen(account) + 1; j++ )
+            if (account[j] == ':') account[j] = '\0';
 	    	}
 	    }
     }
@@ -638,6 +640,7 @@ void onwhois(char *source, char *nick)
   if (user == NULL)
   {
     sprintf(buffer, "%s 401 %s %s :No such nick\n", myYY, source, nick);
+    sendtoserv(buffer);
   }
   else
   {
@@ -676,8 +679,6 @@ void onwhois(char *source, char *nick)
       strcat(buffer, "\n");
       sendtoserv(buffer);
     }
-    sprintf(buffer, "%s 312 %s %s %s :\n", myYY, source, source, user->server->name);
-    sendtoserv(buffer);
 
     if (user->mode & LFL_ISOPER)
     {
@@ -687,7 +688,7 @@ void onwhois(char *source, char *nick)
 
     if (user->mode & LFL_REGISTERED)
     {
-      sprintf(buffer, "%s 316 %s %s :is Logged in as %s\n", myYY, source, user->nick, user->account);
+      sprintf(buffer, "%s 330 %s %s %s :is logged in as\n", myYY, source, user->nick, user->account);
       sendtoserv(buffer);
     }
   }

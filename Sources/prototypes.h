@@ -290,3 +290,5 @@ void nserv_nick(char *newnick, aluser *user);
 void nserv_onop(char *channel, auser *user);
 #endif
 void DccMe(char *, char *);
+
+char *randstring(int);

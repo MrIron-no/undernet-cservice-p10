@@ -600,6 +600,32 @@ int StringSize(const char *sentence)
     return counted;
 }
 
+char *randstring(int length)
+{
+    char *string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    size_t stringLen = 26*2+10;
+    char *randomString;
+
+    srand(time(NULL));
+
+    randomString = malloc(sizeof(char) * (length + 1));
+
+    if (!randomString)
+        return (char*)0;
+
+    unsigned int key = 0;
+
+    for (int n = 0;n < length;n++)
+    {
+        key = rand() % stringLen;
+        randomString[n] = string[key];
+    }
+
+    randomString[length] = '\0';
+
+    return randomString;
+}
+
 char *time_remaining(time_t t)
 {
   static char s[80];
