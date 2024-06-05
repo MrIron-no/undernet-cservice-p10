@@ -1,0 +1,38 @@
+#!/bin/bash
+
+echo "Original version number: "
+read orig
+
+new=$((orig+1))
+patchfile="$orig-$new.patch"
+origdir="CS.v$orig"
+sourcedir="CS"
+
+if [ ! -d "$sourcedir" ]; then
+  echo "Enter source directory: "
+  read sourcedir
+
+  if [ ! -d "$sourcedir" ]; then
+    echo "Unable to find source directory."
+    exit 1
+  fi
+fi
+
+if [ ! -d "$origdir" ]; then
+  echo "Enter original directory: "
+  read origdir
+
+  if [ ! -d "$origdir" ]; then
+    echo "Unable to find original directory."
+    exit 1
+  fi
+fi
+
+echo -e "Original version:\t$orig" 
+echo -e "Original directory:\t$origdir/"
+echo -e "New version:\t\t$new"
+echo -e "New directory:\t\t$sourcedir/"
+echo -e "Patchfile:\t\t$patchfile"
+
+diff -Nrc -x '*.o' -x 'cksum' -x 'version.c' $origdir/Sources/ $sourcedir/Sources/ > $patchfile
+echo "Finished creating patchfile $patchfile"
