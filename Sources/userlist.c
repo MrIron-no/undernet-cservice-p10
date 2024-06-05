@@ -1857,6 +1857,7 @@ void RegChan(char *source, char *ch, char *args)
   {
     pwd = randstring(8);
     strcpy(passwd, pwd);
+    free(pwd);
   }
 
   for (ptr = mask; *ptr; ptr++)
