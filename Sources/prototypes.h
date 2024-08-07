@@ -199,7 +199,9 @@ void RandomChannel(char *);
 void Say(char *,char *);
 void RobinSay(char *,char *);
 void ServNotice(char *,char *);
+#ifdef UWORLD
 void ccontrolLogin(char *, char *, char *, char *);
+#endif
 int IsReg(char *);
 #ifdef FAKE_UWORLD
 void IntroduceUworld(void);

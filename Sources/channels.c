@@ -329,17 +329,12 @@ void GetOps(char *channel)
   }
 #endif
 
+#ifdef UWORLD
   if ((user = ToLuserNick(UWORLD)) != NULL && !match(user->site, UWORLD_HOST))
     user = NULL;
-
-#ifdef UWORLD2
-  if (user == NULL)
-  {
-    if ((user = ToLuserNick(UWORLD2)) != NULL && !match(user->site, UWORLD2_HOST))
-      user = NULL;
-  }
 #endif
 
+#if defined(UWORLD) || defined(FAKE_UWORLD)
   if (user != NULL)
   {
     sprintf(buffer, "%s P %s :" UWORLD_COMMAND "\n",
@@ -356,6 +351,10 @@ void GetOps(char *channel)
     changemode(channel, "+o", myYYXXX, 1);
     flushmode(channel);
   }
+  #else
+    changemode(channel, "+o", myYYXXX, 1);
+    flushmode(channel);
+  #endif
   /* If Uworld is not present, queue the request
    * and try again later..
    * If he's present, send the request and check later on

@@ -177,32 +177,23 @@ extern char BROADCAST_CHANNEL[80];
 extern char VERIFY_ID[256];
 #endif
 
+/* Define this to enable op'ing via mod.ccontrol */
+#undef UWORLD
+#ifdef UWORLD
 #ifdef MAIN
-char UWORLD[10] = "Uworld";
+char UWORLD_NICK[10] = "Uworld";
 char UWORLD_USER[80] = "UWorld";
 char UWORLD_HOST[80] = "*.nssl.uoknor.edu";
 char UWORLD_SERVER[80] = "Uworld.undernet.org";
 char UWORLD_USERNAME[80] = DEFAULT_NICKNAME;
 char UWORLD_PASSWORD[80] = "qwerty";
 #else
-extern char UWORLD[10];
+extern char UWORLD_NICK[10];
 extern char UWORLD_USER[80];
 extern char UWORLD_HOST[80];
 extern char UWORLD_SERVER[80];
 extern char UWORLD_USERNAME[80];
 extern char UWORLD_PASSWORD[80];
-#endif
-
-#define UWORLD2 UWORLD2_NICK
-#ifdef UWORLD2
-#ifdef MAIN
-char UWORLD2_NICK[10] = "Uworld2";
-char UWORLD2_HOST[80] = "undernet.org";
-char UWORLD2_SERVER[80] = "Uworld2.undernet.org";
-#else
-extern char UWORLD2_NICK[10];
-extern char UWORLD2_HOST[80];
-extern char UWORLD2_SERVER[80];
 #endif
 #endif
 
@@ -220,14 +211,14 @@ extern char UWORLD2_SERVER[80];
 # define SERVERINFO "Channel Service Backup"
 #endif
 
-
 #define UWORLD_COMMAND "reop %s %s"
 
-#define FAKE_UWORLD
+/* Define this if you would like to enable the FAKE_UWORLD function */
+#undef FAKE_UWORLD
 #ifdef FAKE_UWORLD
-# define UFAKE_NICK	UWORLD2
+# define UFAKE_NICK	"Uworld2"
 # define UFAKE_HOST	DEFAULT_HOSTNAME
-# define UFAKE_SERVER	UWORLD2_SERVER
+# define UFAKE_SERVER	"Uworld2.undernet.org";
 # define UFAKE_NUMERIC	101
 # define UFAKE_INFO	"Uworld"
 #endif

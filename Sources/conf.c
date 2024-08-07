@@ -162,10 +162,11 @@ void read_conf(char *conf)
       strncpy(VERIFY_ID, buffer + 9, 256);
       VERIFY_ID[255] = '\0';
     }
+#ifdef UWORLD
     else if (!strncasecmp(buffer, "UWORLD_NICK ", 12))
     {
-      strncpy(UWORLD, buffer + 12, 10);
-      UWORLD[9] = '\0';
+      strncpy(UWORLD_NICK, buffer + 12, 10);
+      UWORLD_NICK[9] = '\0';
     }
     else if (!strncasecmp(buffer, "UWORLD_USER ", 12))
     {
@@ -192,21 +193,7 @@ void read_conf(char *conf)
       strncpy(UWORLD_SERVER, buffer + 14, 80);
       UWORLD_SERVER[79] = '\0';
     }
-    else if (!strncasecmp(buffer, "UWORLD2_NICK ", 13))
-    {
-      strncpy(UWORLD2_NICK, buffer + 13, 10);
-      UWORLD2_NICK[9] = '\0';
-    }
-    else if (!strncasecmp(buffer, "UWORLD2_HOST ", 13))
-    {
-      strncpy(UWORLD2_HOST, buffer + 13, 80);
-      UWORLD2_HOST[79] = '\0';
-    }
-    else if (!strncasecmp(buffer, "UWORLD2_SERVER ", 15))
-    {
-      strncpy(UWORLD2_SERVER, buffer + 15, 80);
-      UWORLD2_SERVER[79] = '\0';
-    }
+#endif
     else if (!strncasecmp(buffer, "CALMDOWNTOPIC ", 14))
     {
       strncpy(CALMDOWNTOPIC, buffer + 14, 512);

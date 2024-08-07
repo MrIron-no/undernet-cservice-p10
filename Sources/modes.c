@@ -323,9 +323,9 @@ void ModeChange(char *source, char *channel, char *change)
      * a +b, then the last argument is a TS
      */
     for (ptr = change; *ptr != 'b' && *ptr != ' '; ptr++);
-    if (*ptr != 'b' && strcmp(uworldYY, source) != 0 && strcmp(myYY, source) != 0
-#ifdef UWORLD2
-      && strcasecmp(UWORLD2_SERVER, source) // TODO: This is supposed to be the numeric.
+    if (*ptr != 'b' && strcmp(myYY, source) != 0
+#ifdef UWORLD
+      && strcmp(uworldYY, source) != 0 
 #endif
 #ifdef FAKE_UWORLD
       && strcmp(ufakeYY, source) != 0
@@ -833,9 +833,11 @@ void clearmode(char *channel, char *flag, int AsUworld)
   if (!AsUworld && (!chan || !chan->on))
     return;	/* not on the channel.. ignore */
 
+#ifdef FAKE_UWORLD
   if (AsUworld && Uworld_status == 1)
 	sprintf(buffer, "%s CM %s %s\n", ufakeYY, channel, flag);
   else
+#endif
 	sprintf(buffer, "%s CM %s %s\n", myYYXXX, channel, flag);
 
   // Sending to server.

@@ -38,7 +38,9 @@ extern char myYYXXX[6];
 extern char server[SERVER_NAME_LENGTH];
 extern char myuplinkYY[3];
 extern char myuplinkname[SERVER_NAME_LENGTH];
+#ifdef UWORLD
 extern char uworldYY[3];
+#endif
 extern int bursting;
 extern int logfile;
 extern RegUser *UserList[1000];

@@ -1,7 +1,8 @@
 
 #include "h.h"
+#ifdef UWORLD
 
-/* Triggered by onnick() and checking if the user matches the configuration options. 
+/* Triggered by onnick() and checking if the user matches the configuration options.
 If yes, passes login command. */
 
 void ccontrolLogin (char *YYXXX, char *nick, char *username, char *site)
@@ -19,8 +20,9 @@ void ccontrolLogin (char *YYXXX, char *nick, char *username, char *site)
 	// Setting UWORLD's servernum
 	strncpy(uworldYY, YYXXX, 2);
 	uworldYY[2] = '\0';
-	
+
 #ifdef DEBUG
 	printf("UWORLD SERVER DETECTED with YY: %s\n", uworldYY);
 #endif
 }
+#endif

@@ -66,7 +66,9 @@ char myYYXXX[6];
 char myYY[3];
 char myuplinkYY[3] = "";
 char myuplinkname[SERVER_NAME_LENGTH] = "";
+#ifdef UWORLD
 char uworldYY[3] = "";
+#endif
 char *TmpPtr;
 int logfile;
 int bursting = 0;

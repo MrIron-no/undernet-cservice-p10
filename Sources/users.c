@@ -277,8 +277,10 @@ void onnick(char *source, char *newnick, char *body)
       onquit(YYXXX);
     }
 
+#ifdef UWORLD
     // Check ccontrol login
     ccontrolLogin(YYXXX, newnick, username, hostname);
+#endif
 
 	  TTLALLOCMEM += sizeof(aluser);
     user = (aluser *) calloc(1, sizeof(aluser));

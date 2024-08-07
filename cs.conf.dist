@@ -54,10 +54,6 @@ UWORLD_SERVER Uworld.undernet.org
 UWORLD_USERNAME X
 UWORLD_PASSWORD qwerty
 #
-UWORLD2_NICK Uworld2
-UWORLD2_HOST undernet.org
-UWORLD2_SERVER Uworld2.undernet.org
-#
 # Topic to set when CALMDOWN is used
 #
 CALMDOWNTOPIC CALMDOWN was used on this channel

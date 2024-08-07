@@ -70,7 +70,7 @@ void CalmDown(char *source, char *chan, char *args)
   }
 
   sprintf(buffer, "%s WA :%s is asking me to calm down on %s\n",
-    ufakeYY, user->nick, ch->name);
+    myYY, user->nick, ch->name);
   sendtoserv(buffer);
 
   sprintf(buffer, "%s!%s@%s is asking me to calm down on %s\n",
