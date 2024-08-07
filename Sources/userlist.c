@@ -211,13 +211,12 @@ void try_find(char *channel, aluser * user)
 {
   register RegUser *reg;
   register avalchan *vchan;
-  char userhost[200] = "", hiddenhost[200] = "";
-  sprintf(userhost, "%s!%s@%s", user->nick, user->username, user->site);
+  char userhost[200] = "";
 
   if ((user->mode & LFL_REGISTERED) && (user->mode & LFL_ISMODEX))
-    sprintf(hiddenhost, "%s!%s@%s", user->nick, user->username, user->hiddenhost);
+    sprintf(userhost, "%s!%s@%s", user->nick, user->username, user->hiddenhost);
   else
-    strcpy(hiddenhost, userhost);
+    sprintf(userhost, "%s!%s@%s", user->nick, user->username, user->site);
 
   if (IsValid(user, channel))
     return;
@@ -226,7 +225,7 @@ void try_find(char *channel, aluser * user)
   while (reg != NULL)
   {
     if (!strcasecmp(reg->channel, channel) &&
-      (match(userhost, reg->match) || match(hiddenhost, reg->match)) && 
+      match(userhost, reg->match) && 
       *reg->passwd == '\0')
     {
       vchan = (avalchan *) MALLOC(sizeof(avalchan));
@@ -410,7 +409,7 @@ static void
 {
   register aluser *luser;
   register RegUser *reg;
-  char userhost[200] = "", hiddenhost[200] = "";
+  char userhost[200] = "";
 #ifdef DEBUG
   if (dbu)
     printf("vall: hdr: %X%X nick: %s match: %s passwd: %s channel: %s "
@@ -438,14 +437,13 @@ static void
 
     reg = load_dbuser(off, dbu);
 
-    sprintf(userhost, "%s!%s@%s", luser->nick, luser->username,
-      luser->site);
     if ((luser->mode & LFL_REGISTERED) && (luser->mode & LFL_ISMODEX))
-      sprintf(hiddenhost, "%s!%s@%s", luser->nick, luser->username, luser->hiddenhost);
+      sprintf(userhost, "%s!%s@%s", luser->nick, luser->username, luser->hiddenhost);
     else
-      strcpy(hiddenhost, userhost);
+      sprintf(userhost, "%s!%s@%s", luser->nick, luser->username,
+        luser->site);
 
-    if (reg != NULL && (match(userhost, reg->match) || (((luser->mode & LFL_REGISTERED) && (luser->mode & LFL_ISMODEX)) && match(hiddenhost, reg->match))))
+    if (reg != NULL && match(userhost, reg->match))
     {
       successful_auth(luser, dbu->channel, reg);
     }
@@ -471,7 +469,7 @@ static void
 
 void validate(char *source, char *target, char *args)
 {
-  char channel[CHANNELNAME_LENGTH] = "", passwd[80] = "", userhost[200] = "", hiddenhost[200] = "", buffer[512] = "";
+  char channel[CHANNELNAME_LENGTH] = "", passwd[80] = "", userhost[200] = "", buffer[512] = "";
   register avalchan *vchan, **pvchan;
   register RegUser *ruser;
   register aluser *luser;
@@ -527,35 +525,30 @@ void validate(char *source, char *target, char *args)
     free(vchan);
   }
 
-  sprintf(userhost, "%s!%s@%s", luser->nick, luser->username, luser->site);
   if ((luser->mode & LFL_REGISTERED) && (luser->mode & LFL_ISMODEX))
-    sprintf(hiddenhost, "%s!%s@%s", luser->nick, luser->username, luser->hiddenhost);
-  /* Even if the auth'd user is not +x, we recognise what would have been its hidden host had they been +x */
-  else if (luser->mode & LFL_REGISTERED)
-    sprintf(hiddenhost, "%s!%s@%s%s", luser->nick, luser->username, luser->account, HIDDEN_HOST_SUFFIX);
+    sprintf(userhost, "%s!%s@%s", luser->nick, luser->username, luser->hiddenhost);
   else
-    strcpy(hiddenhost, userhost);
+    sprintf(userhost, "%s!%s@%s", luser->nick, luser->username, luser->site);
 
   ruser = UserList[ul_hash(channel)];
   while (ruser != NULL)
   {
     if (!strcasecmp(ruser->channel, channel) &&
-      (match(userhost, ruser->match) || match(hiddenhost, ruser->match)) &&
-      (strcmp(ruser->passwd, passwd) == 0))
+    match(userhost, ruser->match) &&
+    strcmp(ruser->passwd, passwd) == 0)
       break;
     ruser = ruser->next;
   }
 
-  // TODO: Allow hiddenhost also here?
   if (ruser == NULL)
   {	/* hmm might be in the admin list too.. */
     ruser = UserList[0];
     while (ruser != NULL)
     {
       if (!strcasecmp(ruser->channel, "*") &&
-	match(userhost, ruser->match) &&
-	strcmp(ruser->passwd, passwd) == 0)
-	break;
+	      match(userhost, ruser->match) &&
+	      strcmp(ruser->passwd, passwd) == 0)
+	      break;
       ruser = ruser->next;
     }
   }
@@ -1756,6 +1749,8 @@ void RegChan(char *source, char *ch, char *args)
 {
   aluser *luser;
   RegUser *reg;
+  time_t now1 = now + 3600;
+  struct tm *tms = gmtime(&now1);
   struct stat st;
   int bad = 0;
   char buffer[512] = "";
@@ -1933,8 +1928,15 @@ void RegChan(char *source, char *ch, char *args)
     strcpy(reg->realname, realname);
     reg->match = (char *)MALLOC(strlen(mask) + 1);
     strcpy(reg->match, mask);
-    reg->modif = (char *)MALLOC(strlen(source) + 1);
-    strcpy(reg->modif, source);
+
+    sprintf(buffer, "%04d%02d%02d@%03ld (%s)",
+      tms->tm_year + 1900, tms->tm_mon + 1, tms->tm_mday,
+      1000 * (now1 % 86400) / 86400,
+      VERIFY_ID);
+
+    reg->modif = (char *)MALLOC(strlen(buffer) + 1);
+    strcpy(reg->modif, buffer);
+
     reg->channel = (char *)MALLOC(strlen(channel) + 1);
     strcpy(reg->channel, channel);
     reg->passwd = (char *)MALLOC(strlen(passwd) + 1);
@@ -1949,14 +1951,15 @@ void RegChan(char *source, char *ch, char *args)
     UserList[ul_hash(channel)] = reg;
     cold_save_one(reg);
 
-    sprintf(buffer, "%s registered %s to %s!%s", GetNick(reg->modif),
-      reg->channel, reg->realname, reg->match);
+    sprintf(buffer, "%s registered %s to %s (%s)",
+      GetNick(reg->modif), reg->channel, reg->realname, reg->match);
     broadcast(buffer, 0);
 
 //  AddChan("", channel, "");
     join("", channel, "");
 
-    sprintf(buffer, "Channel %s has been registered to %s!%s with password '%s'", channel, realname, mask, passwd);
+    sprintf(buffer, "Channel %s has been registered to %s (%s) with password '%s'",
+      channel, realname, mask, passwd);
     notice(source, buffer);
     SpecLog(buffer);
   }

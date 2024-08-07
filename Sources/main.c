@@ -779,7 +779,11 @@ void proc(char *source, char *function, char *target, char *body)
   }
   else if (strcmp(function, "EB") == 0)
   {
+    /* Ignore if it is not my uplink. */
     if (strcmp(source, myuplinkYY) != 0) return;
+
+    signon();
+    SendBurst();
 
     sprintf(buffer, "%s EA\n", myYY);
     sendtoserv(buffer);
@@ -793,7 +797,8 @@ void proc(char *source, char *function, char *target, char *body)
     printf("****************************************************\n");
 #endif
 
-    sprintf(buffer, "Completet ned burst in %ld seconds, read %lld bytes and processed %d commands", now - burstStartTime, TTLREADBYTES, burstCommands);
+    sprintf(buffer, "Completed ned burst in %ld seconds, read %lld bytes and processed %d commands",
+      now - burstStartTime, TTLREADBYTES, burstCommands);
     PutLog(buffer);
 
     bursting = 0;
@@ -1096,8 +1101,6 @@ int main(int argc, char **argv)
 
   /* OK.. connection succeeded now send signon stuff... */
   regist();
-  signon();
-  SendBurst();
 
   TSonline = now;
 

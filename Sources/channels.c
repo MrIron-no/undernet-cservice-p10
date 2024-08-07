@@ -998,12 +998,12 @@ void JoinUser(char *num, int isOp, achannel * chan)
     return;
   }
 
-#ifdef DEBUG
+/*#ifdef DEBUG
   printf("JOIN: %s!%s@%s (%s) on channel %s", user->nick, user->username, gethost(user), user->num, chan->name);
   if (isOp)
     printf(" (@)");
   printf("\n");
-#endif
+#endif*/
 
   c->next = user->channel;
   user->channel = c;
@@ -1939,15 +1939,38 @@ void SendBurst(void)
   /* find defaults (if any) */
   for (defs = DefChanList; defs != NULL; defs = defs->next)
   {
-    chan = (achannel *) MALLOC(sizeof(achannel));
-
     for (ptr = defs->name; *ptr; ptr++)
     {
       *ptr = tolowertmp(*ptr);
     }
 
-    chan->name = (char *)MALLOC(strlen(defs->name) + 1);
-    strcpy(chan->name, defs->name);
+    /* Check if the channel exists. */
+    chan = ToChannel(defs->name);
+    if (chan)
+    {
+      /* We keep our timestamp if its older. */
+      if (defs->TS < chan->TS)
+        chan->TS = defs->TS;
+
+      /* Burst our modes on record. */
+      if (strcmp(defs->mode, "") != 0)
+        ModeChange(myYY, chan->name, defs->mode);
+    }
+    else
+    {
+      /* It is a new channel. */
+      chan = (achannel *) MALLOC(sizeof(achannel));
+      chan->name = (char *)MALLOC(strlen(defs->name) + 1);
+      strcpy(chan->name, defs->name);
+      chan->TS = defs->TS;
+      strcpy(chan->mode, defs->mode);
+      chan->bans = NULL;
+      chan->users = NULL;
+      chan->modebuff = NULL;
+      chan->next = ChannelList[cl_hash(chan->name)];
+      ChannelList[cl_hash(chan->name)] = chan;
+    }
+
     chan->AmChanOp = 1;
     chan->on = 1;
     chan->lastact = now;
@@ -1958,21 +1981,13 @@ void SendBurst(void)
     chan->MsgFloodPro = defs->MsgFloodPro;
     chan->flags = defs->flags;
     chan->uflags = defs->uflags;
-    chan->TS = defs->TS;
-    strcpy(chan->mode, defs->mode);
-
     strcpy(chan->lastjoin, "");
-    chan->bans = NULL;
-    chan->users = NULL;
-    chan->modebuff = NULL;
-    chan->next = ChannelList[cl_hash(chan->name)];
-    ChannelList[cl_hash(chan->name)] = chan;
 
 #ifdef DEBUG
     printf("SendBurst(): Found chan: %s\n", chan->name);
 #endif
 
-    sprintf(buffer, "%s B %s %ld +%s %s:o\n", myYY, chan->name, chan->TS, chan->mode, myYYXXX);
+    sprintf(buffer, "%s B %s %ld +%s %s:o\n", myYY, chan->name, chan->TS, defs->mode, myYYXXX);
     sendtoserv(buffer);
   }
 
