@@ -397,7 +397,8 @@ void http_accept(int sock)
     sendto_http(new, HTTP_BODY);
     sendto_http(new, "<H1>Due to abuse from users of your site "
       "(%s), connections are no longer accepted.</H1>\n", inet_ntoa(addr));
-    sendto_http(new, "<HR>%s\n</BODY>\n", HTTP_FOOTER);
+    sendto_http(new, "<HR>%s\n", HTTP_FOOTER);
+    sendto_http(new, "</BODY></HTML>\n");
     new->status = HTTP_ENDING;
     return;
   }
@@ -426,7 +427,7 @@ static void
       sendto_http((http_socket *) hook1,
 	"Userlist is empty on %s!<p>\n", mynick);
     sendto_http((http_socket *) hook1, "<HR>%s\n", HTTP_FOOTER);
-    sendto_http((http_socket *) hook1, "</BODY>\n");
+    sendto_http((http_socket *) hook1, "</BODY></HTML>\n");
     ((http_socket *) hook1)->status = HTTP_ENDING;
     ((http_socket *) hook1)->dbio = 0;
     free(hook2);
@@ -479,13 +480,14 @@ static void http_show_userlist(http_socket * hsock, char *channel, char *protoco
   int *hook;
 
   timeptr = gmtime(&now);
-  sprintf(date, "%sUTC", asctime(timeptr));
+  sprintf(date, "%sGMT", asctime(timeptr));
   *strchr(date, '\n') = ' ';
 
-  sendto_http(hsock, "HTTP/1.0 200 Document follows%c", 10);
+  sendto_http(hsock, "HTTP/1.0 200 OK%c", 10);
   sendto_http(hsock, "Date: %s%c", date, 10);
   sendto_http(hsock, "Server: CS/1.0%c", 10);
-  sendto_http(hsock, "Content-type: text/html%c%c", 10, 10);
+  sendto_http(hsock, "Connection: close%c", 10);
+  sendto_http(hsock, "Content-type: text/html; charset=UTF-8%c%c", 10, 10);
 
   sendto_http(hsock, HTTP_HEADER, "User list");
   sendto_http(hsock, HTTP_BODY);
@@ -496,16 +498,18 @@ static void http_show_userlist(http_socket * hsock, char *channel, char *protoco
   {
     sendto_http(hsock, "Userlist is empty on %s!<p>\n", mynick);
     sendto_http(hsock, "<HR>%s\n", HTTP_FOOTER);
-    sendto_http(hsock, "</BODY>\n");
+    sendto_http(hsock, "</BODY></HTML>\n");
     hsock->status = HTTP_ENDING;
     hsock->dbio = 0;
   }
   else
   {
+#ifdef HTTP_SECRET_WORD
     if (strcmp(channel, HTTP_SECRET_WORD) == 0)
     {
         strcpy(channel, "*"); /* Enable us to see the * userlist via the web */
     }
+#endif
     hook = (int *)malloc(sizeof(int));
     *hook = 0;
 
@@ -524,13 +528,14 @@ static void http_show_banlist(http_socket * hsock, char *channel, char *protocol
   int found = 0;
 
   timeptr = gmtime(&now);
-  sprintf(date, "%sUTC", asctime(timeptr));
+  sprintf(date, "%sGMT", asctime(timeptr));
   *strchr(date, '\n') = ' ';
 
-  sendto_http(hsock, "HTTP/1.0 200 Document follows%c", 10);
+  sendto_http(hsock, "HTTP/1.0 200 OK%c", 10);
   sendto_http(hsock, "Date: %s%c", date, 10);
   sendto_http(hsock, "Server: CS/1.0%c", 10);
-  sendto_http(hsock, "Content-type: text/html%c%c", 10, 10);
+  sendto_http(hsock, "Connection: close%c", 10);
+  sendto_http(hsock, "Content-type: text/html; charset=UTF-8%c%c", 10, 10);
 
   sendto_http(hsock, HTTP_HEADER, "Ban list");
   sendto_http(hsock, HTTP_BODY);
@@ -550,7 +555,7 @@ static void http_show_banlist(http_socket * hsock, char *channel, char *protocol
 	(*curr->reason) ? curr->reason : "No reason given");
 
       timeptr = gmtime(&curr->time);
-      sprintf(date, "%sUCT", asctime(timeptr));
+      sprintf(date, "%sGMT", asctime(timeptr));
       *strchr(date, '\n') = ' ';
       sendto_http(hsock, "SINCE: %s<br>\n", date);
 
@@ -566,7 +571,7 @@ static void http_show_banlist(http_socket * hsock, char *channel, char *protocol
   }
 
   sendto_http(hsock, "<HR>%s\n", HTTP_FOOTER);
-  sendto_http(hsock, "</BODY>\n");
+  sendto_http(hsock, "</BODY></HTML>\n");
   hsock->status = HTTP_ENDING;
 }
 
@@ -581,10 +586,14 @@ static void http_show_list(http_socket * hsock, char *keylist)
   struct tm *timeptr;
 
   timeptr = gmtime(&now);
-  sprintf(date, "%sUTC", asctime(timeptr));
+  sprintf(date, "%sGMT", asctime(timeptr));
   *strchr(date, '\n') = ' ';
 
-  sendto_http(hsock, "HTTP/1.0 200 Document follows\n\n");
+  sendto_http(hsock, "HTTP/1.0 200 OK%c", 10);
+  sendto_http(hsock, "Date: %s%c", date, 10);
+  sendto_http(hsock, "Server: CS/1.0%c", 10);
+  sendto_http(hsock, "Connection: close%c", 10);
+  sendto_http(hsock, "Content-type: text/html; charset=UTF-8%c%c", 10, 10);
 
   sendto_http(hsock, HTTP_HEADER, "Channel list");
   sendto_http(hsock, HTTP_BODY);
@@ -626,6 +635,7 @@ static void http_show_list(http_socket * hsock, char *keylist)
   }
 
   sendto_http(hsock, "<P><P><HR>%s\n", HTTP_FOOTER);
+  sendto_http(hsock, "</BODY></HTML>\n");
   hsock->status = HTTP_ENDING;
 }
 
@@ -667,6 +677,7 @@ static void
       }
     }
     sendto_http((http_socket *) hook1, "<P><P><HR>%s\n", HTTP_FOOTER);
+    sendto_http((http_socket *) hook1, "</BODY></HTML>\n");
     ((http_socket *) hook1)->status = HTTP_ENDING;
     ((http_socket *) hook1)->dbio = 0;
     free(hook2);
@@ -688,13 +699,14 @@ static void http_show_chaninfo(http_socket * hsock, char *channel)
   struct tm *timeptr;
 
   timeptr = gmtime(&now);
-  sprintf(date, "%sUCT", asctime(timeptr));
+  sprintf(date, "%sGMT", asctime(timeptr));
   *strchr(date, '\n') = ' ';
 
-  sendto_http(hsock, "HTTP/1.0 200 Document follows%c", 10);
+  sendto_http(hsock, "HTTP/1.0 200 OK%c", 10);
   sendto_http(hsock, "Date: %s%c", date, 10);
   sendto_http(hsock, "Server: CS/1.0%c", 10);
-  sendto_http(hsock, "Content-type: text/html%c%c", 10, 10);
+  sendto_http(hsock, "Connection: close%c", 10);
+  sendto_http(hsock, "Content-type: text/html; charset=UTF-8%c%c", 10, 10);
 
   sendto_http(hsock, HTTP_HEADER, "Channel information");
   sendto_http(hsock, HTTP_BODY);
@@ -719,17 +731,18 @@ static void http_show_whois(http_socket * hsock, char *nick)
   struct tm *timeptr;
 
   timeptr = gmtime(&now);
-  sprintf(date, "%sUTC", asctime(timeptr));
+  sprintf(date, "%sGMT", asctime(timeptr));
   *strchr(date, '\n') = ' ';
 
 #ifdef DEBUG
   printf("HTTP WHOIS: \"%s\"\n", nick);
 #endif
 
-  sendto_http(hsock, "HTTP/1.0 200 Document follows%c", 10);
+  sendto_http(hsock, "HTTP/1.0 200 OK%c", 10);
   sendto_http(hsock, "Date: %s%c", date, 10);
   sendto_http(hsock, "Server: CS/1.0%c", 10);
-  sendto_http(hsock, "Content-type: text/html%c%c", 10, 10);
+  sendto_http(hsock, "Connection: close%c", 10);
+  sendto_http(hsock, "Content-type: text/html; charset=UTF-8%c%c", 10, 10);
 
   sendto_http(hsock, HTTP_HEADER, "WHOIS");
   sendto_http(hsock, HTTP_BODY);
@@ -782,6 +795,7 @@ static void http_show_whois(http_socket * hsock, char *nick)
   }
 
   sendto_http(hsock, "<P><P><P><HR>%s\n", HTTP_FOOTER);
+  sendto_http(hsock, "</BODY></HTML>\n");
   hsock->status = HTTP_ENDING;
 }
 
@@ -912,10 +926,11 @@ static void http_send_file(http_socket * hsock, char *fname, char *protocol)
 
   sendto_http(hsock, "HTTP/1.0 200 Document follows%c", 10);
   timeptr = gmtime(&now);
-  sprintf(date, "%sUTC", asctime(timeptr));
+  sprintf(date, "%sGMT", asctime(timeptr));
   *strchr(date, '\n') = ' ';
   sendto_http(hsock, "Date: %s%c", date, 10);
   sendto_http(hsock, "Server: CS/1.0%c", 10);
+  sendto_http(hsock, "Connection: close%c", 10);
   sendto_http(hsock, "Mime-version: 1.0%c", 10);
 
   if (strstr(fname, ".gif"))
@@ -940,7 +955,7 @@ static void http_send_file(http_socket * hsock, char *fname, char *protocol)
   }
 
   timeptr = gmtime(&sbuf.st_mtime);
-  sprintf(date, "%sUTC", asctime(timeptr));
+  sprintf(date, "%sGMT", asctime(timeptr));
   *strchr(date, '\n') = ' ';
   sendto_http(hsock, "Last-modified: %s%c", date, 10);
   sendto_http(hsock, "Content-length: %ld\n\n", sbuf.st_size);
@@ -960,6 +975,7 @@ static void send_http_error(http_socket * hsock)
   sendto_http(hsock, HTTP_BODY);
   sendto_http(hsock, "<H1>Error in request</H1>\n");
   sendto_http(hsock, "<P><HR>%s\n", HTTP_FOOTER);
+  sendto_http(hsock, "</BODY></HTML>\n");
 }
 
 static void parse_get(http_socket * hsock, char *path, char *protocol)
@@ -1032,6 +1048,7 @@ static void parse_get(http_socket * hsock, char *path, char *protocol)
   }
 }
 
+#ifndef HTTP_EXT_DISABLE
 static int auth_raw(u_long addr)
 {
   FILE *fp;
@@ -1180,14 +1197,15 @@ static void proc_raw(http_socket * hsock, char *line)
     hsock->status = HTTP_ENDING;
   }
 }
+#endif
 
 static void parse_post(http_socket * hsock, char *line)
 {
   extern void http_show_help(http_socket *, char *);
   char buffer[512] = "", *channel = NULL, *nick = NULL, *arg = NULL;
-//  char tmp[10];
+  char tmp[10];
   register char *ptr1, *ptr2;
-  int value;
+  unsigned int value;
   register http_post *post;
 
   post = (http_post *) hsock->hook;
@@ -1238,10 +1256,10 @@ static void parse_post(http_socket * hsock, char *line)
   {
     if (ptr1[0] == '%' && ptr1[1] && ptr1[2])
     {
-/*      tmp[0] = ptr1[1]; TODO.
+      tmp[0] = ptr1[1];
       tmp[1] = ptr1[2];
       tmp[2] = '\0';
-      sscanf(tmp, "%x", &value);*/
+      sscanf(tmp, "%x", &value);
       *(ptr2++) = value;
       ptr1 += 2;
     }
@@ -1389,6 +1407,7 @@ void parse_http(http_socket * hsock, char *buf)
     parse_post(hsock, buf);
     return;
   }
+#ifndef HTTP_EXT_DISABLE
   if (hsock->status == HTTP_CSRAW)
   {
     proc_raw(hsock, buf);
@@ -1399,6 +1418,7 @@ void parse_http(http_socket * hsock, char *buf)
     parse_chat(hsock, buf);
     return;
   }
+#endif
 
   if ((ptr = strpbrk(buf, "\r\n")) != NULL)
     *ptr = '\0';
@@ -1424,6 +1444,7 @@ void parse_http(http_socket * hsock, char *buf)
     ((http_post *) hsock->hook)->count = 0;
     ((http_post *) hsock->hook)->ready = 0;
   }
+#ifdef DISABLE_HTTP_EXT
   else if (!strcasecmp(method, "CSRAW"))
   {
     hsock->status = HTTP_CSRAW;
@@ -1444,6 +1465,7 @@ void parse_http(http_socket * hsock, char *buf)
       chat_login(hsock, path, ptr);
     }
   }
+#endif
 /*
    else{
    hsock->status=HTTP_ERROR;

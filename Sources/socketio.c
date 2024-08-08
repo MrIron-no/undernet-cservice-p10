@@ -34,7 +34,9 @@
 #ifdef DOHTTP
 #include <stdarg.h>
 
+#ifndef HTTP_EXT_DISABLE
 extern void chat_close(http_socket *, char *);
+#endif
 
 int readfrom_http(http_socket * client)
 {
@@ -50,8 +52,10 @@ int readfrom_http(http_socket * client)
     }
     else
     {
+#ifndef HTTP_EXT_DISABLE
       if (client->status == HTTP_CHAT)
 	chat_close(client, "read error");
+#endif
       close(client->fd);
       client->fd = -1;
       client->status = HTTP_ERROR;
@@ -66,8 +70,10 @@ int readfrom_http(http_socket * client)
   if (copy_to_buffer(&client->inbuf, buf, length) >= 4096)
   {
     http_log("ERROR: Recv'd more than 4K from client! (flood?)");
+#ifndef HTTP_EXT_DISABLE
     if (client->status == HTTP_CHAT)
       chat_close(client, "Input packet too big");
+#endif
     client->status = HTTP_ERROR;
     close(client->fd);
     client->fd = -1;
@@ -103,8 +109,10 @@ int readfrom_http(http_socket * client)
   }
   else if (length > 200)
   {
+#ifndef HTTP_EXT_DISABLE
     if (client->status == HTTP_CHAT)
       chat_close(client, "line too long");
+#endif
     client->status = HTTP_ERROR;
     close(client->fd);
     client->fd = -1;
@@ -145,8 +153,10 @@ int flush_http_buffer(http_socket * client)
 	    }
 	  }
 	}
+#ifndef HTTP_EXT_DISABLE
 	if (client->status == HTTP_CHAT)
 	  chat_close(client, "write error");
+#endif
 	close(client->fd);
 	client->fd = -1;
 	client->status = HTTP_ERROR;

@@ -234,8 +234,10 @@ void parse_command(char *source, char *target, char *channel, char *commandline)
   else if (!strcasecmp(command, "status"))
 	showstatus(source, channel, ToWord(1, commandline));
 
+#ifndef HIS_SERVERNAME
   else if (!strcasecmp(command, "map"))
 	showmap(source);
+#endif
 
   else if (!strcasecmp(command, "help"))
 	showhelp(source, channel, ToWord(1, commandline));
@@ -357,7 +359,7 @@ void parse_command(char *source, char *target, char *channel, char *commandline)
       else if (!strcasecmp(command, "nicknewemail"))
 	nserv_nicknewemail(source, ToWord(1, commandline));
 #endif
-#ifdef DOHTTP
+#if defined(DOHTTP) && !defined(HTTP_EXT_DISABLE)
   else if (!strcasecmp(command, "dccme"))
 	DccMe(source, ToWord(1, commandline));
 #endif

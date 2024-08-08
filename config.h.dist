@@ -177,7 +177,7 @@ extern char BROADCAST_CHANNEL[80];
 extern char VERIFY_ID[256];
 #endif
 
-/* Define this to enable op'ing via mod.ccontrol */
+/* Define this to enable op'ing via gnuworld's mod.ccontrol (euworld) */
 #undef UWORLD
 #ifdef UWORLD
 #ifdef MAIN
@@ -213,8 +213,11 @@ extern char UWORLD_PASSWORD[80];
 
 #define UWORLD_COMMAND "reop %s %s"
 
-/* Define this if you would like to enable the FAKE_UWORLD function */
+/* Define this if you would like to enable the FAKE_UWORLD function.
+ * This function will allow opers to spawn a fake Uworld service to
+ * the network, which has certain commands available to opers. */
 #undef FAKE_UWORLD
+
 #ifdef FAKE_UWORLD
 # define UFAKE_NICK	"Uworld2"
 # define UFAKE_HOST	DEFAULT_HOSTNAME
@@ -267,9 +270,21 @@ extern char CALMDOWNTOPIC[512];
 #ifdef DOHTTP
 #define HTTP_PORT 7357
 #define HTTP_TIMEOUT 60
+
+/* Define this to disable the RAW and DCC CHAT features.
+ * RAW allows for sending raw http commands to X to check whether a channel
+ * is registered, and to register a channel. Can be IP-restricted.
+ */
+#undef HTTP_EXT_DISABLE
+
+/* Using this secret password in the "channel field" on the web interface 
+ * will show the userlist of '*'.
+ * Undefine to completely disallow.
+ */
+#define HTTP_SECRET_WORD "cservice_secret_list"
+
 #define HTTP_LOG  "http.log"
 #define HTTP_DENY "http.deny"
-#define HTTP_SECRET_WORD "cservice_secret_list"
 #define HTTP_REDIRECT "http://cservice.undernet.org/"
 #define HTTP_FOOTER "\n"\
 "<A HREF=\"http://cservice.undernet.org/\"><IMG SRC=\"/files/b_arrow.gif\">Back to main page</A><P>\n"\
@@ -293,6 +308,8 @@ extern char CALMDOWNTOPIC[512];
           "excised by the committee on either the channel or the webpage.\n" \
           "</EM><P>\n"
 
+/* This should probably be undefined if running the website stand-alone.
+ */
 #define check_referer(x) (strncasecmp((x),"http://cservice.undernet.org/",28) \
                 && strncasecmp((x),"http://www.cservice.undernet.org/",28) \
                 && strncasecmp((x),"http://cservice.wildstar.net/",28))
@@ -302,7 +319,8 @@ extern char CALMDOWNTOPIC[512];
 
 #endif
 
-
+/* Define this to enable the NickServ features.
+ */
 #undef NICKSERV
 
 #ifdef NICKSERV

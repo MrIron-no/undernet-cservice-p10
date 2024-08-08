@@ -200,10 +200,12 @@ commands[] =
     "clearmode", CLEARMODE_LEVEL, "CLEARMODE"
   }
   ,
+#ifndef HIS_SERVERNAME
   {
     "map", 0, "MAP"
   }
   ,
+#endif
   {
     "help", 0, "HELP"
   }
@@ -657,6 +659,7 @@ void http_show_help(http_socket * hsock, char *command)
   sendto_http(hsock, "HTTP/1.0 200 Document follows%c", 10);
   sendto_http(hsock, "Date: %s%c", date, 10);
   sendto_http(hsock, "Server: CS/1.0%c", 10);
+  sendto_http(hsock, "Connection: close%c", 10);
   sendto_http(hsock, "Content-type: text/html%c%c", 10, 10);
 
   sendto_http(hsock, HTTP_HEADER, command);

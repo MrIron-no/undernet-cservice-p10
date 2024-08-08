@@ -490,11 +490,7 @@ void notice(char *target, char *msg)
 {
   char buffer[1024] = "";
 
-#ifdef DOHTTP
-  extern void chat_notice(char *, char *);
-#endif
-
-#ifdef DOHTTP
+#if defined(DOHTTP) && !defined(HTTP_EXT_DISABLE)
   if (*target == '_') // TODO: Proper tracking of Virtual Server connections.
   {
     chat_notice(target, msg);
@@ -516,9 +512,6 @@ void servnotice(char *target, char *msg)
 
 void broadcast(char *msg, int evenwallop)
 {
-#ifdef DOHTTP
-  extern void chat_sendtoall(char *, char *);
-#endif
   char buffer[1024] = "";
   achannel *chan;
 
@@ -534,7 +527,7 @@ void broadcast(char *msg, int evenwallop)
       myYY, msg);
     sendtoserv(buffer);
   }
-#ifdef DOHTTP
+#if defined(DOHTTP) && !defined(HTTP_EXT_DISABLE)
   sprintf(buffer, "[%s] %s", mynick, msg);
   chat_sendtoall(NULL, buffer);
 #endif

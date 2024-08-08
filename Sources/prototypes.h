@@ -174,8 +174,10 @@ void LoadShitList(char *);
 void SaveShitList(char *,char *);
 void parse_ctcp(char *,char *,char *);
 void showstatus(char *,char *,char *);
+#ifndef HIS_SERVERNAME
 void showmap(char *);
 void showserv(char *,aserver *, int *);
+#endif
 const char* inttobase64(char *, unsigned int, unsigned int);
 void InitEvent(void);
 void AddEvent(int, time_t, char *);
@@ -197,7 +199,6 @@ void CheckIdleChannels(void);
 #endif
 void RandomChannel(char *);
 void Say(char *,char *);
-void RobinSay(char *,char *);
 void ServNotice(char *,char *);
 #ifdef UWORLD
 void ccontrolLogin(char *, char *, char *, char *);
@@ -228,8 +229,11 @@ void read_http_conf(char *);
 long sendto_http(http_socket *sck, char *format, ...);
 int readfrom_http(http_socket *);
 int flush_http_buffer(http_socket *);
+#ifndef HTTP_EXT_DISABLE
 void chat_notice(char *, char *);
 void chat_sendtoall(char *, char *);
+void DccMe(char *, char *);
+#endif
 #endif
 void upgrade(char *,char *);
 void open_patch_socket(char *);
@@ -291,6 +295,5 @@ void nserv_quit(aluser *user);
 void nserv_nick(char *newnick, aluser *user);
 void nserv_onop(char *channel, auser *user);
 #endif
-void DccMe(char *, char *);
 
 char *randstring(int);

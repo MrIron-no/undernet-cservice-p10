@@ -231,30 +231,19 @@ void onsquit(char *source, char *theserver, char *args)
   free(serv);
 }
 
+#ifndef HIS_SERVERNAME
 void showmap(char *source)
 {
   int count = 0;
-  int hide = 0;
   register aluser *user;
-
-#ifdef HIS_SERVERNAME
-  hide = 1;
-#endif
 
   if (CurrentSendQ > HIGHSENDQTHRESHOLD)
   {
     notice(source, "Cannot process your request at this time. Try again later.");
     return;
   }
-
-  user = ToLuser(source);
-  if ((!user->mode & LFL_ISOPER) && hide)
-    notice(source, "This command has been disabled.");
-  else
-  {
-    notice(source, SERVERNAME);
-    showserv(source, ServerList, &count);
-  }
+  notice(source, SERVERNAME);
+  showserv(source, ServerList, &count);
   CheckFloodFlood(source, count);
 }
 
@@ -306,6 +295,7 @@ void showserv(char *source, aserver * server, int *count)
 
   showserv(source, server->next, count);
 }
+#endif
 
 void onsettime(char *source, char *value)
 {

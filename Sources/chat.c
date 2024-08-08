@@ -26,7 +26,7 @@
 
 #include "h.h"
 
-#ifdef DOHTTP
+#if defined(DOHTTP) && !defined(HTTP_EXT_DISABLE)
 
 struct chat_user
 {

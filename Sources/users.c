@@ -637,6 +637,16 @@ void onwhois(char *source, char *nick)
   register achannelnode *chan;
   char buffer[512] = "";
 
+  if ( strcasecmp(nick, mynick) == 0 )
+  {
+    sprintf(buffer, "%s 311 %s %s %s %s * :%s\n", myYY, source, mynick,
+      myuser, mysite, myrealname );
+    sendtoserv(buffer);
+    sprintf(buffer, "%s 318 %s %s :End of /WHOIS list.\n", myYY, source, nick);
+    sendtoserv(buffer);
+    return;
+  }
+
   user = ToLuserNick(nick);
 
   if (user == NULL)
