@@ -83,12 +83,12 @@ void RemFlag(char *string, char flag)
       strcpy(temp, curr + 1);
       strcpy(curr, temp);
       if (ptr)
-	      strcpy(ToWord(count, newarg), ToWord(count + 1, newarg));
+        strcpy(ToWord(count, newarg), ToWord(count + 1, newarg));
     }
     else
     {
       if (ptr)
-	      count++;
+        count++;
       curr++;
     }
   }
@@ -124,9 +124,9 @@ int IsSet(char *channel, char flag, char *param)
     {
       GetWord(j + 1, setmode, setparam);
       if (strcmp(setparam, param) == 0)
-	out = 1;
+        out = 1;
       else
-	out = 0;
+        out = 0;
     }
     else
     {
@@ -164,63 +164,62 @@ void bounce(char *channel, char *change, time_t TS)
       user = ToUser(channel, arg);
 
       if (user == NULL)
-	continue;
+        continue;
       if (sign == '+')
       {
-	if (!user->chanop)
-	{
-	  changemode(channel, "-o", arg, 1);
-	  user->chanop = 0;
-	}
+        if (!user->chanop)
+        {
+          changemode(channel, "-o", arg, 1);
+          user->chanop = 0;
+        }
       }
       else
       {
-	if (user->chanop)
-	{
-	  /*
-	     changemode(channel,"+o",arg,1);
-	     user->chanop=1;
-	   */
-	  /* don't bounce -o */
-	  user->chanop = 0;
-	}
+        if (user->chanop)
+        {
+          /*
+            changemode(channel,"+o",arg,1);
+            user->chanop=1;
+          */
+          /* don't bounce -o */
+          user->chanop = 0;
+        }
       }
     }
     else if (change[i] == 'v')
     {
       GetWord(pos++, change, arg);
       if (sign == '+')
-	changemode(channel, "-v", arg, 1);
+        changemode(channel, "-v", arg, 1);
       else
-	changemode(channel, "+v", arg, 1);
+        changemode(channel, "+v", arg, 1);
     }
     else if (change[i] == 'k')
     {
       GetWord(pos++, change, arg);
       if (sign == '+')
       {
-	if (!IsSet(channel, 'k', arg))
-	  changemode(channel, "-k", arg, 1);
+        if (!IsSet(channel, 'k', arg))
+          changemode(channel, "-k", arg, 1);
       }
       else
       {
-	if (IsSet(channel, 'k', arg))
-	  changemode(channel, "+k", arg, 1);
+        if (IsSet(channel, 'k', arg))
+          changemode(channel, "+k", arg, 1);
       }
     }
     else if (change[i] == 'l')
     {
       pos++;
       if (sign == '+' && !IsSet(channel, 'l', arg))
-	changemode(channel, "-l", "", 1);
-
+        changemode(channel, "-l", "", 1);
     }
     else if ((IsSet(channel, change[i], "") && sign == '-') ||
       (!IsSet(channel, change[i], "") && sign == '+'))
     {
       sprintf(buffer, "%c%c",
-	(sign == '+') ? '-' : '+',
-	change[i]);
+        (sign == '+') ? '-' : '+',
+        change[i]);
       changemode(channel, buffer, "", 1);
     }
   }
@@ -241,52 +240,52 @@ void onclearmode(char *source, char *channel, char *change)
 
   if (!chan)
   {
-	sprintf(buffer, "ERROR OnClearMode(): Cannot find channel %s", channel);
-	PutLog(buffer);
-	return;
+    sprintf(buffer, "ERROR OnClearMode(): Cannot find channel %s", channel);
+    PutLog(buffer);
+    return;
   }
 
   for (int i = 0; i < strlen(change); i++)
   {
-	if (change[i] != 'o' && change[i] != 'v' && change[i] != 'b')
-		strcat(modestring, &change[i]);
+    if (change[i] != 'o' && change[i] != 'v' && change[i] != 'b')
+      strcat(modestring, &change[i]);
 
-	if (change[i] == 'o')
-		clearOps = 1;
+    if (change[i] == 'o')
+      clearOps = 1;
 
-	if (change[i] == 'b')
-		clearBans = 1;
+    if (change[i] == 'b')
+      clearBans = 1;
   }
 
   // Clearing modes if any.
   if (strcasecmp(modestring, "-"))
-	ModeChange(source, channel, modestring);
+    ModeChange(source, channel, modestring);
 
   // Clearing ops.
   if (clearOps)
   {
-	// Checking if I am op.
-	if (chan->on) chan->AmChanOp = 0;
+    // Checking if I am op.
+    if (chan->on) chan->AmChanOp = 0;
 
-	// Registering all other opped users as deoped. 
-	chanuser = chan->users;
-	while (chanuser != NULL)
-	{
-		if (chanuser->chanop)
- 			chanuser->chanop = 0;
-		chanuser = chanuser->next;
-	}
+    // Registering all other opped users as deoped.
+    chanuser = chan->users;
+    while (chanuser != NULL)
+    {
+      if (chanuser->chanop)
+        chanuser->chanop = 0;
+      chanuser = chanuser->next;
+    }
   }
 
   // Clearing bans.
   if (clearBans)
   {
-	while ((ban = chan->bans) != NULL)
-	{
-		chan->bans = ban->next;
- 		TTLALLOCMEM -= sizeof(aban);
- 		free(ban);
-  	}
+    while ((ban = chan->bans) != NULL)
+    {
+      chan->bans = ban->next;
+      TTLALLOCMEM -= sizeof(aban);
+      free(ban);
+    }
   }
 }
 
@@ -305,7 +304,7 @@ void ModeChange(char *source, char *channel, char *change)
   printf("ModeChange(%s, %s, %s)\n", source, channel, change);
 #endif
   chan = ToChannel(channel);
-  /* if chan == NULL at this point.. we're dealing with a 
+  /* if chan == NULL at this point.. we're dealing with a
    * user mode change
    */
   if (chan != NULL)
@@ -325,7 +324,7 @@ void ModeChange(char *source, char *channel, char *change)
     for (ptr = change; *ptr != 'b' && *ptr != ' '; ptr++);
     if (*ptr != 'b' && strcmp(myYY, source) != 0
 #ifdef UWORLD
-      && strcmp(uworldYY, source) != 0 
+      && strcmp(uworldYY, source) != 0
 #endif
 #ifdef FAKE_UWORLD
       && strcmp(ufakeYY, source) != 0
@@ -334,19 +333,19 @@ void ModeChange(char *source, char *channel, char *change)
     {
       ptr = change + strlen(change);
       while (*ptr != ' ')
-	ptr--;
+        ptr--;
       *(ptr++) = '\0';
       if (atol(ptr) > chan->TS && atol(ptr) != 0 && chan->on)
       {
-	PutLog(source);
-	PutLog(channel);
-	PutLog(change);
-	PutLog(ptr);
-	bounce(channel, change, chan->TS);
-	return;
+        PutLog(source);
+        PutLog(channel);
+        PutLog(change);
+        PutLog(ptr);
+        bounce(channel, change, chan->TS);
+        return;
       }
       if (atol(ptr) != 0)
-	chan->TS = atol(ptr);
+        chan->TS = atol(ptr);
     }
   }
 
@@ -364,118 +363,118 @@ void ModeChange(char *source, char *channel, char *change)
     {
       if (sign == '+')
       {
-	if (chan != NULL)
-	{
-	  ptr = strchr("blkov", *change);
-	  if (ptr)
-	  {
-	    GetWord(count, change, arg);
-	    if (strchr("lk", *change) && *arg)
-	      AddFlag(chan->mode, *change, arg);
-	    count++;
-	  }
-	  else
-	  {
-	    if (strchr("imntpsrDdRCc", *change))
-	      AddFlag(chan->mode, *change, NULL);
-	  }
-	}
-	else
-	{
-	  /* user mode change (+) */
-	  if (*change == 'o')
-	  {
-	    u->mode |= LFL_ISOPER;
-#ifdef DEBUG
-	    printf("%s (%s) is now IRCOP\n", u->nick, source);
-#endif
-	  } 
-	  else if (*change == 'k')
-	  {
-	    u->mode |= LFL_ISSERVICE;
-#ifdef DEBUG
-	    printf("%s (%s) is now a Network Service\n", u->nick, source);
-#endif
-	  } 
-	  else if (*change == 'x')
-	  {
-		  u->mode |= LFL_ISMODEX;
-#ifdef DEBUG
-		  printf("%s (%s) is now +x\n", u->nick, source);
-#endif
-		  if (u->mode & LFL_REGISTERED)
-		  {
-			  sprintf(hiddenhost, "%s%s", u->account, HIDDEN_HOST_SUFFIX);
+        if (chan != NULL)
+        {
+          ptr = strchr("blkov", *change);
+          if (ptr)
+          {
+            GetWord(count, change, arg);
+            if (strchr("lk", *change) && *arg)
+              AddFlag(chan->mode, *change, arg);
+            count++;
+          }
+          else
+          {
+            if (strchr("imntpsrDdRCc", *change))
+              AddFlag(chan->mode, *change, NULL);
+          }
+        }
+        else
+        {
+          /* user mode change (+) */
+          if (*change == 'o')
+          {
+            u->mode |= LFL_ISOPER;
+      #ifdef DEBUG
+            printf("%s (%s) is now IRCOP\n", u->nick, source);
+      #endif
+          }
+          else if (*change == 'k')
+          {
+            u->mode |= LFL_ISSERVICE;
+      #ifdef DEBUG
+            printf("%s (%s) is now a Network Service\n", u->nick, source);
+      #endif
+          }
+          else if (*change == 'x')
+          {
+            u->mode |= LFL_ISMODEX;
+      #ifdef DEBUG
+            printf("%s (%s) is now +x\n", u->nick, source);
+      #endif
+            if (u->mode & LFL_REGISTERED)
+            {
+              sprintf(hiddenhost, "%s%s", u->account, HIDDEN_HOST_SUFFIX);
 
-			  // Change the hiddenhost in memory
-			  u->hiddenhost = (char *)MALLOC(strlen(hiddenhost) + 1);
-			  strcpy(u->hiddenhost, hiddenhost);
-		  }
-	  }
-	}
+              // Change the hiddenhost in memory
+              u->hiddenhost = (char *)MALLOC(strlen(hiddenhost) + 1);
+              strcpy(u->hiddenhost, hiddenhost);
+            }
+          }
+        }
       }
       else
       {
-	if (chan != NULL)
-	{
-	  ptr = strchr("bkov", *change);
-	  if (strchr("ilkmntpsrDdRCc", *change))
-	    RemFlag(chan->mode, *change);
-	  if (ptr)
-	  {
-	    GetWord(count, change, arg);
-	    count++;
-	  }
-	}
-	else
-	{
-	  /* user mode change (-) */
-	  if (*change == 'o')
-	  {
-	    u->mode &= ~LFL_ISOPER;
-#ifdef DEBUG
-	    printf("%s (%s) is no longer IRCOP\n", u->nick, source);
-#endif
-	  }
-	  else if (*change == 'k')
-	  {
-	    u->mode &= ~LFL_ISSERVICE;
-#ifdef DEBUG
-	    printf("%s (%s) is no longer a Network Service\n", u->nick, source);
-#endif
-	  }
-	}
+        if (chan != NULL)
+        {
+          ptr = strchr("bkov", *change);
+          if (strchr("ilkmntpsrDdRCc", *change))
+            RemFlag(chan->mode, *change);
+          if (ptr)
+          {
+            GetWord(count, change, arg);
+            count++;
+          }
+        }
+        else
+        {
+          /* user mode change (-) */
+          if (*change == 'o')
+          {
+            u->mode &= ~LFL_ISOPER;
+      #ifdef DEBUG
+            printf("%s (%s) is no longer IRCOP\n", u->nick, source);
+      #endif
+          }
+          else if (*change == 'k')
+          {
+            u->mode &= ~LFL_ISSERVICE;
+      #ifdef DEBUG
+            printf("%s (%s) is no longer a Network Service\n", u->nick, source);
+      #endif
+          }
+        }
       }
 
 /** other tests should go here **/
 
       if (chan != NULL)
       {
-	if (*change == 'o')
-	{
-	  if (sign == '+')
-	    onop(source, channel, arg);
-	  else
-	    ondeop(source, channel, arg, &desync);
-	}
-	else if (*change == 'b')
-	{
-	  if (sign == '+')
-	    onban(source, channel, arg);
-	  else
-	    onunban(source, channel, arg);
-	}
-	else if (*change == 'l')
-	{
-	  if (sign == '+' && atoi(arg) < 2)
-	  {
-	    if (chan->on && chan->AmChanOp)
-	    {
-	      changemode(channel, "-l", "", 0);
-	      RemFlag(chan->mode, *change);
-	    }
-	  }
-	}
+        if (*change == 'o')
+        {
+          if (sign == '+')
+            onop(source, channel, arg);
+          else
+            ondeop(source, channel, arg, &desync);
+        }
+        else if (*change == 'b')
+        {
+          if (sign == '+')
+            onban(source, channel, arg);
+          else
+            onunban(source, channel, arg);
+        }
+        else if (*change == 'l')
+        {
+          if (sign == '+' && atoi(arg) < 2)
+          {
+            if (chan->on && chan->AmChanOp)
+            {
+              changemode(channel, "-l", "", 0);
+              RemFlag(chan->mode, *change);
+            }
+          }
+        }
       }
     }
     change++;
@@ -527,57 +526,49 @@ void onop(char *source, char *channel, char *target)
     if (!user)
     {
       sprintf(buffer, "ERROR: onop() user not found (%s)",
-	target);
+        target);
       PutLog(buffer);
       return;
     }
 
     user->chanop = 1;
 
-    if (luser && chan->on && (chan->flags & CFL_NOOP))
+    if (luser && chan->on && (chan->flags & CFL_NOOP) && !(luser->mode & LFL_ISSERVICE))
     {
       sprintf(buffer, "NoOp MODE! deopping %s and %s",
-	target, luser->nick);
+        target, luser->nick);
       PutLog(buffer);
       notice(target, replies[RPL_NOOP][chan->lang]);
       changemode(channel, "-o", target, 0);
       user->chanop = 0;
 
-      if (!(luser->mode & LFL_ISSERVICE))
+      notice(source, replies[RPL_NOOP][chan->lang]);
+      changemode(channel, "-o", source, 0);
+      user = ToUser(channel, source);
+      if (user != NULL)
       {
-        notice(source, replies[RPL_NOOP][chan->lang]);
-        changemode(channel, "-o", source, 0);
-        user = ToUser(channel, source);
-        if (user != NULL)
-        {
-   	  user->chanop = 0;
-        }
+        user->chanop = 0;
       }
     }
     else if (luser && chan->on && (chan->flags & CFL_STRICTOP) &&
-      Access(channel, target) < OP_LEVEL)
+      Access(channel, target) < OP_LEVEL && !(luser->mode & LFL_ISSERVICE))
     {
       notice(target, "Only authenticated users may be op in StrictOp mode");
       changemode(channel, "-o", target, 0);
       user->chanop = 0;
 
-      if (!(luser->mode & LFL_ISSERVICE))
+      notice(source, "Only authenticated users may be op in StrictOp mode");
+      if (Access(channel, source) < OP_LEVEL)
       {
-        notice(source, "Only authenticated users may be op in StrictOp mode");
-        if (Access(channel, source) < OP_LEVEL)
+        changemode(channel, "-o", source, 0);
+        user = ToUser(channel, source);
+        if (user != NULL)
         {
-  	  changemode(channel, "-o", source, 0);
- 	  user = ToUser(channel, source);
-	  if (user != NULL)
-	  {
-	    user->chanop = 0;
-	  }
+          user->chanop = 0;
         }
-        sprintf(buffer, "StrictOp MODE! deopping %s and %s",
-	  target, luser->nick);
-      } else
-        sprintf(buffer, "StrictOp MODE! deopping %s (opped by %s)",
-	  target, luser->nick);
+      }
+      sprintf(buffer, "StrictOp MODE! deopping %s and %s",
+        target, luser->nick);
 
       PutLog(buffer);
     }
@@ -585,30 +576,30 @@ void onop(char *source, char *channel, char *target)
     {
       if (Access(channel, source) < ACCESS_BAN_PRIORITY)
       {
-	notice(target, replies[RPL_CANTBEOP][chan->lang]);
-	changemode(channel, "-o", target, 0);
-	user->chanop = 0;
+        notice(target, replies[RPL_CANTBEOP][chan->lang]);
+        changemode(channel, "-o", target, 0);
+        user->chanop = 0;
 
         if (!(luser->mode & LFL_ISSERVICE))
         {
-  	  notice(source, replies[RPL_CANTBEOPPED][chan->lang]);
-	  changemode(channel, "-o", source, 0);
-	  user = ToUser(channel, source);
-	  if (user != NULL)
-	    user->chanop = 0;
-	  sprintf(buffer, "%s %d", luser->nick, SUSPEND_TIME_FOR_OPPING_A_SHITLISTED_USER);
-	  suspend("", channel, buffer);
-	  sprintf(buffer, "%s is shitlisted (NO-OP LEVEL)!"
-	    "Deopping %s and %s", target, target, luser->nick);
+          notice(source, replies[RPL_CANTBEOPPED][chan->lang]);
+          changemode(channel, "-o", source, 0);
+          user = ToUser(channel, source);
+          if (user != NULL)
+            user->chanop = 0;
+          sprintf(buffer, "%s %d", luser->nick, SUSPEND_TIME_FOR_OPPING_A_SHITLISTED_USER);
+          suspend("", channel, buffer);
+          sprintf(buffer, "%s is shitlisted (NO-OP LEVEL)!"
+            "Deopping %s and %s", target, target, luser->nick);
         } else
-	  sprintf(buffer, "%s is shitlisted (NO-OP LEVEL)!"
-	    "Deopping %s (opped by %s)", target, target, luser->nick);
+          sprintf(buffer, "%s is shitlisted (NO-OP LEVEL)!"
+            "Deopping %s (opped by %s)", target, target, luser->nick);
 
-	PutLog(buffer);
+        PutLog(buffer);
       }
       else
       {
-	unban(source, channel, target);
+        unban(source, channel, target);
       }
     }
   }
@@ -675,17 +666,17 @@ void ondeop(char *source, char *channel, char *target, int *desync)
     {
       if (prec)
       {
-	prec->next = curr->next;
-	TTLALLOCMEM -= sizeof(adeop);
-	free(curr);
-	curr = prec->next;
+        prec->next = curr->next;
+        TTLALLOCMEM -= sizeof(adeop);
+        free(curr);
+        curr = prec->next;
       }
       else
       {
-	user1->deophist = curr->next;
-	TTLALLOCMEM -= sizeof(adeop);
-	free(curr);
-	curr = user1->deophist;
+        user1->deophist = curr->next;
+        TTLALLOCMEM -= sizeof(adeop);
+        free(curr);
+        curr = user1->deophist;
       }
     }
     else
@@ -721,8 +712,8 @@ void ondeop(char *source, char *channel, char *target, int *desync)
       sprintf(buffer, "%s %d", user1->N->nick, MASSDEOP_SUSPEND_TIME);
       suspend("", channel, buffer);
       sprintf(buffer, "%s %d %d *** MASSDEOP ***", user1->N->nick,
-	MASSDEOP_SHITLIST_TIME,
-	MASSDEOP_SHITLIST_LEVEL);
+        MASSDEOP_SHITLIST_TIME,
+        MASSDEOP_SHITLIST_LEVEL);
       AddToShitList("", channel, buffer, 0);
       sprintf(buffer, "%s ### MASSDEOP PROTECTION ###", user1->N->nick);
       kick("", channel, buffer);
@@ -835,10 +826,10 @@ void clearmode(char *channel, char *flag, int AsUworld)
 
 #ifdef FAKE_UWORLD
   if (AsUworld && Uworld_status == 1)
-	sprintf(buffer, "%s CM %s %s\n", ufakeYY, channel, flag);
+  sprintf(buffer, "%s CM %s %s\n", ufakeYY, channel, flag);
   else
 #endif
-	sprintf(buffer, "%s CM %s %s\n", myYYXXX, channel, flag);
+  sprintf(buffer, "%s CM %s %s\n", myYYXXX, channel, flag);
 
   // Sending to server.
   sendtoserv(buffer);
@@ -869,7 +860,7 @@ void changemode(char *channel, char *flag, char *arg, int AsServer)
     strcpy(args, arg);
   }
 
-  /* first, cancel previous contradicting mode changes..  
+  /* first, cancel previous contradicting mode changes..
      ex.. mode #test +o-o+o-o+o .. the bot won't do that..  */
 
   mode = chan->modebuff;
@@ -877,15 +868,15 @@ void changemode(char *channel, char *flag, char *arg, int AsServer)
   {
     if (strcmp(arg, mode->arg) == 0 && flag[1] == mode->flag[1] &&
       ((flag[0] == '+' && mode->flag[0] == '-') ||
-	(flag[0] == '-' && mode->flag[0] == '+')))
+      (flag[0] == '-' && mode->flag[0] == '+')))
     {
       if (mode->prev)
-	mode->prev->next = mode->next;
+        mode->prev->next = mode->next;
       else
-	chan->modebuff = mode->next;
+        chan->modebuff = mode->next;
 
       if (mode->next)
-	mode->next->prev = mode->prev;
+        mode->next->prev = mode->prev;
 
       curr = mode;
       TTLALLOCMEM -= sizeof(modequeue);
@@ -897,7 +888,7 @@ void changemode(char *channel, char *flag, char *arg, int AsServer)
     mode = mode->next;
   }
 
-	TTLALLOCMEM += sizeof(modequeue);
+  TTLALLOCMEM += sizeof(modequeue);
   curr = (modequeue *) calloc(1, sizeof(modequeue));
   strncpy(curr->arg, args, strlen(args) + 1);
   strncpy(curr->flag, flag, 3);
@@ -957,71 +948,71 @@ void flushmode(char *channel)
     {
       if (strcmp(mode->flag, "-b") == 0)
       {
-	RemBan(channel, mode->arg);
+        RemBan(channel, mode->arg);
       }
       else if (strcmp(mode->flag, "+b") == 0)
       {
-	AddBan(channel, mode->arg);
+        AddBan(channel, mode->arg);
       }
       if (AsServer == mode->AsServer)
       {
-	if (mode->arg[0] != '\0')
-	{
-	  count++;
-	  strcat(args, " ");
-	  strncat(args, mode->arg, strlen(mode->arg));
-	}
-	if (lastsign != mode->flag[0])
-	{
-	  strcat(flags, mode->flag);
-	  lastsign = mode->flag[0];
-	}
-	else
-	{
-	  strcat(flags, mode->flag + 1);
-	}
-	if (mode->prev)
-	  mode->prev->next = mode->next;
-	else
-	  chan->modebuff = mode->next;
-	if (mode->next)
-	  mode->next->prev = mode->prev;
-	tmp = mode;
-	mode = mode->next;
-	TTLALLOCMEM -= sizeof(modequeue);
-	free(tmp);
+        if (mode->arg[0] != '\0')
+        {
+          count++;
+          strcat(args, " ");
+          strncat(args, mode->arg, strlen(mode->arg));
+        }
+        if (lastsign != mode->flag[0])
+        {
+          strcat(flags, mode->flag);
+          lastsign = mode->flag[0];
+        }
+        else
+        {
+          strcat(flags, mode->flag + 1);
+        }
+        if (mode->prev)
+          mode->prev->next = mode->next;
+        else
+          chan->modebuff = mode->next;
+        if (mode->next)
+          mode->next->prev = mode->prev;
+        tmp = mode;
+        mode = mode->next;
+        TTLALLOCMEM -= sizeof(modequeue);
+        free(tmp);
       }
       else
       {
-	mode = mode->next;
+        mode = mode->next;
       }
 
       if (count == MAX_MODE_PER_LINE || !mode)
       {
-	if (AsServer == 0 && chan->AmChanOp && *flags != '\0')
-	{
-	  sprintf(buffer, "%s M %s %s%s\n",
-	    myYYXXX, channel, flags, args);
-	  sendtoserv(buffer);
-	}
-	else if (AsServer == 1 && *flags != '\0')
-	{
-	  sprintf(buffer, "%s M %s %s%s\n",
-	    myYY, channel,
-	    flags, args);
-	  sendtoserv(buffer);
-	}
-#ifdef FAKE_UWORLD
-	else if (AsServer == 2 && Uworld_status == 1 && *flags != '\0')
-	{
-	  sprintf(buffer, "%s M %s %s%s\n",
-	    ufakeYY, channel,
-	    flags, args);
-	  sendtoserv(buffer);
-	}
-#endif
-	count = *args = *flags = 0;
-	lastsign = '+';
+        if (AsServer == 0 && chan->AmChanOp && *flags != '\0')
+        {
+          sprintf(buffer, "%s M %s %s%s\n",
+            myYYXXX, channel, flags, args);
+          sendtoserv(buffer);
+        }
+        else if (AsServer == 1 && *flags != '\0')
+        {
+          sprintf(buffer, "%s M %s %s%s\n",
+            myYY, channel,
+            flags, args);
+          sendtoserv(buffer);
+        }
+      #ifdef FAKE_UWORLD
+        else if (AsServer == 2 && Uworld_status == 1 && *flags != '\0')
+        {
+          sprintf(buffer, "%s M %s %s%s\n",
+            ufakeYY, channel,
+            flags, args);
+          sendtoserv(buffer);
+        }
+      #endif
+        count = *args = *flags = 0;
+        lastsign = '+';
       }
     }
   }

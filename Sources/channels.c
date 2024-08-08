@@ -124,50 +124,50 @@ void DelChannel(char *channelname)
     {
       while ((user = chan->users) != NULL)
       {
-	      chan->users = user->next;
-	      FreeUser(user);
+        chan->users = user->next;
+        FreeUser(user);
       }
       if (prec)
       {
-	      prec->next = chan->next;
-	      while ((mode = chan->modebuff) != NULL)
-	      {
-	        chan->modebuff = mode->next;
-	        TTLALLOCMEM -= sizeof(modequeue);
-	        free(mode);
-      	}
-	      while ((ban = chan->bans) != NULL)
-	      {
-	        chan->bans = ban->next;
-	        TTLALLOCMEM -= sizeof(aban);
-	        free(ban);
-	      }
-	      TTLALLOCMEM -= strlen(chan->name) + 1;
-	      free(chan->name);
-	      TTLALLOCMEM -= sizeof(achannel);
-	      free(chan);
-	      chan = prec->next;
+        prec->next = chan->next;
+        while ((mode = chan->modebuff) != NULL)
+        {
+          chan->modebuff = mode->next;
+          TTLALLOCMEM -= sizeof(modequeue);
+          free(mode);
+        }
+        while ((ban = chan->bans) != NULL)
+        {
+          chan->bans = ban->next;
+          TTLALLOCMEM -= sizeof(aban);
+          free(ban);
+        }
+        TTLALLOCMEM -= strlen(chan->name) + 1;
+        free(chan->name);
+        TTLALLOCMEM -= sizeof(achannel);
+        free(chan);
+        chan = prec->next;
       }
       else
       {
-	      ChannelList[cl_hash(channel)] = chan->next;
-	      while ((mode = chan->modebuff) != NULL)
-	      {
-	        chan->modebuff = mode->next;
-	        TTLALLOCMEM -= sizeof(modequeue);
-	        free(mode);
-	      }
-	      while ((ban = chan->bans) != NULL)
-      	{
-	        chan->bans = ban->next;
-	        TTLALLOCMEM -= sizeof(aban);
-	        free(ban);
-	      }
-	      TTLALLOCMEM -= strlen(chan->name) + 1;
+        ChannelList[cl_hash(channel)] = chan->next;
+        while ((mode = chan->modebuff) != NULL)
+        {
+          chan->modebuff = mode->next;
+          TTLALLOCMEM -= sizeof(modequeue);
+          free(mode);
+        }
+        while ((ban = chan->bans) != NULL)
+        {
+          chan->bans = ban->next;
+          TTLALLOCMEM -= sizeof(aban);
+          free(ban);
+        }
+        TTLALLOCMEM -= strlen(chan->name) + 1;
         free(chan->name);
-	      TTLALLOCMEM -= sizeof(achannel);
-	      free(chan);
-	      chan = ChannelList[cl_hash(channel)];
+        TTLALLOCMEM -= sizeof(achannel);
+        free(chan);
+        chan = ChannelList[cl_hash(channel)];
       }
       break;
     }
@@ -220,7 +220,7 @@ auser *ToUser(char *channel, char *num)
 
   // Servermode?
   if (strlen(num) == 2)
-	return NULL;
+  return NULL;
 
   chan = ToChannel(channel);
   if (!chan)
@@ -332,9 +332,7 @@ void GetOps(char *channel)
 #ifdef UWORLD
   if ((user = ToLuserNick(UWORLD)) != NULL && !match(user->site, UWORLD_HOST))
     user = NULL;
-#endif
 
-#if defined(UWORLD) || defined(FAKE_UWORLD)
   if (user != NULL)
   {
     sprintf(buffer, "%s P %s :" UWORLD_COMMAND "\n",
@@ -342,25 +340,23 @@ void GetOps(char *channel)
     sendtoserv(buffer);
     sprintf(buffer, "I ASK %s FOR REOP ON %s", user->nick, channel);
     PutLog(buffer);
+
+   /* If Uworld is present, send the request and check later on
+    * if it worked.
+    */
+    AddEvent(EVENT_GETOPS, now + GETOPS_FREQ, channel);
+
+    return;
   }
-  else
-  {
 #ifdef DEBUG
     printf("GetOps(): %s isn't online... Op'ing myself.\n", UWORLD);
 #endif
-    changemode(channel, "+o", myYYXXX, 1);
-    flushmode(channel);
-  }
-  #else
-    changemode(channel, "+o", myYYXXX, 1);
-    flushmode(channel);
-  #endif
-  /* If Uworld is not present, queue the request
-   * and try again later..
-   * If he's present, send the request and check later on
-   * if it worked.
-   */
-  AddEvent(EVENT_GETOPS, now + GETOPS_FREQ, channel);
+#endif
+  sprintf(buffer, "%s M %s +o %s %ld\n",
+    myYY, channel, myYYXXX, timestamp);
+  sendtoserv(buffer);
+  sprintf(buffer, "+o %s %ld", myYYXXX, timestamp);
+  ModeChange(myYY, channel, buffer);
 }
 
 int GuessChannel(char *num, char *output)
@@ -477,7 +473,7 @@ int IsReg(char *channel)
   {
     for (reg = UserList[ul_hash(channel)]; reg != NULL; reg = reg->next)
       if (!strcasecmp(reg->channel, channel))
-	break;
+        break;
     if (reg == NULL)
       return 0;
   }
@@ -540,22 +536,24 @@ void join(char *source, char *chan, char *arg)
   if (strlen(channel) <= 45)
   {
     ch = ToChannel(channel);
+#ifndef ALLOW_PAL
     if (ch != NULL)
     {
       for (user = ch->users; user != NULL; user = user->next)
       {
-	if (!strcasecmp(user->N->username, DEFAULT_USERNAME) &&
-	  !strcasecmp(user->N->site, DEFAULT_HOSTNAME))
-	{
-	  if (*source)
-	  {
-	    sprintf(buffer, "%s is already on that channel", user->N->nick);
-	    notice(source, buffer);
-	  }
-	  return;
-	}
+        if (!strcasecmp(user->N->username, DEFAULT_USERNAME) &&
+            !strcasecmp(user->N->site, DEFAULT_HOSTNAME))
+        {
+          if (*source)
+          {
+            sprintf(buffer, "%s is already on that channel", user->N->nick);
+            notice(source, buffer);
+          }
+          return;
+        }
       }
     }
+#endif
     sprintf(buffer, "I JOIN %s", channel);
     PutLog(buffer);
     if (ch == NULL)
@@ -571,9 +569,9 @@ void join(char *source, char *chan, char *arg)
       ch->on = 1;
       ch->lastact = now;
       if (IsOpless(channel) || ((ch->flags & CFL_ALWAYSOP) &&
-	  !ch->AmChanOp))
-	AddEvent(EVENT_GETOPS,
-	  now + GETOPS_ONJOIN_DELAY, channel);
+        !ch->AmChanOp))
+        AddEvent(EVENT_GETOPS,
+          now + GETOPS_ONJOIN_DELAY, channel);
     }
   }
 #ifdef DEBUG
@@ -696,7 +694,7 @@ void invite(char *source, char *ch, char *args)
   GetWord(0, args, target);
   luser = ToLuser(source);
 
-  if (*target != '\0' && strcasecmp(target, luser->nick) && (source[0] != '+')) // TODO: Is this + DCC related? Numerics start with __. 
+  if (*target != '\0' && strcasecmp(target, luser->nick) && (source[0] != '_'))
   {
     notice(source, "You are only allowed to invite yourself");
     return;
@@ -730,7 +728,7 @@ void invite(char *source, char *ch, char *args)
 
 void onburst(char *source, char *chanarg, char *args)
 {
-  char string[600] = ""; 
+  char string[600] = "";
   char buffer[80] = "";
   char YYXXX[6] = "";
   char channel[CHANNELNAME_LENGTH] = "";
@@ -750,19 +748,19 @@ void onburst(char *source, char *chanarg, char *args)
   timestamp = atol(string);
   tokenPos++;
 
-  // Checking if the channel is new. 
+  // Checking if the channel is new.
   chan = ToChannel(channel);
   if (!chan)
   {
 #ifdef DEBUG
-	  printf("onburst(): New channel %s\n", channel);
+    printf("onburst(): New channel %s\n", channel);
 #endif
-	  if (!timestamp)
-	  	NewChannel(channel, now + TSoffset, 0);
-	  else
-		  NewChannel(channel, timestamp, 0);
+    if (!timestamp)
+      NewChannel(channel, now + TSoffset, 0);
+    else
+      NewChannel(channel, timestamp, 0);
 
-	  chan = ToChannel(channel);
+    chan = ToChannel(channel);
 
     if (!chan)
     {
@@ -773,8 +771,8 @@ void onburst(char *source, char *chanarg, char *args)
   }
   else // Updating timestamp
   {
-	  if (chan->TS > timestamp)
-		  chan->TS = timestamp;
+    if (chan->TS > timestamp)
+      chan->TS = timestamp;
   }
 
   chan->lastact = now;
@@ -785,126 +783,126 @@ void onburst(char *source, char *chanarg, char *args)
 
   if (sptr[0] == '+')
   {
-	// Saving modestring.
-	strncpy(modestring, string, 49);
+  // Saving modestring.
+  strncpy(modestring, string, 49);
 
-	// Skip the '+'
-	sptr++;
+  // Skip the '+'
+  sptr++;
 
-	for (; sptr && *sptr; ++sptr)
-	{
-		switch (*sptr)
-		{
-			case 't':
-				break;
-			case 'n':
-				break;
-			case 'm':
-				break;
-			case 'p':
-				break;
-			case 's':
-				break;
-			case 'i':
-				break;
-			case 'r':
-				break;
-			case 'R':
-				break;
-			case 'D':
-				break;
-			case 'c':
-				break;
-			case 'C':
-				break;
-			case 'l':
-				tokenPos++;
-				GetWord(tokenPos, args, buffer);
-				strcat(modestring, " ");
-				strncat(modestring, buffer, sizeof(modestring) - strlen(modestring) - 1);
-				break;
-			case 'k':
-				tokenPos++;
-				GetWord(tokenPos, args, buffer);
-				strcat(modestring, " ");
-				strncat(modestring, buffer, sizeof(modestring) - strlen(modestring) - 1);
-				break;
-			default:
-				break;
-		}
-	}
+  for (; sptr && *sptr; ++sptr)
+  {
+    switch (*sptr)
+    {
+      case 't':
+        break;
+      case 'n':
+        break;
+      case 'm':
+        break;
+      case 'p':
+        break;
+      case 's':
+        break;
+      case 'i':
+        break;
+      case 'r':
+        break;
+      case 'R':
+        break;
+      case 'D':
+        break;
+      case 'c':
+        break;
+      case 'C':
+        break;
+      case 'l':
+        tokenPos++;
+        GetWord(tokenPos, args, buffer);
+        strcat(modestring, " ");
+        strncat(modestring, buffer, sizeof(modestring) - strlen(modestring) - 1);
+        break;
+      case 'k':
+        tokenPos++;
+        GetWord(tokenPos, args, buffer);
+        strcat(modestring, " ");
+        strncat(modestring, buffer, sizeof(modestring) - strlen(modestring) - 1);
+        break;
+      default:
+        break;
+    }
+  }
 
   modestring[49] = '\0';
 
-	// Saving modes.
+  // Saving modes.
   strcpy(chan->mode, modestring + 1);
 
-	// Next.
-	tokenPos++;
+  // Next.
+  tokenPos++;
   }
 
   // Parsing rest of string
   for (; tokenPos < StringSize(args); tokenPos++)
   {
-	  GetnWord(tokenPos, args, string, 600);
+    GetnWord(tokenPos, args, string, 600);
     sptr = string;
 
-	  // Deleting : if any.
-	  if (sptr[0] == ':') sptr++;
+    // Deleting : if any.
+    if (sptr[0] == ':') sptr++;
 
-  	if (sptr[0] == '~')
-	  {
-	  	// Ignoring?
-	  }
-	  else if (sptr[0] == '%') /* BANLIST */
-	  {
-		  // Registering bans.
-		  bans = ToWord(tokenPos, args);
-		  if (bans[0] == ':') bans++;
-		  if (bans[0] == '%') bans++;
+    if (sptr[0] == '~')
+    {
+      // Ignoring?
+    }
+    else if (sptr[0] == '%') /* BANLIST */
+    {
+      // Registering bans.
+      bans = ToWord(tokenPos, args);
+      if (bans[0] == ':') bans++;
+      if (bans[0] == '%') bans++;
 
-	  	while (bans && *bans != '\0')
-	  	{
-		  	ptr2 = strchr(bans, ' ');
-			  if (ptr2 != NULL)
-				  *(ptr2++) = '\0';
+      while (bans && *bans != '\0')
+      {
+        ptr2 = strchr(bans, ' ');
+        if (ptr2 != NULL)
+          *(ptr2++) = '\0';
 
-			  // Adding ban to banlist
-			  AddBan(channel, bans);
+        // Adding ban to banlist
+        AddBan(channel, bans);
 
-  			// Next
-  			bans = ptr2;
-    		}
-	  }
-	  else /* USERS */
-	  {
-		  while (sptr && *sptr && *sptr != ' ')
-		  {
-			  ptr = strchr(sptr, ',');
-			  if (ptr != NULL)
-			  	*(ptr++) = '\0';
+        // Next
+        bans = ptr2;
+        }
+    }
+    else /* USERS */
+    {
+      while (sptr && *sptr && *sptr != ' ')
+      {
+        ptr = strchr(sptr, ',');
+        if (ptr != NULL)
+          *(ptr++) = '\0';
 
-  			// Fetching numeric
-  			strncpy(YYXXX, sptr, 5);
+        // Fetching numeric
+        strncpy(YYXXX, sptr, 5);
         YYXXX[5] = '\0';
 
-			// Checking if modes are attached to the numeric. If :o or :ov, flag that next users are ops.
-			mode = strchr(sptr, ':');
-			if (mode != NULL)
-			{
-				if (strcmp(mode, ":o") == 0 || strcmp(mode, ":ov") == 0)
-					isOp = 1;
-				else
-					isOp = 0;
-			}
+      // Checking if modes are attached to the numeric. If :o or :ov, flag that next users are ops.
+      mode = strchr(sptr, ':');
+      if (mode != NULL)
+      {
+        if (strcmp(mode, ":o") == 0 || strcmp(mode, ":ov") == 0)
+          isOp = 1;
+        else
+          isOp = 0;
+      }
 
-			// Registering user.
-			JoinUser(YYXXX, isOp, chan);
+      // Registering user.
+      JoinUser(YYXXX, isOp, chan);
 
-			// Next
-			sptr = ptr;
-	  	}
-  	}
+      // Next
+      sptr = ptr;
+      }
+    }
   }
 }
 
@@ -929,40 +927,40 @@ void onjoin(char *function, char *source, char *channel, char *args)
 
   while (channel)
   {
-	ptr = strchr(channel, ',');
-	if (ptr != NULL)
-		*(ptr++) = '\0';
+  ptr = strchr(channel, ',');
+  if (ptr != NULL)
+    *(ptr++) = '\0';
 
-	if (!*channel)
-	{
-		PutLog("ERROR: onjoin(): JOIN to null channel!");
-		PutLog(source);
-		PutLog(channel);
-		channel = ptr;
-		continue;
-	}
+  if (!*channel)
+  {
+    PutLog("ERROR: onjoin(): JOIN to null channel!");
+    PutLog(source);
+    PutLog(channel);
+    channel = ptr;
+    continue;
+  }
 
-	chan = ToChannel(channel);
-	if (!chan)
-	{
+  chan = ToChannel(channel);
+  if (!chan)
+  {
 #ifdef DEBUG
-		printf("onjoin(): New channel\n");
+    printf("onjoin(): New channel\n");
 #endif
-  
-		if (!timestamp)
-			NewChannel(channel, now + TSoffset, 0);
-		else
-			NewChannel(channel, timestamp, 0);
 
-		chan = ToChannel(channel);
-	}
+    if (!timestamp)
+      NewChannel(channel, now + TSoffset, 0);
+    else
+      NewChannel(channel, timestamp, 0);
 
-	chan->lastact = now;
+    chan = ToChannel(channel);
+  }
 
-	// Registering the user
-	JoinUser(source, isOp, chan);
+  chan->lastact = now;
 
-	channel = ptr;
+  // Registering the user
+  JoinUser(source, isOp, chan);
+
+  channel = ptr;
   }
 }
 
@@ -984,12 +982,12 @@ void JoinUser(char *num, int isOp, achannel * chan)
   user = ToLuser(num);
   if (user == NULL)
   {
-	  /* a server would send a KILL, but I think
-	  * it'll be ok to ignore it
-	  */
-	  sprintf(buffer, "ERROR JoinUser(): Unknown USER %s!", num);
-	  PutLog(buffer);
-	  return;
+    /* a server would send a KILL, but I think
+    * it'll be ok to ignore it
+    */
+    sprintf(buffer, "ERROR JoinUser(): Unknown USER %s!", num);
+    PutLog(buffer);
+    return;
   }
 
   if (!chan)
@@ -1020,21 +1018,23 @@ void JoinUser(char *num, int isOp, achannel * chan)
   usr->next = chan->users;
   chan->users = usr;
 
+#ifndef ALLOW_PAL
   if (chan->on)
   {
-	for (tmp = chan->users; tmp != NULL; tmp = tmp->next)
-	{
- 		if (!strcasecmp(tmp->N->username, DEFAULT_USERNAME)
-		&& !strcasecmp(tmp->N->site, DEFAULT_HOSTNAME)
-		&& tmp->N->time <= logTS)
-		{
-			sprintf(buffer, "PAL's already on %s (%ld <= %ld)",
-			chan->name, tmp->N->time, logTS);
-			PutLog(buffer);
-			part("", chan->name, "");
-		}
-	}
+  for (tmp = chan->users; tmp != NULL; tmp = tmp->next)
+  {
+     if (!strcasecmp(tmp->N->username, DEFAULT_USERNAME)
+    && !strcasecmp(tmp->N->site, DEFAULT_HOSTNAME)
+    && tmp->N->time <= logTS)
+    {
+      sprintf(buffer, "PAL's already on %s (%ld <= %ld)",
+      chan->name, tmp->N->time, logTS);
+      PutLog(buffer);
+      part("", chan->name, "");
+    }
   }
+  }
+#endif
 
   if (bursting) // TODO: Any kicks or ops must occuring after bursting (?). Skipping for now.
     return;
@@ -1044,36 +1044,36 @@ void JoinUser(char *num, int isOp, achannel * chan)
 
   if (chan->on && chan->AmChanOp && IsShit(chan->name, user, mask, reason) >= AUTO_KICK_SHIT_LEVEL)
   {
-	PutLog("Detected banned user (AUTO-KICK LEVEL)");
-	notice(num, "*** Sorry. You are on my banlist ***");
-	mban("", chan->name, mask); 
-	sprintf(buffer, "%s %s [%s]", mask, mask, reason);
-	kick("", chan->name, buffer);
+  PutLog("Detected banned user (AUTO-KICK LEVEL)");
+  notice(num, "*** Sorry. You are on my banlist ***");
+  mban("", chan->name, mask);
+  sprintf(buffer, "%s %s [%s]", mask, mask, reason);
+  kick("", chan->name, buffer);
   }
   else if (chan->on && chan->AmChanOp
-	&& reg && (reg->flags & UFL_AUTOOP)
-	&& reg->suspend < now
-	&& *reg->passwd != '\0'
-	&& !(chan->flags & CFL_NOOP)
-	&& IsShit(chan->name, user, NULL, NULL) < NO_OP_SHIT_LEVEL)
+  && reg && (reg->flags & UFL_AUTOOP)
+  && reg->suspend < now
+  && *reg->passwd != '\0'
+  && !(chan->flags & CFL_NOOP)
+  && IsShit(chan->name, user, NULL, NULL) < NO_OP_SHIT_LEVEL)
   {
-	op("", chan->name, user->nick);
+  op("", chan->name, user->nick);
   }
 
   if (chan->on && chan->AmChanOp && (chan->flags & CFL_AUTOTOPIC) &&
     chan->lasttopic + AUTOTOPIC_FREQ < now)
   {
-	adefchan *def = DefChanList;
- 	while (def != NULL && strcasecmp(def->name, chan->name))
-  		def = def->next;
+  adefchan *def = DefChanList;
+   while (def != NULL && strcasecmp(def->name, chan->name))
+      def = def->next;
 
-	if (def != NULL && (*def->url || *def->topic))
-	{
-		chan->lasttopic = now;
-		sprintf(buffer, "%s (%s)", (*def->topic) ? def->topic : "",
-			(*def->url) ? def->url : "");
-		topic("", chan->name, buffer);
-	}
+  if (def != NULL && (*def->url || *def->topic))
+  {
+    chan->lasttopic = now;
+    sprintf(buffer, "%s (%s)", (*def->topic) ? def->topic : "",
+      (*def->url) ? def->url : "");
+    topic("", chan->name, buffer);
+  }
   }
 }
 
@@ -1106,98 +1106,98 @@ void onpart(char *num, char *channel)
 
   while (channel)
   {
-	ptr = strchr(channel, ',');
-	if (ptr != NULL)
-		*(ptr++) = '\0';
+  ptr = strchr(channel, ',');
+  if (ptr != NULL)
+    *(ptr++) = '\0';
 
-	if (!*channel)
-	{
-		PutLog("ERROR: onpart(): PART to null channel!");
-		PutLog(num);
-		PutLog(channel);
-		channel = ptr;
-		continue;
-	}
-
-	chan = ToChannel(channel);
-
-	if (chan == NULL)
-	{
-		user = NULL;
-		PutLog("ERROR: onpart(): null channel!? /*core dumped*/");
-		PutLog(num);
-		PutLog(channel);
-		/*dumpcore(""); */
-		channel = ptr;
-		continue;
-	}
-	else
-	{
-		chan->lastact = now;
-		user = chan->users;
-	}
-
-	while (user)
-	{
-		if (strcmp(user->N->num, num) == 0)
-		{
-			/* remove the structure from mem */
-			if (prec)
-			{
-				prec->next = user->next;
-				FreeUser(user);
-				user = prec->next;
-      			}
-      			else
-      			{
-				chan->users = user->next;
-				FreeUser(user);
-				user = chan->users;
-      			}
-      			break;
-    		}
-    		else
-    		{
-      			prec = user;
-      			user = user->next;
-    		}
+  if (!*channel)
+  {
+    PutLog("ERROR: onpart(): PART to null channel!");
+    PutLog(num);
+    PutLog(channel);
+    channel = ptr;
+    continue;
   }
 
-	ch = &luser->channel;
-	while (*ch && strcasecmp(channel, (*ch)->N->name))
-		ch = &(*ch)->next;
+  chan = ToChannel(channel);
 
-	c = *ch;
-  	if (c == NULL)
-  	{
+  if (chan == NULL)
+  {
+    user = NULL;
+    PutLog("ERROR: onpart(): null channel!? /*core dumped*/");
+    PutLog(num);
+    PutLog(channel);
+    /*dumpcore(""); */
+    channel = ptr;
+    continue;
+  }
+  else
+  {
+    chan->lastact = now;
+    user = chan->users;
+  }
+
+  while (user)
+  {
+    if (strcmp(user->N->num, num) == 0)
+    {
+      /* remove the structure from mem */
+      if (prec)
+      {
+        prec->next = user->next;
+        FreeUser(user);
+        user = prec->next;
+      }
+      else
+      {
+        chan->users = user->next;
+        FreeUser(user);
+        user = chan->users;
+      }
+      break;
+    }
+    else
+    {
+      prec = user;
+      user = user->next;
+    }
+  }
+
+  ch = &luser->channel;
+  while (*ch && strcasecmp(channel, (*ch)->N->name))
+    ch = &(*ch)->next;
+
+  c = *ch;
+  if (c == NULL)
+  {
 #ifdef DEBUG
-		printf("WARNING: onpart(): channel %s not found!\n", channel);
+    printf("WARNING: onpart(): channel %s not found!\n", channel);
 #endif
-  	}
-  	else
-  	{
-		*ch = c->next;
+  }
+  else
+  {
+    *ch = c->next;
 
-		while ((nickhist = c->nickhist) != NULL)
-		{
-			c->nickhist = nickhist->next;
-			TTLALLOCMEM -= sizeof(anickchange);
-			free(nickhist);
-		}
+    while ((nickhist = c->nickhist) != NULL)
+    {
+      c->nickhist = nickhist->next;
+      TTLALLOCMEM -= sizeof(anickchange);
+      free(nickhist);
+    }
 
-		TTLALLOCMEM -= sizeof(achannelnode);
-		free(c);
-	}
+    TTLALLOCMEM -= sizeof(achannelnode);
+    free(c);
+  }
 
-	if (chan != NULL && chan->users == NULL && !chan->on)
-	{
-		DelChannel(channel);
+  if (chan != NULL && chan->users == NULL && !chan->on)
+  {
+    DelChannel(channel);
   }
 
 /*	if (IsOpless(channel))
-		onopless(channel);*/
+    onopless(channel);*/
 
-	channel = ptr;
+  channel = ptr;
   }
 }
 
@@ -1216,13 +1216,13 @@ void onkick(char *source, char *channel, char *body)
     if (user == NULL)
     {
       sprintf(buffer, "I'M KICKED OFF %s by %s",
-	channel, source);
+        channel, source);
     }
     else
     {
       sprintf(buffer, "I'M KICKED OFF %s BY %s!%s@%s (%d) %s",
-	channel, user->N->nick, user->N->username, gethost(user->N),
-	Access(channel, source), ToWord(1, body));
+        channel, user->N->nick, user->N->username, gethost(user->N),
+        Access(channel, source), ToWord(1, body));
     }
     PutLog(buffer);
     broadcast(buffer, 0);
@@ -1263,10 +1263,10 @@ void CheckIdleChannels(void)
       tmp = chan->next;
       if (chan->on && chan->lastact + MAX_IDLE_TIME <= now)
       {
-	sprintf(buffer, "Channel %s has exceeded the idle time limit of %.2f hours", chan->name, (float)MAX_IDLE_TIME / 3600.0);
-	SpecLog(buffer);
-	part("", chan->name, "");
-	RemChan("", chan->name, "");
+        sprintf(buffer, "Channel %s has exceeded the idle time limit of %.2f hours", chan->name, (float)MAX_IDLE_TIME / 3600.0);
+        SpecLog(buffer);
+        part("", chan->name, "");
+        RemChan("", chan->name, "");
       }
       chan = tmp;
     }
@@ -1492,14 +1492,14 @@ void SetChanFlag(char *source, char *ch, char *args)
       chan->flags |= CFL_ALWAYSOP;
       notice(source, replies[RPL_ALWAYSOPON][chan->lang]);
       sprintf(buffer, "%s SET ALWAYSOP ON %s ON",
-	GetNick(source), channel);
+        GetNick(source), channel);
       PutLog(buffer);
       /* looks like ppl would like X to op himself when
        * ALWAYSOP is truned on... fine ;)
        */
       if (!chan->AmChanOp)
       {
-	GetOps(chan->name);
+        GetOps(chan->name);
       }
     }
     else if (!strcasecmp(svalue, "OFF") || !strcasecmp(svalue, "AUS"))
@@ -1507,7 +1507,7 @@ void SetChanFlag(char *source, char *ch, char *args)
       chan->flags &= ~CFL_ALWAYSOP;
       notice(source, replies[RPL_ALWAYSOPOFF][chan->lang]);
       sprintf(buffer, "%s SET ALWAYSOP ON %s OFF",
-	GetNick(source), channel);
+        GetNick(source), channel);
       PutLog(buffer);
     }
     else
@@ -1525,7 +1525,7 @@ void SetChanFlag(char *source, char *ch, char *args)
       chan->flags |= CFL_OPONLY;
       notice(source, replies[RPL_OPONLYON][chan->lang]);
       sprintf(buffer, "%s SET OPONLY ON %s ON",
-	GetNick(source), channel);
+        GetNick(source), channel);
       PutLog(buffer);
     }
     else if (!strcasecmp(svalue, "OFF") || !strcasecmp(svalue, "AUS"))
@@ -1533,7 +1533,7 @@ void SetChanFlag(char *source, char *ch, char *args)
       chan->flags &= ~CFL_OPONLY;
       notice(source, replies[RPL_OPONLYOFF][chan->lang]);
       sprintf(buffer, "%s SET OPONLY ON %s OFF",
-	GetNick(source), channel);
+        GetNick(source), channel);
       PutLog(buffer);
     }
     else
@@ -1551,7 +1551,7 @@ void SetChanFlag(char *source, char *ch, char *args)
       chan->flags |= CFL_STRICTOP;
       notice(source, replies[RPL_STRICTOPON][chan->lang]);
       sprintf(buffer, "%s SET STRICTOP ON %s ON",
-	GetNick(source), channel);
+        GetNick(source), channel);
       PutLog(buffer);
     }
     else if (!strcasecmp(svalue, "OFF") || !strcasecmp(svalue, "AUS"))
@@ -1559,7 +1559,7 @@ void SetChanFlag(char *source, char *ch, char *args)
       chan->flags &= ~CFL_STRICTOP;
       notice(source, replies[RPL_STRICTOPOFF][chan->lang]);
       sprintf(buffer, "%s SET STRICTOP ON %s OFF",
-	GetNick(source), channel);
+        GetNick(source), channel);
       PutLog(buffer);
     }
     else
@@ -1595,11 +1595,11 @@ void SetChanFlag(char *source, char *ch, char *args)
     for (i = 0; i < NO_LANG; i++)
     {
       if (!strcasecmp(svalue, Lang[i].abbr) ||
-	!strcasecmp(svalue, Lang[i].name))
+        !strcasecmp(svalue, Lang[i].name))
       {
-	chan->lang = i;
-	found = 1;
-	break;
+        chan->lang = i;
+        found = 1;
+        break;
       }
     }
     if (!found)
@@ -1607,18 +1607,18 @@ void SetChanFlag(char *source, char *ch, char *args)
       strcpy(buffer, replies[RPL_KNOWNLANG][chan->lang]);
       for (i = 0; i < NO_LANG; i++)
       {
-	strcat(buffer, " ");
-	strcat(buffer, Lang[i].abbr);
-	strcat(buffer, " (");
-	strcat(buffer, Lang[i].name);
-	strcat(buffer, ")");
+        strcat(buffer, " ");
+        strcat(buffer, Lang[i].abbr);
+        strcat(buffer, " (");
+        strcat(buffer, Lang[i].name);
+        strcat(buffer, ")");
       }
       notice(source, buffer);
     }
     else
     {
       sprintf(buffer, replies[RPL_SETLANG][chan->lang],
-	Lang[chan->lang].abbr, Lang[chan->lang].name);
+        Lang[chan->lang].abbr, Lang[chan->lang].name);
       notice(source, buffer);
     }
   }
@@ -1663,10 +1663,10 @@ void SetChanFlag(char *source, char *ch, char *args)
     for (ptr = svalue; *ptr; ptr++)
     {
       if (*(unsigned char *)ptr >= 0x80 || *ptr < 0x20 ||
-	strchr("<>;\"&\\", *ptr))
+        strchr("<>;\"&\\", *ptr))
       {
-	notice(source, "Invalid URL");
-	return;
+        notice(source, "Invalid URL");
+        return;
       }
     }
     strncpy(def->url, svalue, 79);
@@ -1685,7 +1685,7 @@ void SetChanFlag(char *source, char *ch, char *args)
       chan->flags |= CFL_AUTOTOPIC;
       notice(source, replies[RPL_AUTOTOPICON][chan->lang]);
       sprintf(buffer, "%s SET AUTOTOPIC ON %s ON",
-	GetNick(source), channel);
+        GetNick(source), channel);
       PutLog(buffer);
     }
     else if (!strcasecmp(svalue, "OFF") || !strcasecmp(svalue, "AUS"))
@@ -1693,7 +1693,7 @@ void SetChanFlag(char *source, char *ch, char *args)
       chan->flags &= ~CFL_AUTOTOPIC;
       notice(source, replies[RPL_AUTOTOPICOFF][chan->lang]);
       sprintf(buffer, "%s SET AUTOTOPIC ON %s OFF",
-	GetNick(source), channel);
+        GetNick(source), channel);
       PutLog(buffer);
     }
     else
@@ -1753,10 +1753,10 @@ void showstatus(char *source, char *ch, char *args)
       chan = ChannelList[j];
       while (chan)
       {
-	if (chan->on)
-	  i++;
-	k++;
-	chan = chan->next;
+        if (chan->on)
+          i++;
+        k++;
+        chan = chan->next;
       }
     }
 
@@ -1768,18 +1768,18 @@ void showstatus(char *source, char *ch, char *args)
       luser = Lusers[j];
       while (luser)
       {
-	lchan = luser->channel;
-	while (lchan)
-	{
-	  if (lchan->N->on)
-	  {
-	    i++;
-	    break;
-	  }
-	  lchan = lchan->next;
-	}
-	k++;
-	luser = luser->next;
+        lchan = luser->channel;
+        while (lchan)
+        {
+          if (lchan->N->on)
+          {
+            i++;
+            break;
+          }
+          lchan = lchan->next;
+        }
+        k++;
+        luser = luser->next;
       }
     }
     sprintf(buffer, "I'm seeing %d users (out of %d)", i, k + 1 /* add self */ );
@@ -1805,14 +1805,14 @@ void showstatus(char *source, char *ch, char *args)
 
     if (days > 0)
       sprintf(buffer, "Service Up %d day%s %d:%s%d:%s%d",
-	days, (days > 1) ? "s" : "", hours,
-	(mins <= 9) ? "0" : "", mins,
-	(secs <= 9) ? "0" : "", secs);
+        days, (days > 1) ? "s" : "", hours,
+        (mins <= 9) ? "0" : "", mins,
+        (secs <= 9) ? "0" : "", secs);
     else
       sprintf(buffer, "Service Up %d:%s%d:%s%d",
-	hours,
-	(mins <= 9) ? "0" : "", mins,
-	(secs <= 9) ? "0" : "", secs);
+        hours,
+        (mins <= 9) ? "0" : "", mins,
+        (secs <= 9) ? "0" : "", secs);
     notice(source, buffer);
   }
   else
@@ -1830,7 +1830,7 @@ void showstatus(char *source, char *ch, char *args)
     while (user)
     {
       if (user->chanop)
-	j++;
+        j++;
       i++;
       user = user->next;
     }
@@ -1840,12 +1840,12 @@ void showstatus(char *source, char *ch, char *args)
     if (chan->lang != L_GERMAN)
     {
       sprintf(buffer, replies[RPL_STATUS1][chan->lang],
-	channel, i + 1, (i > 0) ? "s" : "", j, (j > 1) ? "s" : "");
+        channel, i + 1, (i > 0) ? "s" : "", j, (j > 1) ? "s" : "");
     }
     else
     {
       sprintf(buffer, replies[RPL_STATUS1][chan->lang],
-	channel, i + 1, j);
+        channel, i + 1, j);
     }
     notice(source, buffer);
 
@@ -1864,27 +1864,27 @@ void showstatus(char *source, char *ch, char *args)
     if (chan->lang != L_GERMAN)
     {
       sprintf(buffer, "NoOp: %3s  AlwaysOp: %3s  OpOnly: %3s  StrictOp: %3s  AutoTopic: %3s",
-	(chan->flags & CFL_NOOP) ? "ON" : "OFF",
-	(chan->flags & CFL_ALWAYSOP) ? "ON" : "OFF",
-	(chan->flags & CFL_OPONLY) ? "ON" : "OFF",
-	(chan->flags & CFL_STRICTOP) ? "ON" : "OFF",
-	(chan->flags & CFL_AUTOTOPIC) ? "ON" : "OFF");
+        (chan->flags & CFL_NOOP) ? "ON" : "OFF",
+        (chan->flags & CFL_ALWAYSOP) ? "ON" : "OFF",
+        (chan->flags & CFL_OPONLY) ? "ON" : "OFF",
+        (chan->flags & CFL_STRICTOP) ? "ON" : "OFF",
+        (chan->flags & CFL_AUTOTOPIC) ? "ON" : "OFF");
     }
     else
     {
       sprintf(buffer, "NoOp: %3s  AlwaysOp: %3s  OpOnly: %3s  StrictOp: %3s  AutoTopic: %3s",
-	(chan->flags & CFL_NOOP) ? "EIN" : "AUS",
-	(chan->flags & CFL_ALWAYSOP) ? "EIN" : "AUS",
-	(chan->flags & CFL_OPONLY) ? "EIN" : "AUS",
-	(chan->flags & CFL_STRICTOP) ? "EIN" : "AUS",
-	(chan->flags & CFL_AUTOTOPIC) ? "EIN" : "AUS");
+        (chan->flags & CFL_NOOP) ? "EIN" : "AUS",
+        (chan->flags & CFL_ALWAYSOP) ? "EIN" : "AUS",
+        (chan->flags & CFL_OPONLY) ? "EIN" : "AUS",
+        (chan->flags & CFL_STRICTOP) ? "EIN" : "AUS",
+        (chan->flags & CFL_AUTOTOPIC) ? "EIN" : "AUS");
     }
     notice(source, buffer);
 
     if (chan->uflags)
     {
       sprintf(buffer, replies[RPL_STATUS3][chan->lang],
-	(chan->uflags & UFL_AUTOOP) ? " AUTOOP" : "");
+        (chan->uflags & UFL_AUTOOP) ? " AUTOOP" : "");
       notice(source, buffer);
     }
 
@@ -1895,7 +1895,7 @@ void showstatus(char *source, char *ch, char *args)
     if (i != 0)
     {
       sprintf(buffer, replies[RPL_STATUS5][chan->lang],
-	i, (i > 1) ? "s" : "");
+        i, (i > 1) ? "s" : "");
       notice(source, buffer);
     }
 
@@ -1905,19 +1905,19 @@ void showstatus(char *source, char *ch, char *args)
       luser = Lusers[j];
       while (luser)
       {
-	if ((reg = IsValid(luser, chan->name)) != NULL)
-	{
-	  sprintf(buffer + strlen(buffer), " %s(%s%d)", luser->nick,
-	    *reg->channel == '*' ? "*" : "", reg->access);
-	}
+        if ((reg = IsValid(luser, chan->name)) != NULL)
+        {
+          sprintf(buffer + strlen(buffer), " %s(%s%d)", luser->nick,
+            *reg->channel == '*' ? "*" : "", reg->access);
+        }
 
-	if (strlen(buffer) > 400)
-	{
-	  notice(source, buffer);
-	  strcpy(buffer, "Auth:");
-	}
+        if (strlen(buffer) > 400)
+        {
+          notice(source, buffer);
+          strcpy(buffer, "Auth:");
+        }
 
-	luser = luser->next;
+        luser = luser->next;
       }
     }
 
@@ -1948,6 +1948,24 @@ void SendBurst(void)
     chan = ToChannel(defs->name);
     if (chan)
     {
+#ifndef ALLOW_PAL
+      register auser *user;
+      int doCnt = 0;
+      /* Check whether PAL is on the channel. */
+      for (user = chan->users; user != NULL; user = user->next)
+      {
+        if (!strcasecmp(user->N->username, DEFAULT_USERNAME) &&
+            !strcasecmp(user->N->site, DEFAULT_HOSTNAME))
+        { doCnt = 1; break; }
+      }
+
+      if (doCnt)
+      {
+        sprintf(buffer, "SendBurst(): PAL's already on %s", chan->name);
+        PutLog(buffer);
+        continue;
+      }
+#endif
       /* We keep our timestamp if its older. */
       if (defs->TS < chan->TS)
         chan->TS = defs->TS;
@@ -2015,18 +2033,18 @@ void showusers(char *chan)
     {
       if (match(channel->name, chan))
       {
-	user = channel->users;
+        user = channel->users;
 
-	while (user)
-	{
-	  u = user->N;
-	  printf("%s: %s!%s@%s (%s) %d\n",
-	    channel->name, u->nick, u->username,
-	    gethost(u), u->num, user->chanop);
-	  user = user->next;
-	}
-	printf("MODE FOR %s is %s\n",
-	  channel->name, channel->mode);
+        while (user)
+        {
+          u = user->N;
+          printf("%s: %s!%s@%s (%s) %d\n",
+            channel->name, u->nick, u->username,
+            gethost(u), u->num, user->chanop);
+          user = user->next;
+        }
+        printf("MODE FOR %s is %s\n",
+          channel->name, channel->mode);
       }
       channel = channel->next;
     }
@@ -2051,21 +2069,21 @@ void showchannels(void)
     while (channel != NULL)
     {
       printf("%s TS: %ld on: %d amchanop: %d\n",
-	channel->name,
-	channel->TS, channel->on, channel->AmChanOp);
+        channel->name,
+        channel->TS, channel->on, channel->AmChanOp);
       b = channel->bans;
       printf("%s - banlist\n", channel->name);
       while (b != NULL)
       {
-	printf("\t%s\n", b->pattern);
-	b = b->next;
+        printf("\t%s\n", b->pattern);
+        b = b->next;
       }
       printf("%s - modebuff\n", channel->name);
       mode = channel->modebuff;
       while (mode != NULL)
       {
-	printf("\t%d %s %s\n", mode->AsServer, mode->flag, mode->arg);
-	mode = mode->next;
+        printf("\t%d %s %s\n", mode->AsServer, mode->flag, mode->arg);
+        mode = mode->next;
       }
       channel = channel->next;
     }

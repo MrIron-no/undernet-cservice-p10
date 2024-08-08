@@ -169,6 +169,13 @@ extern char MASTER_MATCH[80];
 #define SYNC_FREQ          7200 /* seconds */
 #define MODE_DELAY 2            /* seconds */
 
+/* Originally either X or W would part a channel if
+ * the other was already on it. Define this to allow
+ * two instances on the same channel.
+ * It checks for clients with the same ident and host. 
+ */
+#define ALLOW_PAL
+
 #ifdef MAIN
 char BROADCAST_CHANNEL[80] = "#cservice_info";
 char VERIFY_ID[256] = "CSERVICE";
