@@ -1444,7 +1444,7 @@ void parse_http(http_socket * hsock, char *buf)
     ((http_post *) hsock->hook)->count = 0;
     ((http_post *) hsock->hook)->ready = 0;
   }
-#ifdef DISABLE_HTTP_EXT
+#ifndef HTTP_EXT_DISABLE
   else if (!strcasecmp(method, "CSRAW"))
   {
     hsock->status = HTTP_CSRAW;
