@@ -568,7 +568,7 @@ static void
 
 void ShowChanInfo(char *source, char *chan, char *args)
 {
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[80] = "";
   char *hook1, *hook2;
 
   if (*args == '#')
@@ -596,7 +596,7 @@ void ShowChanInfo(char *source, char *chan, char *args)
 
 void isreg(char *source, char *chan, char *args)
 {
-  char channel[CHANNELNAME_LENGTH], buffer[512] = "";
+  char channel[80], buffer[512] = "";
   struct stat st;
 
   if (*args == '#')

@@ -25,12 +25,14 @@
  */
 
 #define NICK_LENGTH 15
-#define USERNAME_LENGTH 20
-#define SITE_LENGTH 80
-#define REALNAME_LENGTH 80
+#define USERNAME_LENGTH 10
+#define SITE_LENGTH 63
+#define REALNAME_LENGTH 50
 #define CHANNELNAME_LENGTH 200
 #define SERVER_NAME_LENGTH 80
 #define PASSWD_LENGTH 20
+#define ACCOUNT_LENGTH 12
+#define TOPIC_LENGTH 160
 
 #define NUMNICKLOG 6
 #define NUMNICKMASK 63
@@ -128,6 +130,7 @@
 #define HTTP_CHAT	7
 #define HTTP_ERROR	0
 
+#ifdef UPGRADE
 #define MISC_GETPATCH   1
 #define MISC_PIPE_PATCH	2
 #define MISC_PIPE_MAKE	3
@@ -136,6 +139,7 @@
 #define MISC_CONNECTING 1
 #define MISC_HANDSHAKE  2
 #define MISC_RECV       3
+#endif
 
 #define BUFFER_BLOCK_SIZE 512
 

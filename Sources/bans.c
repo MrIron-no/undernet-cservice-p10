@@ -30,7 +30,7 @@ void ban(char *source, char *chan, char *nicklist)
 {
   char buffer[300] = "";
   char OneNick[NICK_LENGTH] = "";
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[80] = "";
   register auser *user;
   register aluser *luser;
   register achannel *ch;
@@ -116,14 +116,14 @@ void ban(char *source, char *chan, char *nicklist)
 void mban(char *source, char *ch, char *args)
 {
   char buffer[512] = "";
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[80] = "";
   register int found = 0;
   register achannel *chan;
   register auser *user;
 
   if (*args == '#')
   {
-    GetnWord(0, args, channel, CHANNELNAME_LENGTH);
+    GetWord(0, args, channel);
     args = ToWord(1, args);
   }
   else
@@ -202,7 +202,7 @@ void unban(char *source, char *ch, char *list)
   register aban *bans;
   register aluser *luser;
   register achannel *chan;
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[80] = "";
   char buffer[512] = "";
   char one[200] = "";
   register int found;

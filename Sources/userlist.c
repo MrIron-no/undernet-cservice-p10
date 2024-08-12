@@ -201,7 +201,6 @@ RegUser *IsValid(aluser * luser, char *channel)
   }
 #ifdef DEBUG
 printf("IsValid() --> %s\n", channel);
-//  printf("IsValid() --> %s\n", valchan->name);
 #endif
 
   return (valchan) ? valchan->reg : NULL;
@@ -423,7 +422,7 @@ static void
 
   if (dbu != NULL)
   {
-    luser = ToLuser((char *)hook1); 
+    luser = ToLuser((char *)hook1);
 
     if (luser == NULL)
     {
@@ -449,7 +448,7 @@ static void
     }
     else
     {
-      char buf[200];
+      char buf[BUFFER_BLOCK_SIZE];
       sprintf(buf, "AUTHENTICATION FAILED ON %s!", dbu->channel);
       notice((char *)hook1, buf);
     }
@@ -458,7 +457,7 @@ static void
   {
     if (count == 0)
     {
-      char buf[200];
+      char buf[BUFFER_BLOCK_SIZE];
       sprintf(buf, "AUTHENTICATION FAILED ON %s!", (char *)hook2);
       notice((char *)hook1, buf);
     }
@@ -469,7 +468,7 @@ static void
 
 void validate(char *source, char *target, char *args)
 {
-  char channel[CHANNELNAME_LENGTH] = "", passwd[80] = "", userhost[200] = "", buffer[512] = "";
+  char channel[80] = "", passwd[80] = "", userhost[200] = "", buffer[512] = "";
   register avalchan *vchan, **pvchan;
   register RegUser *ruser;
   register aluser *luser;
@@ -478,7 +477,7 @@ void validate(char *source, char *target, char *args)
 
   if (*args == '#' || *args == '*')
   {
-    GetnWord(0, args, channel, CHANNELNAME_LENGTH);
+    GetWord(0, args, channel);
     args = ToWord(1, args);
   }
   else
@@ -572,7 +571,7 @@ void validate(char *source, char *target, char *args)
 
 void DeAuth(char *source, char *chan, char *args)
 {
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[80] = "";
   char buffer[512] = "";
   register aluser *luser;
   register avalchan *vchan, **pvchan;
@@ -581,7 +580,7 @@ void DeAuth(char *source, char *chan, char *args)
 
   if (*args == '#' || *args == '*')
   {
-    GetnWord(0, args, channel, CHANNELNAME_LENGTH);
+    GetWord(0, args, channel);
   }
   else
   {
@@ -683,7 +682,7 @@ void AddUser(char *source, char *ch, char *args)
   register achannel *chan;
   void *hook;
   char buffer[500] = "";
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[80] = "";
   char realname[80] = "";
   char mask[80] = "";
   char straccess[80] = "";
@@ -698,7 +697,7 @@ void AddUser(char *source, char *ch, char *args)
   src = ToLuser(source);
   if (*args == '#' || (*args == '*' && *(args + 1) == ' ' && IsValid(src, ch)))
   {
-    GetnWord(0, args, channel, CHANNELNAME_LENGTH);
+    GetWord(0, args, channel);
     args = ToWord(1, args);
   }
   else
@@ -714,7 +713,6 @@ void AddUser(char *source, char *ch, char *args)
 
   GetWord(0, args, realname);
   GetWord(1, args, mask);
-
   if (isdigit(*mask) || *mask == '-')
   {
     strcpy(straccess, mask);
@@ -1088,7 +1086,7 @@ static void
 
 void showaccess(char *source, char *ch, char *args)
 {
-  char buffer[500] = "", argument[80] = "", channel[CHANNELNAME_LENGTH] = "";
+  char buffer[500] = "", argument[80] = "", channel[80] = "";
   char realname[80] = "", chaninfo[80] = "", modifby[80] = "";
   register RegUser *scan;
   register aluser *luser;
@@ -1101,7 +1099,7 @@ void showaccess(char *source, char *ch, char *args)
   /* use another channel if provided as argument */
   if (*args == '#' || *args == '*')
   {
-    GetnWord(0, args, channel, CHANNELNAME_LENGTH);
+    GetWord(0, args, channel);
     args = ToWord(1, args);
   }
   else
@@ -1197,12 +1195,8 @@ void showaccess(char *source, char *ch, char *args)
   /* if the user is online.. use his address */
   if (luser != NULL)
   {
-    if ((luser->mode & LFL_REGISTERED) && (luser->mode & LFL_ISMODEX))
-      sprintf(chaninfo, "%s!%s@%s",
-        luser->nick, luser->username, luser->hiddenhost);
-    else
-      sprintf(chaninfo, "%s!%s@%s",
-        luser->nick, luser->username, luser->site);
+    sprintf(chaninfo, "%s!%s@%s",
+      luser->nick, luser->username, gethost(luser));
   }
 #ifdef DEBUG
   printf("showaccess(): REALNAME= %s CHANINFO= %s\n", realname, chaninfo);
@@ -1310,7 +1304,7 @@ static void
     {
       user->suspend = exp;
       user->modified = 1;
-      if (*(char *)hook1 && (lusr = ToLuser((char *)hook1))) 
+      if (*(char *)hook1 && (lusr = ToLuser((char *)hook1)))
       {
 	RegUser *reg;
 	time_t now1 = now + 3600;
@@ -1360,13 +1354,13 @@ static void
 
 void unsuspend(char *source, char *ch, char *args)
 {
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[80] = "";
   char target[100] = "";
   char out[512] = "";
 
   if (*args == '#' || (*args == '*' && IsValid(ToLuser(source), ch)))
   {
-    GetnWord(0, args, channel, CHANNELNAME_LENGTH);
+    GetWord(0, args, channel);
     args = ToWord(1, args);
   }
   else
@@ -1387,13 +1381,13 @@ void unsuspend(char *source, char *ch, char *args)
 
 void suspend(char *source, char *ch, char *args)
 {
-  char channel[CHANNELNAME_LENGTH] = "", target[80] = "", timestring[80] = "", *hook;
+  char channel[80] = "", target[80] = "", timestring[80] = "", *hook;
   int timeint;
   int acc;
 
   if (*args == '#' || (*args == '*' && IsValid(ToLuser(source), ch)))
   {
-    GetnWord(0, args, channel, CHANNELNAME_LENGTH);
+    GetWord(0, args, channel);
     args = ToWord(1, args);
   }
   else
@@ -1554,7 +1548,7 @@ static void
 void RemoveUser(char *source, char *ch, char *arg)
 {
   char buffer[500] = "";
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[80] = "";
   char toremove[80] = "";
   register RegUser *user;
   register aluser *src;
@@ -1564,7 +1558,7 @@ void RemoveUser(char *source, char *ch, char *arg)
   src = ToLuser(source);
   if (*arg == '#' || (*arg == '*' && *(arg + 1) == ' ' && IsValid(src, ch)))
   {
-    GetnWord(0, arg, channel, CHANNELNAME_LENGTH);
+    GetWord(0, arg, channel);
     arg = ToWord(1, arg);
   }
   else
@@ -1664,7 +1658,7 @@ void purge(char *source, char *ch, char *args)
   register achannel *chan;
   register int index;
   char buffer[1024] = "";
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[80] = "";
   char global[] = "*";
   char *comment;
 
@@ -1674,7 +1668,7 @@ void purge(char *source, char *ch, char *args)
     return;
   }
 
-  GetnWord(0, args, channel, CHANNELNAME_LENGTH);
+  GetWord(0, args, channel);
   comment = ToWord(1, args);
   if (!*channel || *channel != '#' || !*comment)
   {
@@ -1755,7 +1749,7 @@ void RegChan(char *source, char *ch, char *args)
   int bad = 0;
   char buffer[512] = "";
   char global[] = "*";
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[80] = "";
   char realname[NICK_LENGTH] = "";
   char mask[80] = "";
   char passwd[40] = "";
@@ -1763,7 +1757,7 @@ void RegChan(char *source, char *ch, char *args)
 
   int nopasswd = 0;
 
-  GetnWord(0, args, channel, CHANNELNAME_LENGTH);
+  GetWord(0, args, channel);
   GetWord(1, args, realname);
   GetWord(2, args, mask);
   GetWord(3, args, passwd);
@@ -1885,6 +1879,12 @@ void RegChan(char *source, char *ch, char *args)
     return;
   }
 
+  if (strlen(channel) > 45)
+  {
+    notice(source, "Channel name is too long (max 45 characters)");
+    return;
+  }
+
   if (strlen(passwd) < 6)
   {
     notice(source, "A password MUST be at least 6 characters long");
@@ -1914,7 +1914,7 @@ void RegChan(char *source, char *ch, char *args)
     if (reg != NULL)
       bad = 1;
   }
- 
+
   if (bad)
   {
     notice(source, "Sorry. This channel is already registered.");
@@ -1951,8 +1951,8 @@ void RegChan(char *source, char *ch, char *args)
     UserList[ul_hash(channel)] = reg;
     cold_save_one(reg);
 
-    sprintf(buffer, "%s registered %s to %s (%s)",
-      GetNick(reg->modif), reg->channel, reg->realname, reg->match);
+    sprintf(buffer, "%s registered %s to %s",
+      GetNick(source), reg->channel, reg->match);
     broadcast(buffer, 0);
 
 //  AddChan("", channel, "");
@@ -1961,7 +1961,6 @@ void RegChan(char *source, char *ch, char *args)
     sprintf(buffer, "Channel %s has been registered to %s (%s) with password '%s'",
       channel, realname, mask, passwd);
     notice(source, buffer);
-    SpecLog(buffer);
   }
 }
 
@@ -2156,7 +2155,7 @@ static void
 
 void ModUserInfo(char *source, char *msgtarget, char *ch, char *args)
 {
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[80] = "";
   char field[80] = "";
   char target[80] = "";
   char newvalue[80] = "";
@@ -2167,7 +2166,7 @@ void ModUserInfo(char *source, char *msgtarget, char *ch, char *args)
   luser = ToLuser(source);
   if (*args == '#' || (*args == '*' && *(args + 1) == ' ' && IsValid(luser, ch)))
   {
-    GetnWord(0, args, channel, CHANNELNAME_LENGTH);
+    GetWord(0, args, channel);
     args = ToWord(1, args);
   }
   else
@@ -2249,7 +2248,7 @@ void ModUserInfo(char *source, char *msgtarget, char *ch, char *args)
 void ChPass(char *source, char *ch, char *args)
 {
   char newpassword[80] = "";
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[80] = "";
   char buffer[512] = "";
   char userhost[200] = "";
   register RegUser *user;
@@ -2264,13 +2263,13 @@ void ChPass(char *source, char *ch, char *args)
     return;
   }
 
-/*  if (!strchr(ch, '@'))
+  if (!strchr(ch, '@'))
   {
     sprintf(buffer, "Please use /msg %s@%s newpass [channel] <new_password>",
       mynick, SERVERNAME);
     notice(source, buffer);
     return;
-  }*/
+  }
 
   if (*args == '#' || *args == '*')
   {

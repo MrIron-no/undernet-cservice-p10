@@ -91,11 +91,8 @@ extern long CurrentSendQ;
 extern int DB_Save_Status;
 extern char DB_Save_Nick[NICK_LENGTH];
 
-/*#define MALLOC(X)  ((TmpPtr=(char *)malloc(X))? \
-	TmpPtr : (char *)quit("ERROR: malloc() failed", 1));\
-	TTLALLOCMEM+=X*/
-
-#define MALLOC(X)  malloc(X);\
+#define MALLOC(X)  ((TmpPtr=(char *)malloc(X))? \
+	TmpPtr : (quit("ERROR: malloc() failed", 1), NULL));\
 	TTLALLOCMEM+=X
 
 #define close(X)   if((X)>=0) close(X)

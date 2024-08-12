@@ -91,8 +91,7 @@ void NewChannel(char *channelname, time_t TS, int on)
   ChannelList[cl_hash(channelname)] = chan;
   if (on)
   {
-    sprintf(buffer, "%s %ld", myYYXXX, chan->TS);
-    changemode(chan->name, "+o", buffer, 1);
+    changemode(chan->name, "+o", myYYXXX, 1);
     if (*chan->mode != '\0')
     {
       strcpy(buffer, "-");
@@ -110,7 +109,6 @@ void DelChannel(char *channelname)
   register auser *user;
   register modequeue *mode;
   register aban *ban;
-  char buffer[200] = "";
   char channel[CHANNELNAME_LENGTH] = "";
 
   // For some reason this took care of alot of valgrind warnings...
@@ -218,8 +216,7 @@ auser *ToUser(char *channel, char *num)
   register auser *curr;
   register achannel *chan;
 
-  // Servermode?
-  if (strlen(num) == 2)
+  if (strlen(num) != 5)
   return NULL;
 
   chan = ToChannel(channel);
@@ -295,35 +292,30 @@ auser *ToUserNick(char *channel, char *nick)
 
 void GetOps(char *channel)
 {
-  char buffer[200] = "";
+  char buffer[BUFFER_BLOCK_SIZE] = "";
   register aluser *user;
   register achannel *chan;
-  time_t timestamp;
 
   chan = ToChannel(channel);
 
   if (!chan)
   {
-    timestamp = 0;
 #ifdef DEBUG
     printf("GetOps(): channel not found!\n");
 #endif
     PutLog("ERROR GetOps(): Channel not found!");
     PutLog(channel);
-  }
-  else
-  {
-    timestamp = chan->TS;
+    return;
   }
 
 #ifdef FAKE_UWORLD
   if (Uworld_status == 1)
   {
     sprintf(buffer, "%s M %s +o %s %ld\n",
-      ufakeYY, channel, myYYXXX, timestamp);
+      ufakeYY, channel, myYYXXX, chan->TS);
     sendtoserv(buffer);
     PutLog("REOP by fake Uworld");
-    sprintf(buffer, "+o %s %ld", myYYXXX, timestamp);
+    sprintf(buffer, "+o %s %ld", myYYXXX, chan->TS);
     ModeChange(ufakeYY, channel, buffer);
     return;
   }
@@ -353,9 +345,9 @@ void GetOps(char *channel)
 #endif
 #endif
   sprintf(buffer, "%s M %s +o %s %ld\n",
-    myYY, channel, myYYXXX, timestamp);
+    myYY, channel, myYYXXX, chan->TS);
   sendtoserv(buffer);
-  sprintf(buffer, "+o %s %ld", myYYXXX, timestamp);
+  sprintf(buffer, "+o %s %ld", myYYXXX, chan->TS);
   ModeChange(myYY, channel, buffer);
 }
 
@@ -485,18 +477,18 @@ int IsReg(char *channel)
 void join(char *source, char *chan, char *arg)
 {
   char buffer[1024] = "";
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[80] = "";
   register achannel *ch;
   register auser *user;
   register char *ptr;
 
   if (*arg == '#')
   {
-    GetnWord(0, arg, channel, CHANNELNAME_LENGTH);
+    GetWord(0, arg, channel);
   }
   else
   {
-    GetnWord(0, chan, channel, CHANNELNAME_LENGTH);
+    GetWord(0, chan, channel);
   }
 
   if (strchr(channel, ',') != NULL)
@@ -598,17 +590,17 @@ void joindefault(void)
 
 void part(char *source, char *chan, char *arg)
 {
-  char buffer[512] = "";
-  char channel[CHANNELNAME_LENGTH] = "";
+  char buffer[BUFFER_BLOCK_SIZE] = "";
+  char channel[80] = "";
   register achannel *ch;
 
   if (*arg == '#')
   {
-    GetnWord(0, arg, channel, CHANNELNAME_LENGTH);
+    GetWord(0, arg, channel);
   }
   else
   {
-    GetnWord(0, chan, channel, CHANNELNAME_LENGTH);
+    GetWord(0, chan, channel);
     GuessChannel(source, channel);
   }
 
@@ -644,20 +636,20 @@ void part(char *source, char *chan, char *arg)
 
 void invite(char *source, char *ch, char *args)
 {
-  char buffer[512] = "";
-  char channel[CHANNELNAME_LENGTH] = "";
+  char buffer[BUFFER_BLOCK_SIZE] = "";
+  char channel[80] = "";
   char target[80] = "";
   register achannel *chan;
   register aluser *luser;
 
   if (*args == '#')
   {
-    GetnWord(0, args, channel, CHANNELNAME_LENGTH);
+    GetWord(0, args, channel);
     args = ToWord(1, args);
   }
   else
   {
-    GetnWord(0, ch, channel, CHANNELNAME_LENGTH);
+    GetWord(0, ch, channel);
     GuessChannel(source, channel);
   }
 
@@ -815,6 +807,10 @@ void onburst(char *source, char *chanarg, char *args)
         break;
       case 'C':
         break;
+      case 'u':
+        break;
+      case 'M':
+        break;
       case 'l':
         tokenPos++;
         GetWord(tokenPos, args, buffer);
@@ -913,9 +909,7 @@ void onjoin(char *function, char *source, char *channel, char *args)
   char *ptr;
   register achannel *chan;
   int isOp = 0;
-  long timestamp = 0;
-
-  timestamp = atol(ToWord(0, args));
+  time_t timestamp = atol(ToWord(0, args));
 
   // Setting isOp to 1 if the channel is created.
   if (strcmp(function,"C") == 0)
@@ -1276,10 +1270,10 @@ void CheckIdleChannels(void)
 
 void topic(char *source, char *chan, char *args)
 {
-  char buffer[1024] = "";
-  char channel[CHANNELNAME_LENGTH] = "";
+  char buffer[BUFFER_BLOCK_SIZE] = "";
+  char channel[80] = "";
   register achannel *ch;
-  strncpy(channel, chan, CHANNELNAME_LENGTH);
+  strncpy(channel, chan, 80);
 
   if (*source)
   {
@@ -1349,8 +1343,8 @@ void onnotice(char *source, char *target, char *body)
 
 void SetChanFlag(char *source, char *ch, char *args)
 {
-  char buffer[512] = "";
-  char channel[CHANNELNAME_LENGTH] = "";
+  char buffer[BUFFER_BLOCK_SIZE] = "";
+  char channel[80] = "";
   char variable[80] = "";
   char svalue[80] = "";
   register int value, acc, i, found;
@@ -1358,7 +1352,7 @@ void SetChanFlag(char *source, char *ch, char *args)
 
   if (*args == '#')
   {
-    GetnWord(0, args, channel, CHANNELNAME_LENGTH);
+    GetWord(0, args, channel);
     args = ToWord(1, args);
   }
   else
@@ -1704,8 +1698,8 @@ void SetChanFlag(char *source, char *ch, char *args)
 
 void showstatus(char *source, char *ch, char *args)
 {
-  char buffer[512] = "";
-  char channel[CHANNELNAME_LENGTH] = "";
+  char buffer[BUFFER_BLOCK_SIZE] = "";
+  char channel[80] = "";
   char global[] = "*";
   register achannel *chan;
   register auser *user;
@@ -1719,7 +1713,7 @@ void showstatus(char *source, char *ch, char *args)
 
   if (*args == '#' || *args == '*')
   {
-    GetnWord(0, args, channel, CHANNELNAME_LENGTH);
+    GetWord(0, args, channel);
     args = ToWord(1, args);
   }
   else
@@ -1934,7 +1928,7 @@ void SendBurst(void)
   register achannel *chan;
   register adefchan *defs;
   register char *ptr;
-  char buffer[512] = "";
+  char buffer[BUFFER_BLOCK_SIZE] = "";
 
   /* find defaults (if any) */
   for (defs = DefChanList; defs != NULL; defs = defs->next)

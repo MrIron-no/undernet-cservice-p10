@@ -52,7 +52,7 @@ void AddToShitList(char *source, char *ch, char *args, int force)
 {
   char buffer[1024] = "";
   char srcuh[200] = "";
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[80] = "";
   char pattern[200] = "";
   char strtime[80] = "";
   char strlevel[80] = "";
@@ -162,10 +162,7 @@ void AddToShitList(char *source, char *ch, char *args, int force)
 
   if ((luser = ToLuser(source)) != NULL)
   {
-    if ((luser->mode & LFL_REGISTERED) && (luser->mode & LFL_ISMODEX))
-      sprintf(srcuh, "%s!%s@%s", luser->nick, luser->username, luser->hiddenhost);
-    else
-      sprintf(srcuh, "%s!%s@%s", luser->nick, luser->username, luser->site);
+    sprintf(srcuh, "%s!%s@%s", luser->nick, luser->username, gethost(luser));
   }
   else
   {
@@ -336,7 +333,7 @@ void AddToShitList(char *source, char *ch, char *args, int force)
 
 void RemShitList(char *source, char *ch, char *args, int force)
 {
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[80] = "";
   char pattern[2][200];
   register aluser *luser;
   register ShitUser *curr;
@@ -345,7 +342,7 @@ void RemShitList(char *source, char *ch, char *args, int force)
 
   if (*args == '#')
   {
-    GetnWord(0, args, channel, CHANNELNAME_LENGTH);
+    GetWord(0, args, channel);
     args = ToWord(1, args);
   }
   else
@@ -561,12 +558,12 @@ void ShowShitList(char *source, char *ch, char *args)
   register ShitUser *curr;
   struct tm *tp;
   char buffer[1024] = "", global[] = "*";
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[80] = "";
   int found = 0;
 
   if (*args == '#')
   {
-    GetnWord(0, args, channel, CHANNELNAME_LENGTH);
+    GetWord(0, args, channel);
     args = ToWord(1, args);
   }
   else

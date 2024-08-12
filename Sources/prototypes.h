@@ -189,10 +189,12 @@ int CheckFloodFlood(char *,int);
 int IsIgnored(char *);
 void ShowIgnoreList(char *,char *,char *);
 void AdminRemoveIgnore(char *, char *, char *);
+#ifndef OPERCMD_DISABLE
 void CalmDown(char *,char *,char *);
 void OperJoin(char *,char *,char *);
 void OperPart(char *,char *,char *);
 void ClearMode(char *, char *, char *);
+#endif
 void ReplyNotAccess(char *,char *);
 #ifdef MAX_IDLE_TIME
 void CheckIdleChannels(void);

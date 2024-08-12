@@ -28,17 +28,17 @@
 
 void kick(char *source,char *chanarg,char *args)
 {
-	char buffer[500] = "";
+	char buffer[BUFFER_BLOCK_SIZE] = "";
 	char nick[80] = "";
 	char kicknum[6] = "";
-	char channel[CHANNELNAME_LENGTH] = "";
+	char channel[80] = "";
 	char *comment;
 	int found=0;
 	achannel *chan;
 	auser *user;
 
 	if(*args=='#'){
-		GetnWord(0,args,channel, CHANNELNAME_LENGTH);
+		GetWord(0,args,channel);
 		GetWord(1,args,nick);
 		comment=ToWord(2,args);
 	}else{

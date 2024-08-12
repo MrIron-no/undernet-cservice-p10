@@ -316,11 +316,11 @@ void ModeChange(char *source, char *channel, char *change)
     return;	/* probably a lost MODE */
   }
 
+
+  /* TODO: Is this still necessary to check for mode timestamps and bounce modes?
+   * This is a mode change from a server..
   if (u == NULL && !bursting) // TODO: Should the burst timestamp be added to the ModeChange triggered by onburst()?
   {
-    /* This is a mode change from a server.. if it is not
-     * a +b, then the last argument is a TS
-     */
     for (ptr = change; *ptr != 'b' && *ptr != ' '; ptr++);
     if (*ptr != 'b' && strcmp(myYY, source) != 0
 #ifdef UWORLD
@@ -347,7 +347,7 @@ void ModeChange(char *source, char *channel, char *change)
       if (atol(ptr) != 0)
         chan->TS = atol(ptr);
     }
-  }
+  }*/
 
   while (*change && *change != ' ')
   {
@@ -375,7 +375,7 @@ void ModeChange(char *source, char *channel, char *change)
           }
           else
           {
-            if (strchr("imntpsrDdRCc", *change))
+            if (strchr("imntpsrDdRCcuM", *change))
               AddFlag(chan->mode, *change, NULL);
           }
         }
@@ -418,7 +418,7 @@ void ModeChange(char *source, char *channel, char *change)
         if (chan != NULL)
         {
           ptr = strchr("bkov", *change);
-          if (strchr("ilkmntpsrDdRCc", *change))
+          if (strchr("ilkmntpsrDdRCcuM", *change))
             RemFlag(chan->mode, *change);
           if (ptr)
           {
@@ -505,6 +505,9 @@ void onop(char *source, char *channel, char *target)
   char buffer[200] = "";
 
   chan = ToChannel(channel);
+  luser = ToLuser(source);
+
+  user = ToUser(channel, target);
 
   if (strcmp(myYYXXX, target) == 0)
   {
@@ -513,6 +516,7 @@ void onop(char *source, char *channel, char *target)
       PutLog("ERROR: onop() channel not found!");
       return;
     }
+
     chan->AmChanOp = 1;
   }
   else
@@ -520,8 +524,6 @@ void onop(char *source, char *channel, char *target)
 #ifdef DEBUG
     printf("OP for %s on %s\n", target, channel);
 #endif
-    luser = ToLuser(source);
-    user = ToUser(channel, target);
 
     if (!user)
     {
@@ -533,17 +535,20 @@ void onop(char *source, char *channel, char *target)
 
     user->chanop = 1;
 
-    if (luser && chan->on && (chan->flags & CFL_NOOP) && !(luser->mode & LFL_ISSERVICE))
+    /* If either the op'd or deop'd is a network service, ignore. */
+    if ((luser && luser->mode & LFL_ISSERVICE) || (user->N && user->N->mode & LFL_ISSERVICE))
+      return;
+
+    if (luser && chan->on && (chan->flags & CFL_NOOP))
     {
       sprintf(buffer, "NoOp MODE! deopping %s and %s",
-        target, luser->nick);
+        user->N->nick, luser->nick);
       PutLog(buffer);
       notice(target, replies[RPL_NOOP][chan->lang]);
-      changemode(channel, "-o", target, 0);
-      user->chanop = 0;
-
       notice(source, replies[RPL_NOOP][chan->lang]);
+      changemode(channel, "-o", target, 0);
       changemode(channel, "-o", source, 0);
+      user->chanop = 0;
       user = ToUser(channel, source);
       if (user != NULL)
       {
@@ -551,13 +556,16 @@ void onop(char *source, char *channel, char *target)
       }
     }
     else if (luser && chan->on && (chan->flags & CFL_STRICTOP) &&
-      Access(channel, target) < OP_LEVEL && !(luser->mode & LFL_ISSERVICE))
+      Access(channel, target) < OP_LEVEL)
     {
+      sprintf(buffer, "StrictOp MODE! deopping %s and %s",
+        user->N->nick, luser->nick);
+      PutLog(buffer);
       notice(target, "Only authenticated users may be op in StrictOp mode");
+      notice(source, "Only authenticated users may be op in StrictOp mode");
       changemode(channel, "-o", target, 0);
       user->chanop = 0;
 
-      notice(source, "Only authenticated users may be op in StrictOp mode");
       if (Access(channel, source) < OP_LEVEL)
       {
         changemode(channel, "-o", source, 0);
@@ -567,35 +575,25 @@ void onop(char *source, char *channel, char *target)
           user->chanop = 0;
         }
       }
-      sprintf(buffer, "StrictOp MODE! deopping %s and %s",
-        target, luser->nick);
-
-      PutLog(buffer);
     }
     else if (luser && chan->on && IsShit(channel, user->N, NULL, NULL) >= NO_OP_SHIT_LEVEL)
     {
       if (Access(channel, source) < ACCESS_BAN_PRIORITY)
       {
-        notice(target, replies[RPL_CANTBEOP][chan->lang]);
-        changemode(channel, "-o", target, 0);
-        user->chanop = 0;
-
-        if (!(luser->mode & LFL_ISSERVICE))
-        {
-          notice(source, replies[RPL_CANTBEOPPED][chan->lang]);
-          changemode(channel, "-o", source, 0);
-          user = ToUser(channel, source);
-          if (user != NULL)
-            user->chanop = 0;
-          sprintf(buffer, "%s %d", luser->nick, SUSPEND_TIME_FOR_OPPING_A_SHITLISTED_USER);
-          suspend("", channel, buffer);
-          sprintf(buffer, "%s is shitlisted (NO-OP LEVEL)!"
-            "Deopping %s and %s", target, target, luser->nick);
-        } else
-          sprintf(buffer, "%s is shitlisted (NO-OP LEVEL)!"
-            "Deopping %s (opped by %s)", target, target, luser->nick);
-
+        sprintf(buffer, "%s is shitlisted (NO-OP LEVEL)!"
+          "Deopping %s and %s", user->N->nick, user->N->nick, luser->nick);
         PutLog(buffer);
+        notice(target, replies[RPL_CANTBEOP][chan->lang]);
+        notice(source, replies[RPL_CANTBEOPPED][chan->lang]);
+        changemode(channel, "-o", target, 0);
+        changemode(channel, "-o", source, 0);
+        user->chanop = 0;
+        user = ToUser(channel, source);
+        if (user != NULL)
+          user->chanop = 0;
+
+        sprintf(buffer, "%s %d", luser->nick, SUSPEND_TIME_FOR_OPPING_A_SHITLISTED_USER);
+        suspend("", channel, buffer);
       }
       else
       {
@@ -840,7 +838,6 @@ void changemode(char *channel, char *flag, char *arg, int AsServer)
   register achannel *chan;
   register modequeue *mode, *curr;
   char buffer[80] = "";
-  char args[80];
 
 #ifdef DEBUG
   printf("Queueing mode change for channel %s %s %s %d\n", channel, flag, arg, AsServer);
@@ -849,16 +846,6 @@ void changemode(char *channel, char *flag, char *arg, int AsServer)
   chan = ToChannel(channel);
   if (!AsServer && (!chan || !chan->on))
     return;	/* not on the channel.. ignore */
-
-  // Adding timestamp for servermodes
-  if (AsServer && flag[1] != 'b')
-  {
-    sprintf(args, "%s %ld", arg, chan->TS);
-  }
-  else
-  {
-    strcpy(args, arg);
-  }
 
   /* first, cancel previous contradicting mode changes..
      ex.. mode #test +o-o+o-o+o .. the bot won't do that..  */
@@ -890,8 +877,8 @@ void changemode(char *channel, char *flag, char *arg, int AsServer)
 
   TTLALLOCMEM += sizeof(modequeue);
   curr = (modequeue *) calloc(1, sizeof(modequeue));
-  strncpy(curr->arg, args, strlen(args) + 1);
-  strncpy(curr->flag, flag, 3);
+  strncpy(curr->arg, arg, strlen(arg) + 1);
+  strncpy(curr->flag, flag, strlen(flag) + 1);
   curr->AsServer = AsServer;
   curr->next = NULL;
 
@@ -991,23 +978,23 @@ void flushmode(char *channel)
       {
         if (AsServer == 0 && chan->AmChanOp && *flags != '\0')
         {
-          sprintf(buffer, "%s M %s %s%s\n",
-            myYYXXX, channel, flags, args);
+          sprintf(buffer, "%s M %s %s%s %ld\n",
+            myYYXXX, channel, flags, args, chan->TS);
           sendtoserv(buffer);
         }
         else if (AsServer == 1 && *flags != '\0')
         {
-          sprintf(buffer, "%s M %s %s%s\n",
+          sprintf(buffer, "%s M %s %s%s %ld\n",
             myYY, channel,
-            flags, args);
+            flags, args, chan->TS);
           sendtoserv(buffer);
         }
       #ifdef FAKE_UWORLD
         else if (AsServer == 2 && Uworld_status == 1 && *flags != '\0')
         {
-          sprintf(buffer, "%s M %s %s%s\n",
+          sprintf(buffer, "%s M %s %s%s %ld\n",
             ufakeYY, channel,
-            flags, args);
+            flags, args, chan->TS);
           sendtoserv(buffer);
         }
       #endif

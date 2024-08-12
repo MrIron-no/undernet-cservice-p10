@@ -981,7 +981,7 @@ static void send_http_error(http_socket * hsock)
 static void parse_get(http_socket * hsock, char *path, char *protocol)
 {
   extern void http_show_help(http_socket *, char *);
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[80] = "";
   register char *ptr;
 
 #ifdef DEBUG

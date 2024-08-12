@@ -265,6 +265,7 @@ void parse_command(char *source, char *target, char *channel, char *commandline)
   else if (!strcasecmp(command, "remignore"))
 	AdminRemoveIgnore(source, channel, ToWord(1, commandline));
 
+#ifndef OPERCMD_DISABLE
   else if (!strcasecmp(command, "calmdown"))
 	CalmDown(source, channel, ToWord(1, commandline));
 
@@ -276,6 +277,7 @@ void parse_command(char *source, char *target, char *channel, char *commandline)
 
   else if (!strcasecmp(command, "clearmode"))
 	ClearMode(source, channel, ToWord(1, commandline));
+#endif
 
   else if (!strcasecmp(command, "purge"))
 	purge(source, channel, ToWord(1, commandline));

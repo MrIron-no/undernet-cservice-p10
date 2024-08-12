@@ -26,11 +26,12 @@
 
 #include "h.h"
 
+#ifndef OPERCMD_DISABLE
 void CalmDown(char *source, char *chan, char *args)
 {
   register aluser *user;
   register achannel *ch;
-  char buffer[512] = "", channel[CHANNELNAME_LENGTH] = "", global[] = "*";
+  char buffer[BUFFER_BLOCK_SIZE] = "", channel[80] = "", global[] = "*";
 
   if ((user = ToLuser(source)) == NULL)
   {
@@ -40,7 +41,7 @@ void CalmDown(char *source, char *chan, char *args)
 
   if (*args == '#')
   {
-    GetnWord(0, args, channel, CHANNELNAME_LENGTH);
+    GetWord(0, args, channel);
     args = ToWord(1, args);
   }
   else
@@ -97,7 +98,7 @@ void OperJoin(char *source, char *chan, char *args)
 {
   register aluser *user;
   register achannel *ch;
-  char buffer[512] = "", channel[CHANNELNAME_LENGTH];
+  char buffer[BUFFER_BLOCK_SIZE] = "", channel[80];
 
   if ((user = ToLuser(source)) == NULL)
   {
@@ -107,7 +108,7 @@ void OperJoin(char *source, char *chan, char *args)
 
   if (*args == '#')
   {
-    GetnWord(0, args, channel, CHANNELNAME_LENGTH);
+    GetWord(0, args, channel);
     args = ToWord(1, args);
   }
   else
@@ -162,7 +163,7 @@ void OperPart(char *source, char *chan, char *args)
 {
   register aluser *user;
   register achannel *ch;
-  char buffer[512] = "", channel[CHANNELNAME_LENGTH];
+  char buffer[BUFFER_BLOCK_SIZE] = "", channel[80];
 
   if ((user = ToLuser(source)) == NULL)
   {
@@ -172,7 +173,7 @@ void OperPart(char *source, char *chan, char *args)
 
   if (*args == '#')
   {
-    GetnWord(0, args, channel, CHANNELNAME_LENGTH);
+    GetWord(0, args, channel);
     args = ToWord(1, args);
   }
   else
@@ -307,7 +308,7 @@ void ClearMode(char *source, char *chan, char *args)
   ch->mode[0] = '\0';
   flushmode(channel);
 }
-
+#endif
 
 void verify(char *source, char *arg)
 {
@@ -478,15 +479,14 @@ void parse_uworld_command(char *source, char *args)
 
 void Uworld_opcom(char *source, char *args)
 {
-  char buffer[512] = "";
+  char buffer[BUFFER_BLOCK_SIZE] = "";
   char command[80] = "";
   char channel[CHANNELNAME_LENGTH] = "";
   char modestring[80] = "";
-  char TS[12] = "";
   char orig[80] = ""; /* The original string with nicknames and not numerics. */
   char *ptr;
   aluser *user, *target;
-  achannel *chan;
+  achannel *ch;
 
   user = ToLuser(source);
   if (!user || !(user->mode & LFL_ISOPER))
@@ -502,7 +502,7 @@ void Uworld_opcom(char *source, char *args)
   }
 
   GetWord(0, args, command);
-  GetWord(1, args, channel);
+  GetnWord(1, args, channel, CHANNELNAME_LENGTH);
   args = ToWord(2, args);
 
   if (!strcasecmp(command, "MODE"))
@@ -511,6 +511,14 @@ void Uworld_opcom(char *source, char *args)
     {
       sprintf(buffer, "%s O %s :bad channel name\n",
 	      ufakeYYXXX, source);
+      sendtoserv(buffer);
+      return;
+    }
+
+    if ((ch = ToChannel(channel)) == NULL)
+    {
+      sprintf(buffer, "%s O %s :That channel does not exist\n",
+        ufakeYYXXX, source);
       sendtoserv(buffer);
       return;
     }
@@ -529,39 +537,31 @@ void Uworld_opcom(char *source, char *args)
     args = ToWord(1, args);
     while (args)
     {
-	ptr = strchr(args, ' ');
-	if (ptr != NULL)
-		*(ptr++) = '\0';
+      ptr = strchr(args, ' ');
+      if (ptr != NULL)
+        *(ptr++) = '\0';
 
-	strcat(modestring, " ");
+      strcat(modestring, " ");
 
-	// Checking for user match.
-	target = ToLuserNick(args);
-	if (!target)
-		strcat(modestring, args);
-	else // User match. Adding numeric to modestring. 
-		strcat(modestring, target->num);
+      // Checking for user match.
+      target = ToLuserNick(args);
+      if (!target)
+        strcat(modestring, args);
+      else // User match. Adding numeric to modestring.
+	      strcat(modestring, target->num);
 
-	args = ptr;
-    }
-
-    chan = ToChannel(channel);
-    if (chan) // TODO: Not add TS if mode is +b
-    {
-	sprintf(TS, "%ld", chan->TS);
-	strcat(modestring, " ");
-	strcat(modestring, TS);
+      args = ptr;
     }
 
     sprintf(buffer, "%s WA :%s is using %s to: MODE %s %s\n",
-      ufakeYY, user->nick, UFAKE_NICK, channel, orig);
+      ufakeYY, user->nick, UFAKE_NICK, ch->name, orig);
     sendtoserv(buffer);
 
-    sprintf(buffer, "%s M %s %s\n", ufakeYY, channel, modestring);
+    sprintf(buffer, "%s M %s %s %ld\n", ufakeYY, ch->name, modestring, ch->TS);
     sendtoserv(buffer);
 
     sprintf(buffer, "OPCOM MODE %s %s (%s!%s@%s)",
-      channel, orig, user->nick, user->username, gethost(user));
+      ch->name, orig, user->nick, user->username, gethost(user));
     PutLog(buffer);
     ModeChange(ufakeYY, channel, modestring);
   }
@@ -582,7 +582,7 @@ void ClearChan(char *source, char *args)
   register char *curr;
   register aban *oneban;
   register int i;
-  char buffer[512] = "", channel[CHANNELNAME_LENGTH] = "", arg[80] = "";
+  char buffer[BUFFER_BLOCK_SIZE] = "", channel[CHANNELNAME_LENGTH] = "", arg[80] = "";
 
   if ((user = ToLuser(source)) == NULL)
   {
@@ -590,7 +590,7 @@ void ClearChan(char *source, char *args)
     return;
   }
 
-  GetWord(0, args, channel);
+  GetnWord(0, args, channel, CHANNELNAME_LENGTH);
 
   if (strcmp(channel, "*") == 0)
   {

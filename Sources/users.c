@@ -1,4 +1,3 @@
-
 /* @(#)$Id: users.c,v 1.7 1998/11/21 14:58:43 seks Exp $ */
 
 /* Undernet Channel Service (X)
@@ -32,9 +31,7 @@ int lu_hash(char *num)
   register int i, j;
 
   for (i = 0, j = 0; i < strlen(num); i++)
-  {
     j += (unsigned char)num[i];
-  }
 
   return (j % 1000);
 }
@@ -61,27 +58,27 @@ aluser *ToLuser(char *num)
 
 aluser *ToLuserNick(char *nick)
 {
-	register aluser *curr;
-	int found = 0;
+  register aluser *curr;
+  int found = 0;
 
-	for (int i = 0; i < 1000; i++)
-	{
-		curr = Lusers[i];
+  for (int i = 0; i < 1000; i++)
+  {
+    curr = Lusers[i];
 
-		while (curr)
-		{
-			if (strcasecmp(nick, curr->nick) == 0)
-			{
-				found = 1;
-				break;
-			}
-			curr = curr->next;
-		}
+    while (curr)
+    {
+      if (strcasecmp(nick, curr->nick) == 0)
+      {
+        found = 1;
+        break;
+      }
+      curr = curr->next;
+    }
 
-		if (found)
-			break;
-	}
-	return (curr);
+    if (found)
+      break;
+  }
+  return (curr);
 }
 
 char *GetYYXXX(char *nick)
@@ -124,10 +121,10 @@ char *GetNick(char *num)
 
 char *gethost(aluser *user)
 {
-	if ((user->mode & LFL_REGISTERED) && (user->mode & LFL_ISMODEX))
-		return user->hiddenhost;
-	else
-		return user->site;
+  if ((user->mode & LFL_REGISTERED) && (user->mode & LFL_ISMODEX))
+    return user->hiddenhost;
+  else
+    return user->site;
 }
 
 void onaccount(char *source, char *target, char *body)
@@ -155,11 +152,11 @@ void onaccount(char *source, char *target, char *body)
 
   if (user->mode & LFL_ISMODEX)
   {
-	sprintf(hiddenhost, "%s%s", user->account, HIDDEN_HOST_SUFFIX);
+  sprintf(hiddenhost, "%s%s", user->account, HIDDEN_HOST_SUFFIX);
 
-	// Set hiddenhost in memory
-	user->hiddenhost = (char *)MALLOC(strlen(hiddenhost) + 1);
-	strcpy(user->hiddenhost, hiddenhost);
+  // Set hiddenhost in memory
+  user->hiddenhost = (char *)MALLOC(strlen(hiddenhost) + 1);
+  strcpy(user->hiddenhost, hiddenhost);
   }
 }
 
@@ -196,26 +193,26 @@ void onnick(char *source, char *newnick, char *body)
     {
       numPos++;
 
-	    for (i = 0; i < strlen(modes); i++)
-	    {
-		    if (modes[i] == 'o')
-			    mode |= LFL_ISOPER;
-		    else if (modes[i] == 'k')
-			    mode |= LFL_ISSERVICE;
-		    else if (modes[i] == 'x')
-			    mode |= LFL_ISMODEX;
-		    else if (modes[i] == 'r')
-		    {
-			    numPos++;
-			    mode |= LFL_REGISTERED;
-			    GetWord(5, body, account);
-		    	GetWord(6, body, temp);
+      for (i = 0; i < strlen(modes); i++)
+      {
+        if (modes[i] == 'o')
+          mode |= LFL_ISOPER;
+        else if (modes[i] == 'k')
+          mode |= LFL_ISSERVICE;
+        else if (modes[i] == 'x')
+          mode |= LFL_ISMODEX;
+        else if (modes[i] == 'r')
+        {
+          numPos++;
+          mode |= LFL_REGISTERED;
+          GetWord(5, body, account);
+          GetWord(6, body, temp);
 
           // If there is an account_id, delete it.
           for (int j = 0; j < strlen(account) + 1; j++ )
             if (account[j] == ':') account[j] = '\0';
-	    	}
-	    }
+        }
+      }
     }
 
     GetWord(numPos, body, YYXXX);
@@ -228,18 +225,18 @@ void onnick(char *source, char *newnick, char *body)
 #endif
 
       if (atol(TS) <= logTS &&
-	strcasecmp(username, myuser) &&
-	strcasecmp(hostname, mysite))
+        strcasecmp(username, myuser) &&
+        strcasecmp(hostname, mysite))
       {
-	NickInUse();
-	PutLog(source);
-	PutLog(newnick);
-	PutLog(body);
+        NickInUse();
+        PutLog(source);
+        PutLog(newnick);
+        PutLog(body);
       }
       else
       {
-	onquit(YYXXX);
-	return;		/*ignore */
+        onquit(YYXXX);
+        return;		/*ignore */
       }
 #ifdef BACKUP
     }
@@ -253,14 +250,14 @@ void onnick(char *source, char *newnick, char *body)
     if (Uworld_status == 1 && !strcasecmp(newnick, UFAKE_NICK))
     {
       if (atol(TS) <= UworldTS && atol(TS) != 0 &&
-	strcasecmp(username, UFAKE_NICK) &&
-	strcasecmp(hostname, UFAKE_HOST))
+        strcasecmp(username, UFAKE_NICK) &&
+        strcasecmp(hostname, UFAKE_HOST))
       {
-	sprintf(buffer, "%s nick collided", UFAKE_NICK);
-	PutLog(buffer);
-	Uworld_status = 0;
-	KillUworld("nick collision");
-	return;		/* ignore if younger */
+        sprintf(buffer, "%s nick collided", UFAKE_NICK);
+        PutLog(buffer);
+        Uworld_status = 0;
+        KillUworld("nick collision");
+        return;		/* ignore if younger */
       }
     }
 #endif
@@ -282,7 +279,7 @@ void onnick(char *source, char *newnick, char *body)
     ccontrolLogin(YYXXX, newnick, username, hostname);
 #endif
 
-	  TTLALLOCMEM += sizeof(aluser);
+    TTLALLOCMEM += sizeof(aluser);
     user = (aluser *) calloc(1, sizeof(aluser));
 
     strcpy(user->num, YYXXX);
@@ -301,16 +298,16 @@ void onnick(char *source, char *newnick, char *body)
 
     if (mode & LFL_REGISTERED)
     {
-	    user->account = (char *)MALLOC(strlen(account) + 1);
-	    strcpy(user->account, account);
+      user->account = (char *)MALLOC(strlen(account) + 1);
+      strcpy(user->account, account);
     }
 
     if ((mode & LFL_ISMODEX) && (mode & LFL_REGISTERED))
     {
-	    snprintf(hiddenhost, 80, "%s%s", user->account, HIDDEN_HOST_SUFFIX);
+      snprintf(hiddenhost, 80, "%s%s", user->account, HIDDEN_HOST_SUFFIX);
 
-	    user->hiddenhost = (char *)MALLOC(strlen(hiddenhost) + 1);
-	    strcpy(user->hiddenhost, hiddenhost);
+      user->hiddenhost = (char *)MALLOC(strlen(hiddenhost) + 1);
+      strcpy(user->hiddenhost, hiddenhost);
     }
 
     if (*newnick == '+')
@@ -323,13 +320,13 @@ void onnick(char *source, char *newnick, char *body)
 #ifdef DEBUG
     printf("NEW USER: %s!%s@%s (%s) on %s (%s)", newnick, username, hostname, YYXXX, serv->name, serv->YY);
     if (mode & LFL_ISOPER)
-	    printf(" (IRC Operator)");
+      printf(" (IRC Operator)");
     if (mode & LFL_ISSERVICE)
-	    printf(" (Network Service)");
+      printf(" (Network Service)");
     if (mode & LFL_REGISTERED)
-	    printf(" (account: %s)", account);
+      printf(" (account: %s)", account);
     if ((mode & LFL_ISMODEX) && (mode & LFL_REGISTERED))
-	    printf(" (hidden host: %s)", user->hiddenhost);
+      printf(" (hidden host: %s)", user->hiddenhost);
     printf("\n");
 #endif
 
@@ -371,15 +368,15 @@ void onnick(char *source, char *newnick, char *body)
 #endif
       if (atol(TS + 1) <= logTS)
       {
-	NickInUse();
-	PutLog(source);
-	PutLog(newnick);
-	PutLog(body);
+        NickInUse();
+        PutLog(source);
+        PutLog(newnick);
+        PutLog(body);
       }
       else
       {
-	onquit(source);
-	return;		/*ignore */
+        onquit(source);
+        return;		/*ignore */
       }
     }
 
@@ -420,34 +417,34 @@ void onnick(char *source, char *newnick, char *body)
       /* if not on channel.. ignore nick flood pro */
       if (!chan->N->on)
       {
-	chan = chan->next;
-	continue;	/* yurk.. as bad as a goto ;) */
+        chan = chan->next;
+        continue;	/* yurk.. as bad as a goto ;) */
       }
 
       while (curr)
       {
-	if (curr->time < (now - 15))
-	{
-	  if (prec)
-	  {
-	    prec->next = curr->next;
-	    TTLALLOCMEM -= sizeof(anickchange);
-	    free(curr);
-	    curr = prec->next;
-	  }
-	  else
-	  {
-	    chan->nickhist = curr->next;
-	    TTLALLOCMEM -= sizeof(anickchange);
-	    free(curr);
-	    curr = chan->nickhist;
-	  }
-	}
-	else
-	{
-	  prec = curr;
-	  curr = curr->next;
-	}
+        if (curr->time < (now - 15))
+        {
+          if (prec)
+          {
+            prec->next = curr->next;
+            TTLALLOCMEM -= sizeof(anickchange);
+            free(curr);
+            curr = prec->next;
+          }
+          else
+          {
+            chan->nickhist = curr->next;
+            TTLALLOCMEM -= sizeof(anickchange);
+            free(curr);
+            curr = chan->nickhist;
+          }
+        }
+        else
+        {
+          prec = curr;
+          curr = curr->next;
+        }
       }
 
       /* now add the new nick change to the history */
@@ -460,18 +457,18 @@ void onnick(char *source, char *newnick, char *body)
       /* now count the nick changes in history
          if there are more than allowed.. grrrr */
       for (i = 0, curr = chan->nickhist; curr;
-	curr = curr->next, i++);
+        curr = curr->next, i++);
 
       if (i == chan->N->NickFloodPro && chan->N->NickFloodPro != 0
-	&& chan->N->on)
+          && chan->N->on)
       {
-	sprintf(buffer, "%s!%s@%s", user->nick, user->username, user->site);
-	notice(source,
-	  "### NICK FLOOD PROTECTION ACTIVATED ###");
-	sprintf(buffer, "%s %d", user->nick,
-	  NICK_FLOOD_SUSPEND_TIME);
-	suspend("", chan->N->name, buffer);
-	ban("", chan->N->name, newnick);
+        sprintf(buffer, "%s!%s@%s", user->nick, user->username, user->site);
+        notice(source,
+          "### NICK FLOOD PROTECTION ACTIVATED ###");
+        sprintf(buffer, "%s %d", user->nick,
+          NICK_FLOOD_SUSPEND_TIME);
+        suspend("", chan->N->name, buffer);
+        ban("", chan->N->name, newnick);
       }
       chan = chan->next;
     }
@@ -667,26 +664,26 @@ void onwhois(char *source, char *nick)
       sprintf(buffer, "%s 319 %s %s :", myYY, source, user->nick);
       while (chan != NULL)
       {
-	      /* show a channel only if it is
-	       * not +s or +p
-	       */
-      	if (!IsSet(chan->N->name, 's', "") &&
-	         !IsSet(chan->N->name, 'p', ""))
-      	{
-	        usr = ToUserNick(chan->N->name, nick);
-	        if (usr->chanop)
-	          strcat(buffer, "@");
-	        strcat(buffer, chan->N->name);
-	        strcat(buffer, " ");
-	      }
-	      chan = chan->next;
-	      if (strlen(buffer) > 300)
-	      {
-	        strcat(buffer, "\n");
-	        sendtoserv(buffer);
-	        sprintf(buffer, "%s 319 %s %s :",
-	          myYY, source, nick);
-	      }
+        /* show a channel only if it is
+         * not +s or +p
+         */
+        if (!IsSet(chan->N->name, 's', "") &&
+           !IsSet(chan->N->name, 'p', ""))
+        {
+          usr = ToUserNick(chan->N->name, nick);
+          if (usr->chanop)
+            strcat(buffer, "@");
+          strcat(buffer, chan->N->name);
+          strcat(buffer, " ");
+        }
+        chan = chan->next;
+        if (strlen(buffer) > 300)
+        {
+          strcat(buffer, "\n");
+          sendtoserv(buffer);
+          sprintf(buffer, "%s 319 %s %s :",
+            myYY, source, nick);
+        }
       }
       strcat(buffer, "\n");
       sendtoserv(buffer);

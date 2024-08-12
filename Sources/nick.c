@@ -53,7 +53,7 @@ void NickInUse(void)
 			(*ptr)++;
 			if(*ptr>'z') *ptr='0';
 		}
-	}while(ToLuser(myYYXXX)!=NULL);
+	}while(ToLuserNick(mynick)!=NULL);
 
 	sprintf(buffer,
 		"ERROR: ARGH! Nick already in use! Changing to %s",mynick);
@@ -76,7 +76,7 @@ void ChNick(char *newnick)
 {
 	char buffer[200] = "";
 
-	sprintf(buffer, "%s N %s :%ld\n",myYYXXX,newnick,now);
+	sprintf(buffer, "%s N %s %ld\n",myYYXXX,newnick,now);
 	sendtoserv(buffer);
 	strcpy(mynick,newnick);
 }

@@ -202,6 +202,8 @@ extern char UWORLD_SERVER[80];
 extern char UWORLD_USERNAME[80];
 extern char UWORLD_PASSWORD[80];
 #endif
+
+#define UWORLD_COMMAND "reop %s %s"
 #endif
 
 #ifdef BACKUP
@@ -217,8 +219,6 @@ extern char UWORLD_PASSWORD[80];
 # define SERVERNAME "channels2.undernet.org"
 # define SERVERINFO "Channel Service Backup"
 #endif
-
-#define UWORLD_COMMAND "reop %s %s"
 
 /* Define this if you would like to enable the FAKE_UWORLD function.
  * This function will allow opers to spawn a fake Uworld service to
@@ -241,6 +241,12 @@ extern char UWORLD_PASSWORD[80];
 #define USERLIST_EXP_TIME	(90*24*3600) /* seconds (90 days) */
 #define RENAME_LOGFILE_FREQ	(3*24*3600) /* seconds (3 days) */
 
+/* Define this if you want to disable the following commands
+ * reserved for IRC operators: OPERJOIN, OPERPART, CALMDOWN.
+ */
+#define OPERCMD_DISABLE
+
+#ifndef OPERCMD_DISABLE
 #ifdef MAIN
 char CALMDOWNTOPIC[512] =
   "This channel is in NoOp mode because of repeated abuse. Please contact "
@@ -248,6 +254,7 @@ char CALMDOWNTOPIC[512] =
   "cservice@undernet.org";
 #else
 extern char CALMDOWNTOPIC[512];
+#endif
 #endif
 
 /* Define this if you want the 'upgrade' command

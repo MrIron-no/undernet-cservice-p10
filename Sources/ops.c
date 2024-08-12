@@ -28,7 +28,7 @@
 
 void op(char *source, char *chan, char *nicklist)
 {
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[80] = "";
   char nick[80] = "";
   char buffer[512] = "";
   register auser *user;
@@ -38,13 +38,13 @@ void op(char *source, char *chan, char *nicklist)
   /* if the 1st arg is a channel name.. use it instead of 'chan' */
   if (*nicklist == '#')
   {
-    GetnWord(0, nicklist, channel, CHANNELNAME_LENGTH);
+    GetWord(0, nicklist, channel);
     nicklist = ToWord(1, nicklist);
   }
   else
   {
-    strncpy(channel, chan, CHANNELNAME_LENGTH - 1);
-    channel[CHANNELNAME_LENGTH] = '\0';
+    strncpy(channel, chan, 79);
+    channel[79] = '\0';
     GuessChannel(source, channel);
   }
 
@@ -162,7 +162,7 @@ void op(char *source, char *chan, char *nicklist)
 
 void deop(char *source, char *ch, char *nicklist)
 {
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[80] = "";
   char nick[80] = "";
   char buffer[512] = "";
   register auser *user;
@@ -172,12 +172,13 @@ void deop(char *source, char *ch, char *nicklist)
   /* if the 1st arg is a channel name.. use it instead of 'channel' */
   if (*nicklist == '#')
   {
-    GetnWord(0, nicklist, channel, CHANNELNAME_LENGTH);
+    GetWord(0, nicklist, channel);
     nicklist = ToWord(1, nicklist);
   }
   else
   {
-    strncpy(channel, ch, CHANNELNAME_LENGTH);
+    strncpy(channel, ch, 79);
+    channel[79] = '\0';
     GuessChannel(source, channel);
   }
 

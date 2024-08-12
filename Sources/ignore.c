@@ -103,7 +103,7 @@ int CheckPrivateFlood(char *source, int length, char *type)
   }
 
   /* now add the current message in the list */
-  sprintf(userhost, "%s@%s", user->username, gethost(user)); // TODO: Also add real host?
+  sprintf(userhost, "%s@%s", user->username, gethost(user));
   msg = (aprivmsg *) MALLOC(sizeof(aprivmsg));
   strcpy(msg->user, userhost);
   msg->time = now;
@@ -240,7 +240,7 @@ void CleanIgnores(void)
   }
 }
 
-int IsIgnored(char *num) // TODO: Also check real host?
+int IsIgnored(char *num)
 {
   char userhost[200] = "";
   char hiddenhost[200] = "";
@@ -290,14 +290,14 @@ void ShowIgnoreList(char *source, char *channel, char *args)
     {
       m = (curr->time - now) / 60 + 1;
       sprintf(buffer, "%s for %ld minute%s",
-	curr->mask, m, (m > 1) ? "s" : "");
+	      curr->mask, m, (m > 1) ? "s" : "");
       notice(source, buffer);
       curr = curr->next;
     }
   }
 }
 
-void add_silence(char *num, char *mask) // TODO: Should this only silence the real host?
+void add_silence(char *num, char *mask)
 {
   char buffer[200] = "";
 
@@ -379,7 +379,7 @@ int CheckFloodFlood(char *source, int length)
   }
 
   /* now add the current message in the list */
-  sprintf(userhost, "%s@%s", user->username, gethost(user)); // TODO: Should this also add the real host?
+  sprintf(userhost, "%s@%s", user->username, gethost(user));
   msg = (aprivmsg *) MALLOC(sizeof(aprivmsg));
   strcpy(msg->user, userhost);
   msg->time = now;
@@ -474,7 +474,7 @@ int CheckAdduserFlood(char *source, char *channel)
     }
   }
 
-  sprintf(userhost, "%s@%s", user->username, gethost(user)); // TODO: Should this also add the real host?
+  sprintf(userhost, "%s@%s", user->username, gethost(user));
 
   /* now add the current message in the list */
   msg = (aprivmsg *) MALLOC(sizeof(aprivmsg));

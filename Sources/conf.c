@@ -162,42 +162,54 @@ void read_conf(char *conf)
       strncpy(VERIFY_ID, buffer + 9, 256);
       VERIFY_ID[255] = '\0';
     }
-#ifdef UWORLD
     else if (!strncasecmp(buffer, "UWORLD_NICK ", 12))
     {
+#ifdef UWORLD
       strncpy(UWORLD_NICK, buffer + 12, 10);
       UWORLD_NICK[9] = '\0';
+#endif
     }
     else if (!strncasecmp(buffer, "UWORLD_USER ", 12))
     {
+#ifdef UWORLD
       strncpy(UWORLD_USER, buffer + 12, 80);
       UWORLD_USER[79] = '\0';
+#endif
     }
     else if (!strncasecmp(buffer, "UWORLD_HOST ", 12))
     {
+#ifdef UWORLD
       strncpy(UWORLD_HOST, buffer + 12, 80);
       UWORLD_HOST[79] = '\0';
+#endif
     }
     else if (!strncasecmp(buffer, "UWORLD_USERNAME ", 16))
     {
+#ifdef UWORLD
       strncpy(UWORLD_USERNAME, buffer + 16, 80);
       UWORLD_USERNAME[79] = '\0';
+#endif
     }
     else if (!strncasecmp(buffer, "UWORLD_PASSWORD ", 16))
     {
+#ifdef UWORLD
       strncpy(UWORLD_PASSWORD, buffer + 16, 80);
       UWORLD_PASSWORD[79] = '\0';
+#endif
     }
     else if (!strncasecmp(buffer, "UWORLD_SERVER ", 14))
     {
+#ifdef UWORLD
       strncpy(UWORLD_SERVER, buffer + 14, 80);
       UWORLD_SERVER[79] = '\0';
-    }
 #endif
+    }
     else if (!strncasecmp(buffer, "CALMDOWNTOPIC ", 14))
     {
+#ifndef OPERCMD_DISABLE
       strncpy(CALMDOWNTOPIC, buffer + 14, 512);
       CALMDOWNTOPIC[511] = '\0';
+#endif
     }
     else if (!strncasecmp(buffer, "NSERV_NICK ", 11))
     {
