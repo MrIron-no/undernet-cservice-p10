@@ -130,7 +130,7 @@ void AddChan(char *source,char *ch,char *args)
 		return;
 	}
 
-	if(Access(channel,source)<SET_DEFAULT_LEVEL){
+	if(*source && Access(channel,source)<SET_DEFAULT_LEVEL){
 		ReplyNotAccess(source,channel);
 		return;
 	}
@@ -178,13 +178,15 @@ void AddChan(char *source,char *ch,char *args)
 	sprintf(buffer,"I ADD DEFAULT CHANNEL %s",channel);
 	PutLog(buffer);
 
-	if(found){
-		notice(source,replies[RPL_SETCHANDEFS][chan->lang]);
+	if(*source){
+		if(found){
+			notice(source,replies[RPL_SETCHANDEFS][chan->lang]);
 #ifdef BACKUP
-		notice(source,"This modification will not be permanent");
+			notice(source,"This modification will not be permanent");
 #endif
-	}else{
-		notice(source,replies[RPL_NOTONCHANNEL][L_DEFAULT]);
+		}else{
+			notice(source,replies[RPL_NOTONCHANNEL][L_DEFAULT]);
+		}
 	}
 }
 
