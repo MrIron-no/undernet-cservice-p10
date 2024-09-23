@@ -82,6 +82,15 @@ extern char PASSWORD[80];
 extern int NUMERIC;
 #endif
 
+/*
+ * Although ircu P10 accounts are not provided by X (as opposed to GNUWorld),
+ * X will not reveal hosts if being connected to a network providing accounts
+ * and supporting usermode +x. If HIS_SERVERNAME is defined, the map command
+ * will be disabled, and the client server's name hidden to the outside world.
+ */
+#define HIDDEN_HOST_SUFFIX ".users.undernet.org"
+#define HIS_SERVERNAME "*.undernet.org"
+
 /* HOMEDIR is X's home directory.
  * A chdir() is issued at the very beginning of
  * the execution.
