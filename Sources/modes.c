@@ -83,7 +83,8 @@ void RemFlag(char *string, char flag)
       strcpy(temp, curr + 1);
       strcpy(curr, temp);
       if (ptr)
-        strcpy(ToWord(count, newarg), ToWord(count + 1, newarg));
+	memmove(ToWord(count, newarg), ToWord(count + 1, newarg), strlen(ToWord(count + 1, newarg)) + 1);
+    //    strcpy(ToWord(count, newarg), ToWord(count + 1, newarg));
     }
     else
     {

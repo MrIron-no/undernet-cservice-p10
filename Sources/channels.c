@@ -934,6 +934,35 @@ void onjoin(char *function, char *source, char *channel, char *args)
     continue;
   }
 
+  if (strcmp(channel, "0") == 0)
+  {
+    aluser* user = ToLuser(source);
+    if (!user)
+    {
+#ifdef DEBUG
+      printf("ERROR: onjoin(%s, %s (%s)): Can't find user!\n", source, channel, function);
+#endif
+    return;
+    }
+
+#ifdef DEBUG
+  printf("onjoin(%s, %s (%s)): Parting all channels\n", source, channel, function);
+#endif
+    achannelnode* channode = user->channel;
+    while (channode != NULL)
+    {
+#ifdef DEBUG
+  printf("onjoin(0): Sending part for %s\n", channode->N->name);
+#endif
+      onpart(source, channode->N->name);
+      channode = channode->next;
+    }
+
+    // Continue, they don't join 0...
+    channel = ptr;
+    continue;
+  }
+
   chan = ToChannel(channel);
   if (!chan)
   {
