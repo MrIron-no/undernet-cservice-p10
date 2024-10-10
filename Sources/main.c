@@ -271,8 +271,6 @@ int reconnect(char *server)
   if (!connection(server))
   {
     regist();
-    signon();
-    SendBurst();
     return 0;
   }
   else
@@ -298,8 +296,6 @@ void try_later(char *server)
   }
   while (connection(server));
   regist();
-  signon();
-  SendBurst();
 #endif
 }
 
@@ -810,17 +806,21 @@ void proc(char *source, char *function, char *target, char *body)
   }
   else if (strcmp(function, "SQ") == 0)
   {
+    sprintf(buffer, "Received SQUIT from %s, shutting down", GetNick(source));
+
     onsquit(source, target, body);
     if (ServerList == NULL)
     {
-      PutLog("received squit from");
-      PutLog(source);
-      PutLog(body);
-      if (reconnect(server))
+      PutLog(buffer);
+#ifdef DEBUG
+      puts(buffer);
+#endif
+      exit(0);
+/*    if (reconnect(server))
       {
 	      try_later(server);
 	      return;
-      }
+      }*/
     }
   }
   else if (strcmp(function, "P") == 0)

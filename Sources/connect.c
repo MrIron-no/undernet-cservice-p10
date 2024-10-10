@@ -324,9 +324,15 @@ int wait_msg(void)
   /* The uplink's socket is ready for reading... */
   if (FD_ISSET(Irc.fd, &readfds))
   {
-    if (read_from_server(0) < 0)
+    int result = read_from_server(0);
+    if (result < 0)
     {
       PutLog("ERROR: in read_from_server()");
+      return (-1);
+    }
+    else if (result == 0)
+    {
+      PutLog("Socket closed by the server.");
       return (-1);
     }
     pingflag = 0;
