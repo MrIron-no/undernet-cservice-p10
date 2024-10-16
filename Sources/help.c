@@ -48,7 +48,7 @@ commands[] =
   }
   ,
 #endif
-#ifdef DO_HTTP
+#ifdef DOHTTP
   {
     "rehash", MASTER_ACCESS, "REHASH"
   }
