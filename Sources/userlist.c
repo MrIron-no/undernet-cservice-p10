@@ -1486,7 +1486,7 @@ void SaveUserList(char *source, char *channel)
   else
   {
     sprintf(buffer, "Userlist sync is already in progress (%d%%) [%s]",
-      DB_Save_Status / 10, *DB_Save_Nick ? DB_Save_Nick : "auto");
+      DB_Save_Status / 10, *DB_Save_Nick ? GetNick(DB_Save_Nick) : "auto");
     notice(source, buffer);
   }
   /*do_cold_sync();

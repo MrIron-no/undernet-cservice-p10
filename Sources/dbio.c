@@ -722,6 +722,12 @@ void db_test(char *source, char *chan, char *args)
   char channel[80], type[80], info[80] = "";
   char *hook;
 
+  char global[] = "*";
+  if (*source && Access(global, source) < MASTER_ACCESS)
+  {
+    return;
+  }
+
   GetWord(0, args, channel);
   GetWord(1, args, type);
   GetWord(2, args, info);

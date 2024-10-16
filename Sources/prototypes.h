@@ -131,8 +131,8 @@ char *GetNick(char *);
 void onquit(char *);
 void onkill(char *,char *,char *);
 void onwho(char *);
-void showusers(char *);	
-void showchannels(void);
+void showusers(char *, char *);
+void showchannels(char *);
 void setchanmode(char *);
 void onclearmode(char *,char *,char *);
 void ModeChange(char *,char *,char *);
@@ -193,8 +193,8 @@ void AdminRemoveIgnore(char *, char *, char *);
 void CalmDown(char *,char *,char *);
 void OperJoin(char *,char *,char *);
 void OperPart(char *,char *,char *);
-void ClearMode(char *, char *, char *);
 #endif
+void ClearMode(char *, char *, char *);
 void ReplyNotAccess(char *,char *);
 #ifdef MAX_IDLE_TIME
 void CheckIdleChannels(void);

@@ -2037,12 +2037,18 @@ void SendBurst(void)
   sendtoserv(buffer);
 }
 
-void showusers(char *chan)
+void showusers(char *source, char *chan)
 {
   auser *user;
   aluser *u;
   achannel *channel;
   int index = 0;
+
+  char global[] = "*";
+  if (*source && Access(global, source) < MASTER_ACCESS)
+  {
+    return;
+  }
 
 #ifdef DEBUG
   printf("ACK\n");
@@ -2074,8 +2080,14 @@ void showusers(char *chan)
   }
 }
 
-void showchannels(void)
+void showchannels(char *source)
 {
+  char global[] = "*";
+  if (*source && Access(global, source) < MASTER_ACCESS)
+  {
+    return;
+  }
+
   achannel *channel;
   aban *b;
   modequeue *mode;

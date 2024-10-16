@@ -83,7 +83,7 @@ void nserv_nickserv(char *source, char *args)
 {
   register aluser *luser;
   char buffer[512];
-  
+
   if((luser=ToLuser(source))==NULL)
   {
     PutLog("ERROR: nserv_nickserv() can't locate user!");
@@ -130,7 +130,7 @@ void nserv_addnick(char *source, char *args)
   register struct aregnick *reg;
   char buffer[512] = "", nick[80] = "", password[80] = "", mask[80] = "", email[80] = "";
   int idx = 0;
-  
+
   if((luser=ToLuser(source))==NULL)
   {
     PutLog("ERROR: nserv_addnick() can't locate user!");

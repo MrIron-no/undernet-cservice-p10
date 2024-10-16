@@ -46,6 +46,11 @@ void close_debug_malloc(void)
 
 void log_malloc(char *fmt,...)
 {
+  if (debug_malloc_file == NULL) {
+    fprintf(stderr, "Error: debug_malloc_file is not initialized\n");
+    return;
+  }
+
   va_list ap;
   va_start(ap,fmt);
   vfprintf(debug_malloc_file,fmt,ap);

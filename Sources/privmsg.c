@@ -34,7 +34,7 @@ void privmsg(char *source, char *target, char *body)
   char global[] = "*";
 
 #ifdef DEBUG
-  printf("PRIVMSG from %s to %s with body %s\n", source, target, body);
+  printf("PRIVMSG from %s (%s) to %s with body %s\n", GetNick(source), source, target, body);
 #endif
 
   if ((*target == '#' || *target == '$') && strchr(target, '*'))
@@ -275,9 +275,10 @@ void parse_command(char *source, char *target, char *channel, char *commandline)
   else if (!strcasecmp(command, "operpart"))
 	OperPart(source, channel, ToWord(1, commandline));
 
+#endif
+
   else if (!strcasecmp(command, "clearmode"))
 	ClearMode(source, channel, ToWord(1, commandline));
-#endif
 
   else if (!strcasecmp(command, "purge"))
 	purge(source, channel, ToWord(1, commandline));
@@ -324,10 +325,10 @@ void parse_command(char *source, char *target, char *channel, char *commandline)
 
 #ifdef DEBUG
   else if (!strcasecmp(command, "showusers"))
-	showusers(ToWord(1, commandline));
+	showusers(source, ToWord(1, commandline));
 
   else if (!strcasecmp(command, "showchannels"))
-	showchannels();
+	showchannels(source);
 #endif
 
 #ifdef NICKSERV

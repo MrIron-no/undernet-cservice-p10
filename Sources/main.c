@@ -128,6 +128,10 @@ char nservYYXXX[6];
 int NServ_status = 1;
 #endif
 
+#ifdef BACKUP
+char backupYYXXX[6];
+#endif
+
 void rec_sigpipe(int sig)
 {
   quit("ERROR: Received SIGPIPE :(", 1);
@@ -189,9 +193,11 @@ void signon(void)
   sendtoserv(buffer);
 #ifdef BACKUP
   /* see above */
-  sprintf(buffer, "%s N %s 1 31337 %s %s %s AAAAAA %s :%s\n", myYY, MAIN_NICK, myuser, mysite, UMODE, myYYXXX, MAIN_REALNAME);
+  sprintf(backupYYXXX, "%sAAB", myYY);
+  sprintf(buffer, "%s N %s 1 31337 %s %s %s AAAAAA %s :%s\n", myYY, MAIN_NICK, myuser, mysite, UMODE, backupYYXXX, MAIN_REALNAME);
   sendtoserv(buffer);
-  sprintf(buffer, "%s A :^BTemporarily down.. please use %s^B\n", myYYXXX, mynick);
+  sprintf(buffer, "%s A :^BTemporarily down.. please use %s^B\n", backupYYXXX, mynick);
+  sendtoserv(buffer);
 #endif
 #ifdef FAKE_UWORLD
   if (Uworld_status == 1)
@@ -216,7 +222,7 @@ void IntroduceUworld(void)
   sprintf(buffer, "%s S %s 2 0 %ld J10 %sAAA +s :%s\n"
     "%s N %s 2 31337 %s %s +iodkw AAAAAA %s :%s\n%s EB\n%s EA\n",
     myYY, UFAKE_SERVER, UworldServTS, ufakeYY, UFAKE_INFO,
-    ufakeYY, UFAKE_NICK, UFAKE_NICK, UFAKE_HOST, ufakeYYXXX, UFAKE_INFO, 
+    ufakeYY, UFAKE_NICK, UFAKE_NICK, UFAKE_HOST, ufakeYYXXX, UFAKE_INFO,
     ufakeYY, ufakeYY);
   sendtoserv(buffer);
 }
@@ -237,7 +243,11 @@ void IntroduceNickserv(void)
 {
   char buffer[512];
 
+#ifdef BACKUP
+  sprintf(nservYYXXX, "%sAAC", myYY);
+#else
   sprintf(nservYYXXX, "%sAAB", myYY);
+#endif
   sprintf(buffer, "%s N %s 1 31337 %s %s +kd AAAAAA %s :%s\n",
     myYY, NSERV_NICK, NSERV_USER, NSERV_HOST,
     nservYYXXX, NSERV_INFO);
@@ -395,9 +405,8 @@ int quit(char *msg, int flag)
   }
 
   if (!msg || !*msg)
-    sprintf(buffer, "%s Q :%s\n"
-      "%s SQ %s 0 :die request\n",
-      myYYXXX, mynick, myYY, SERVERNAME);
+    sprintf(buffer, "%s SQ %s 0 :die request\n",
+      myYY, SERVERNAME);
   else
     sprintf(buffer, "%s Q :%s\n"
       "%s SQ %s 0 :%s\n",
@@ -923,7 +932,6 @@ int main(int argc, char **argv)
   extern void read_conf(char *);
   int i;
   unsigned int sum1, sum2;
-
 #if !defined(DEBUG)
   int pid;
 #ifdef TIOCNOTTY
@@ -1051,13 +1059,13 @@ int main(int argc, char **argv)
 
   PutLog("Opening log file");
 
+#ifdef DEBUG_MALLOC
+  open_debug_malloc();
+#endif
+
 #ifdef DOHTTP
   open_http();
   read_http_conf("");
-#endif
-
-#ifdef DEBUG_MALLOC
-  open_debug_malloc();
 #endif
 
   InitEvent();

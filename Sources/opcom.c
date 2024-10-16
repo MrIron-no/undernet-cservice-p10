@@ -216,7 +216,7 @@ void OperPart(char *source, char *chan, char *args)
 
   part("", channel, "");
 }
-
+#endif
 
 void ClearMode(char *source, char *chan, char *args)
 {
@@ -251,6 +251,7 @@ void ClearMode(char *source, char *chan, char *args)
 
   if (Access(channel, source) < CLEARMODE_LEVEL)
   {
+#ifndef OPERCMD_DISABLE
     if (user->mode & LFL_ISOPER)
     {
       sprintf(buffer, "%s WA :%s is using clearmode on %s\n",
@@ -259,9 +260,12 @@ void ClearMode(char *source, char *chan, char *args)
     }
     else
     {
+#endif
       ReplyNotAccess(source, channel);
       return;
+#ifndef OPERCMD_DISABLE
     }
+#endif
   }
 
   if ((ch = ToChannel(channel)) == NULL)
@@ -296,7 +300,7 @@ void ClearMode(char *source, char *chan, char *args)
 	changemode(channel, "-l", "", 0);
       }
     }
-    else
+    else if (!strchr("R", *curr))
     {
       sprintf(buffer, "-%c", *curr);
       changemode(channel, buffer, "", 0);
@@ -308,7 +312,6 @@ void ClearMode(char *source, char *chan, char *args)
   ch->mode[0] = '\0';
   flushmode(channel);
 }
-#endif
 
 void verify(char *source, char *arg)
 {

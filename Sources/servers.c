@@ -124,7 +124,7 @@ void onserver(char *arg1, char *arg2, char *arg3, char *args)
   }
 
 #ifdef BACKUP
-  if (strcmp(newserver, myYY) == 0)
+  if (strcmp(newserver, MAIN_SERVERNAME) == 0)
   {
     quit(MAIN_NICK " is back", 0);
   }
@@ -313,7 +313,7 @@ void showversion(char *source)
 {
   char buffer[200] = "";
 
-  sprintf(buffer, "%s 351 %s :%s\n", myYY, source, VERSION);
+  sprintf(buffer, "%s 351 %s . %s :%s\n", myYY, source, SERVERNAME, VERSION);
   sendtoserv(buffer);
 }
 

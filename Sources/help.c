@@ -34,10 +34,26 @@ static struct item
 }
 commands[] =
 {
+#ifdef DEBUG
   {
-    "showcommands", 0, "SHOWCOMMANDS"
+    "db", MASTER_ACCESS, "DB"
   }
   ,
+  {
+    "showusers", MASTER_ACCESS, "SHOWUSERS"
+  }
+  ,
+  {
+    "showchannels", MASTER_ACCESS, "SHOWCHANNELS"
+  }
+  ,
+#endif
+#ifdef DO_HTTP
+  {
+    "rehash", MASTER_ACCESS, "REHASH"
+  }
+  ,
+#endif
   {
     "status", STATUS_ACCESS, "STATUS"
   }
@@ -175,13 +191,23 @@ commands[] =
   }
   ,
   {
+    "say", SAY_LEVEL, "SAY"
+  }
+  ,
+  {
+    "servnotice", SERVNOTICE_LEVEL, "SERVNOTICE"
+  }
+  ,
+  {
     "core", LEVEL_CORE, "CORE"
   }
   ,
+#ifdef RUSAGE_SELF
   {
     "rusage", RUSAGE_ACCESS, "RUSAGE"
   }
   ,
+#endif
 #ifdef UPGRADE
   {
     "upgrade", LEVEL_UPGRADE, "UPGRADE"

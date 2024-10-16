@@ -111,7 +111,7 @@ void Say(char *source, char *args)
   char target[80] = "", buffer[512] = "", global[] = "*";
   register aluser *user;
 
-  if (Access(global, source) < 900)
+  if (Access(global, source) < SAY_LEVEL)
   {
     return;	/*silently */
   }
@@ -146,7 +146,7 @@ void ServNotice(char *source, char *args)
 {
   char buffer[1048] = "", target[80] = "", global[] = "*";
 
-  if (Access(global, source) < 600)
+  if (Access(global, source) < SERVNOTICE_LEVEL)
   {
     return;	/*silently */
   }
