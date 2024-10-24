@@ -37,9 +37,14 @@ void NickInUse(void)
 	close(Irc.fd);
 	Irc.fd=-1;
 	QuitAll();
+#ifdef RECONNECT
 	if(reconnect(server)){
 		try_later(server);
 	}
+#else
+	PutLog("Nick collision. Shutting down...");
+	exit(0);
+#endif
 #if 0
 	char *ptr;
 	achannel *chan;

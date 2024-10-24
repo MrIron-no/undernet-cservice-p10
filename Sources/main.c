@@ -427,6 +427,18 @@ int quit(char *msg, int flag)
   close_debug_malloc();
 #endif
 
+#ifdef DOHTTP
+  register http_socket *tmp;
+  for (tmp = HttpList; tmp != NULL; tmp = tmp->next)
+  {
+    if (tmp->fd > 0)
+      close(tmp->fd);
+  }
+#endif
+
+  sleep(5);
+  close(Irc.fd);
+
   unlink(PIDFILE);
 
   if (flag)
@@ -449,9 +461,8 @@ int restart(char *msg)		/* added by Kev */
   sync();
 
   if (!msg || !*msg)	/* send out QUIT/SQUIT stuff... */
-    sprintf(buffer, "%s Q :restarting...\n"
-      "%s SQ %s 0 :restart request\n",
-      myYYXXX, myYY, SERVERNAME);
+    sprintf(buffer, "%s SQ %s 0 :restart request\n",
+      myYY, SERVERNAME);
   else
     sprintf(buffer, "%s Q :%s\n"
       "%s SQ %s 0 :%s\n",
@@ -465,6 +476,7 @@ int restart(char *msg)		/* added by Kev */
 
   sprintf(buffer, "RESTARTING (%s)", msg);	/* log the restart... */
   PutLog(buffer);
+  sleep(5);
   switch (fork())
   {
   case -1:
@@ -815,7 +827,7 @@ void proc(char *source, char *function, char *target, char *body)
   }
   else if (strcmp(function, "SQ") == 0)
   {
-    sprintf(buffer, "Received SQUIT from %s, shutting down", GetNick(source));
+    sprintf(buffer, "Received SQUIT from %s", GetNick(source));
 
     onsquit(source, target, body);
     if (ServerList == NULL)
@@ -824,12 +836,16 @@ void proc(char *source, char *function, char *target, char *body)
 #ifdef DEBUG
       puts(buffer);
 #endif
-      exit(0);
-/*    if (reconnect(server))
+#ifdef RECONNECT
+      if (reconnect(server))
       {
 	      try_later(server);
 	      return;
-      }*/
+      }
+#else
+      PutLog("Shutting down...");
+      exit(0);
+#endif
     }
   }
   else if (strcmp(function, "P") == 0)

@@ -82,6 +82,11 @@ extern char PASSWORD[80];
 extern int NUMERIC;
 #endif
 
+/* Define this to attempt auto reconnect in the event of the server being
+ * squit'ed or if the bot is nick collided.
+ */
+#undef RECONNECT
+
 /*
  * Although ircu P10 accounts are not provided by X (as opposed to GNUWorld),
  * X will not reveal hosts if being connected to a network providing accounts

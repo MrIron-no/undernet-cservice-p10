@@ -1478,12 +1478,13 @@ void SaveUserList(char *source, char *channel)
 
   if (DB_Save_Status == -1)
   {
-    notice(source, "Userlist sync initiated");
+    if (*source)
+      notice(source, "Userlist sync initiated");
     DB_Save_Status = 0;
     strncpy(DB_Save_Nick, source, NICK_LENGTH - 1);
     DB_Save_Nick[NICK_LENGTH - 1] = '\0';
   }
-  else
+  else if (*source)
   {
     sprintf(buffer, "Userlist sync is already in progress (%d%%) [%s]",
       DB_Save_Status / 10, *DB_Save_Nick ? GetNick(DB_Save_Nick) : "auto");

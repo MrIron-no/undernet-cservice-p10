@@ -29,10 +29,11 @@ RM = /bin/rm
 CFLAGS = -Wpedantic -ggdb -O0 -pedantic-errors
 #CFLAGS = -O6
 
-DEFINES = -DDEBUG
+#DEFINES = -DDEBUG
 #DEFINES = -DBACKUP
 #DEFINES = -DDEBUG_MALLOC -DHISTORY
 #DEFINES= -DHISTORY
+DEFINES= -DHISTORY -DDEBUG
 #DEFINES=
 
 # necessary for Solaris
