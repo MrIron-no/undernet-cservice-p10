@@ -201,7 +201,7 @@ void chat_notice(char *user, char *msg)
   {
     cu = (struct chat_user *)scan->hook;
     if (scan->status == HTTP_CHAT && cu->luser &&
-      !strcasecmp(cu->luser->num, user))
+      !strcmp(cu->luser->num, user))
     {
       sendto_http(scan, "-%s- %s\n", mynick, msg);
 #ifdef DEBUG

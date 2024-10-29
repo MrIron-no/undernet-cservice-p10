@@ -89,9 +89,7 @@ char *GetYYXXX(char *nick)
 
   if (user == NULL)
   {
-#ifdef DEBUG
-    printf("GetYYXXX(): Cannot find user %s\n", nick);
-#endif
+    PutLog("GetYYXXX(): Cannot find user %s\n", nick);
     return NULL;
   }
   else
@@ -138,7 +136,13 @@ void onaccount(char *source, char *target, char *body)
 
   user = ToLuser(target);
   if (user == NULL)
-    quit("ERROR! onaccount() can't find user", 1);
+  {
+    PutLog("ERROR: onaccount() can't find user!");
+#ifdef HISTORY
+    History(NULL);
+#endif
+    return;
+  }
 
 #ifdef DEBUG
   /* change the account in memory */
@@ -220,9 +224,6 @@ void onnick(char *source, char *newnick, char *body)
     if (!strcasecmp(newnick, mynick))
     {
       PutLog("ERROR: I'm nick collided");
-#ifdef DEBUG
-      printf("ARGH!!! I'M NICK COLLIDED!\n");
-#endif
 
       if (atol(TS) <= logTS &&
         strcasecmp(username, myuser) &&
@@ -265,12 +266,8 @@ void onnick(char *source, char *newnick, char *body)
     // Checking if we have a numeric collision
     if (ToLuser(YYXXX))
     {
-#ifdef DEBUG
-      printf("ARGH!!! NUMERIC COLLISION\n");
-#endif
       tempuser = ToLuser(YYXXX);
-      sprintf(buffer, "ERROR onnick(): Numeric collision. Existing user: %s (%s) (lu_hash: %d). New user %s (arg: %s) (lu_hash: %d)\n", tempuser->nick, tempuser->num, lu_hash(tempuser->num), newnick, body, lu_hash(YYXXX));
-      PutLog(buffer); 
+      PutLog("ERROR onnick(): Numeric collision. Existing user: %s (%s) (lu_hash: %d). New user %s (arg: %s) (lu_hash: %d)\n", tempuser->nick, tempuser->num, lu_hash(tempuser->num), newnick, body, lu_hash(YYXXX));
       onquit(YYXXX);
     }
 
@@ -353,14 +350,6 @@ void onnick(char *source, char *newnick, char *body)
   else
   {	/* nick change */
     GetWord(0, body, TS);
-
-#if 0
-    if (!strcasecmp(source, DEFAULT_NICKNAME) &&
-      strcasecmp(newnick, DEFAULT_NICKNAME))
-    {
-      ChNick(DEFAULT_NICKNAME);
-    }
-#endif
     if (!strcasecmp(newnick, mynick))
     {
 #ifdef DEBUG
@@ -390,16 +379,24 @@ void onnick(char *source, char *newnick, char *body)
 #endif
 
     if (user == NULL)
-      quit("ERROR! onnick() can't find user", 1);
+    {
+      PutLog("ERROR: onnick() can't find user!");
+#ifdef HISTORY
+      History(NULL);
+#endif
+      return;
+    }
 
-    s = &user->server->users[su_hash(source)];
+/*    s = &user->server->users[su_hash(source)];
     while (*s && strcmp((*s)->N->num, user->num) != 0)
       s = &(*s)->next;
-    suser = *s;
+    suser = *s;*/
 
     /* change the nick in memory */
 
+#ifdef DEBUG
     printf("NICK CHANGE %s (%s) --> %s\n", user->nick, user->num, newnick);
+#endif
 
     TTLALLOCMEM -= strlen(user->nick) + 1;
     free(user->nick);
@@ -539,6 +536,7 @@ void onquit(char *num)
     *s = (*s)->next;
     TTLALLOCMEM -= sizeof(asuser);
     free(suser);
+    suser = NULL;
   }
   else
   {
@@ -546,12 +544,6 @@ void onquit(char *num)
   }
 
   *u = user->next;
-#if 0
-  if (!strcasecmp(user->nick, DEFAULT_NICKNAME))
-  {
-    ChNick(DEFAULT_NICKNAME);
-  }
-#endif
 
 #ifdef NICKSERV
   nserv_quit(user);
@@ -575,37 +567,29 @@ void onquit(char *num)
   }
   TTLALLOCMEM -= sizeof(aluser);
   free(user);
+  user = NULL;
 }
 
 void onkill(char *source, char *target, char *comment)
 {
   char buffer[200] = "";
 
-  if (!strcasecmp(target, myYYXXX))
+  if (!strcmp(target, myYYXXX))
   {
-#if 0
-    /* ignore kill for nick collisions because we
-     * already check in onnick() if we're collided.
-     * This kill is prolly a lost  kill resulting of
-     * another nick collision..
-     */
-    if (strstr(comment, "older nick overruled") ||
-      strstr(comment, "collided yourself"))
-    {
-      PutLog("ERROR: Nick collision on me?");
-      return;
-    }
-#endif
     sprintf(buffer, "%s SQ %s 0 :killed by %s\n",
       myYY, SERVERNAME, GetNick(source));
     sendtoserv(buffer);
     dumpbuff();
     close(Irc.fd);
     Irc.fd = -1;
+#ifdef AUTORECONNECT
     if (reconnect(server))
     {
       try_later(server);
     }
+#else
+    exit(0);
+#endif
 #ifdef BACKUP
   }
   else if (!strcasecmp(target, MAIN_NICK))
@@ -614,7 +598,7 @@ void onkill(char *source, char *target, char *comment)
 #endif
 #ifdef FAKE_UWORLD
   }
-  else if (!strcasecmp(target, ufakeYYXXX))
+  else if (!strcmp(target, ufakeYYXXX))
   {
     char buffer[200];
     sprintf(buffer, "%s is KILLED by %s", UFAKE_NICK, GetNick(source));

@@ -314,6 +314,7 @@ void ModeChange(char *source, char *channel, char *change)
   u = ToLuser(source);
   if (chan == NULL && u == NULL)
   {
+    PutLog("ModeChange(): WARNING: Mode change for neither user nor channel: %s - %s - %s", source, channel, change);
     return;	/* probably a lost MODE */
   }
 
@@ -528,9 +529,8 @@ void onop(char *source, char *channel, char *target)
 
     if (!user)
     {
-      sprintf(buffer, "ERROR: onop() user not found (%s)",
+      PutLog("ERROR: onop() user not found (%s)",
         target);
-      PutLog(buffer);
       return;
     }
 

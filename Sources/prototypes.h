@@ -24,7 +24,7 @@
  * http://gnuworld.sourceforge.net/ for more information.
  */
 
-void PutLog(char *);
+void PutLog(char *, ...);
 void SpecLog(char *);
 void LogChan(void);
 int connection(char *);

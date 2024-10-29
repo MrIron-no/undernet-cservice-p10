@@ -42,6 +42,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/resource.h>
+#include <stdarg.h>
 #include "../config.h"
 #include "debug.h"
 #include "defines.h"
@@ -689,14 +690,29 @@ void rpong(char *who, char *args)
   sendtoserv(buffer);
 }
 
-void PutLog(char *text)
+void PutLog(char *text, ...)
 {
   static char date[80], buffer[1024];
   strcpy(date, ctime(&now));
   *strchr(date, '\n') = '\0';
-  sprintf(buffer, "%s: %s\n", date, text);
+
+  // Initialize the variable argument list
+  va_list args;
+  va_start(args, text);
+  vsnprintf(buffer, sizeof(buffer), text, args);
+  va_end(args);
+
+  // Prepare the final log message with date
+  char finalMessage[2048];
+  snprintf(finalMessage, sizeof(finalMessage), "%s: %s\n", date, buffer);
+
+#ifdef DEBUG
+  // Print to the console
+  printf("%s", finalMessage);
+#endif
+
   alarm(3);
-  write(logfile, buffer, strlen(buffer));
+  write(logfile, finalMessage, strlen(finalMessage));
   alarm(0);
 }
 

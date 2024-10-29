@@ -196,6 +196,7 @@ void FreeUser(auser * user)
   }
   TTLALLOCMEM -= sizeof(auser);
   free(user);
+  user = NULL;
   /* phew! */
 }
 
@@ -223,9 +224,6 @@ auser *ToUser(char *channel, char *num)
   if (!chan)
   {
     curr = NULL;
-#ifdef DEBUG
-    printf("ToUser(): channel not found!\n");
-#endif
     // Useful debug information.
     PutLog("ERROR ToUser(): Channel not found!");
     PutLog(channel);
@@ -245,10 +243,10 @@ auser *ToUser(char *channel, char *num)
 #endif
     curr = curr->next;
   }
-#ifdef DEBUG
+/*#ifdef DEBUG
   if (!curr)
     printf("ToUser(): user not found!\n");
-#endif
+#endif*/
   return (curr);
 }
 
@@ -733,7 +731,7 @@ void onburst(char *source, char *chanarg, char *args)
   long timestamp = 0;
 
   strncpy(channel, chanarg, CHANNELNAME_LENGTH - 1);
-  channel[CHANNELNAME_LENGTH] = '\0';
+  channel[CHANNELNAME_LENGTH - 1] = '\0';
 
   // Fetching timestamp
   GetWord(tokenPos, args, string);
@@ -927,9 +925,7 @@ void onjoin(char *function, char *source, char *channel, char *args)
 
   if (!*channel)
   {
-    PutLog("ERROR: onjoin(): JOIN to null channel!");
-    PutLog(source);
-    PutLog(channel);
+    PutLog("ERROR: onjoin(): JOIN to null channel (%s)! (%s)", channel, source);
     channel = ptr;
     continue;
   }
@@ -939,9 +935,7 @@ void onjoin(char *function, char *source, char *channel, char *args)
     aluser* user = ToLuser(source);
     if (!user)
     {
-#ifdef DEBUG
-      printf("ERROR: onjoin(%s, %s (%s)): Can't find user!\n", source, channel, function);
-#endif
+      PutLog("ERROR: onjoin(%s, %s (%s)): Can't find user!\n", source, channel, function);
     return;
     }
 
@@ -954,8 +948,9 @@ void onjoin(char *function, char *source, char *channel, char *args)
 #ifdef DEBUG
   printf("onjoin(0): Sending part for %s\n", channode->N->name);
 #endif
+      achannelnode* nextNode = channode->next;
       onpart(source, channode->N->name);
-      channode = channode->next;
+      channode = nextNode;
     }
 
     // Continue, they don't join 0...
@@ -997,10 +992,6 @@ void JoinUser(char *num, int isOp, achannel * chan)
   register RegUser *reg;
   register achannelnode *c;
 
-  c = (achannelnode *) MALLOC(sizeof(achannelnode));
-  c->N = chan;
-  c->nickhist = NULL;
-
   // Checking user.
   user = ToLuser(num);
   if (user == NULL)
@@ -1008,8 +999,7 @@ void JoinUser(char *num, int isOp, achannel * chan)
     /* a server would send a KILL, but I think
     * it'll be ok to ignore it
     */
-    sprintf(buffer, "ERROR JoinUser(): Unknown USER %s!", num);
-    PutLog(buffer);
+    PutLog("ERROR JoinUser(): Unknown USER %s!", num);
     return;
   }
 
@@ -1019,12 +1009,25 @@ void JoinUser(char *num, int isOp, achannel * chan)
     return;
   }
 
+/* Check whether the user is already on the channel!? Zombie. */
+  tmp = ToUser(chan->name, num);
+  if (tmp != NULL)
+  {
+    PutLog("WARNING: JoinUser(): %s is already on the channel %s", user->nick, chan->name);
+    return;
+  }
+  tmp = NULL;
+
 /*#ifdef DEBUG
   printf("JOIN: %s!%s@%s (%s) on channel %s", user->nick, user->username, gethost(user), user->num, chan->name);
   if (isOp)
     printf(" (@)");
   printf("\n");
 #endif*/
+
+  c = (achannelnode *) MALLOC(sizeof(achannelnode));
+  c->N = chan;
+  c->nickhist = NULL;
 
   c->next = user->channel;
   user->channel = c;
@@ -1193,9 +1196,7 @@ void onpart(char *num, char *channel)
   c = *ch;
   if (c == NULL)
   {
-#ifdef DEBUG
-    printf("WARNING: onpart(): channel %s not found!\n", channel);
-#endif
+    PutLog("WARNING: onpart(): channel %s not found!\n", channel);
   }
   else
   {

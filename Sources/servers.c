@@ -190,9 +190,7 @@ void onsquit(char *source, char *theserver, char *args)
 
   serv = *s;
 
-#ifdef DEBUG
-  printf("SQUIT: %s\n", theserver);
-#endif
+  PutLog("SQUIT: %s\n", theserver);
 
   if (args != NULL)
   {
@@ -205,9 +203,7 @@ void onsquit(char *source, char *theserver, char *args)
 
   if (serv != ServerList && args != NULL && serv->TS != atol(TS))
   {
-#ifdef DEBUG
-    printf("TS's are different.. ignoring squit!\n");
-#endif
+    PutLog("TS's are different.. ignoring squit!\n");
     return;
   }
 
