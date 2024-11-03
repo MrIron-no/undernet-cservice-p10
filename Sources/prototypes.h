@@ -103,7 +103,7 @@ void part(char *,char *,char *);
 void oninvite(char *,char *);
 void onjoin(char *, char *, char *,char *);
 void onburst(char *, char *,char *);
-void JoinUser(char *,int,achannel *);
+void JoinUser(aluser *,int,achannel *);
 void onpart(char *,char *);
 void onkick(char *,char *,char *);
 void onop(char *,char *,char *);
@@ -153,8 +153,6 @@ void topic(char *,char *,char *);
 void notice(char *,char *);
 void servnotice(char *,char *);
 void broadcast(char *,int);
-void NickInUse(void);
-void ChNick(char *);
 void AddToShitList(char *, char *, char *,int);
 void RemShitList(char *,char *,char *,int);
 void CleanShitList(char *,char *);
@@ -299,3 +297,7 @@ void nserv_onop(char *channel, auser *user);
 #endif
 
 char *randstring(int);
+
+#ifdef SOCKET
+void HistLog(char *);
+#endif

@@ -527,7 +527,7 @@ int read_from_server(int reset)
   static int length = 0;
   char *inchar;
   int end;
-#ifdef HISTORY
+#if defined(HISTORY) || defined(SOCKET)
   char buffer[1300] = "";
 #endif
 
@@ -653,8 +653,13 @@ int read_from_server(int reset)
 	}
 
 	/* parse the received line */
-#ifdef HISTORY
+#if defined(HISTORY) || defined(SOCKET)
 	sprintf(buffer, "%s %s %s %s", source, function, target, body);
+#endif
+#ifdef SOCKET
+	HistLog(buffer);
+#endif
+#ifdef HISTORY
 	History(buffer);
 #endif
 	proc(source, function, target, body);

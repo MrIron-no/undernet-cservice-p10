@@ -221,52 +221,9 @@ void onnick(char *source, char *newnick, char *body)
 
     GetWord(numPos, body, YYXXX);
 
-    if (!strcasecmp(newnick, mynick))
-    {
-      PutLog("ERROR: I'm nick collided");
-
-      if (atol(TS) <= logTS &&
-        strcasecmp(username, myuser) &&
-        strcasecmp(hostname, mysite))
-      {
-        NickInUse();
-        PutLog(source);
-        PutLog(newnick);
-        PutLog(body);
-      }
-      else
-      {
-        onquit(YYXXX);
-        return;		/*ignore */
-      }
-#ifdef BACKUP
-    }
-    else if (!strcasecmp(newnick, MAIN_NICK))
-    {
-      return;	/* ignore */
-#endif
-    }
-
-#ifdef FAKE_UWORLD
-    if (Uworld_status == 1 && !strcasecmp(newnick, UFAKE_NICK))
-    {
-      if (atol(TS) <= UworldTS && atol(TS) != 0 &&
-        strcasecmp(username, UFAKE_NICK) &&
-        strcasecmp(hostname, UFAKE_HOST))
-      {
-        sprintf(buffer, "%s nick collided", UFAKE_NICK);
-        PutLog(buffer);
-        Uworld_status = 0;
-        KillUworld("nick collision");
-        return;		/* ignore if younger */
-      }
-    }
-#endif
-
     // Checking if we have a numeric collision
-    if (ToLuser(YYXXX))
+    if ((tempuser = ToLuser(YYXXX)))
     {
-      tempuser = ToLuser(YYXXX);
       PutLog("ERROR onnick(): Numeric collision. Existing user: %s (%s) (lu_hash: %d). New user %s (arg: %s) (lu_hash: %d)\n", tempuser->nick, tempuser->num, lu_hash(tempuser->num), newnick, body, lu_hash(YYXXX));
       onquit(YYXXX);
     }
@@ -349,26 +306,6 @@ void onnick(char *source, char *newnick, char *body)
   }
   else
   {	/* nick change */
-    GetWord(0, body, TS);
-    if (!strcasecmp(newnick, mynick))
-    {
-#ifdef DEBUG
-      printf("ARGH!!! I'M NICK COLLIDED!\n");
-#endif
-      if (atol(TS + 1) <= logTS)
-      {
-        NickInUse();
-        PutLog(source);
-        PutLog(newnick);
-        PutLog(body);
-      }
-      else
-      {
-        onquit(source);
-        return;		/*ignore */
-      }
-    }
-
     u = &Lusers[lu_hash(source)];
     while (*u && strcmp(source, (*u)->num) != 0)
       u = &(*u)->next;
@@ -386,11 +323,6 @@ void onnick(char *source, char *newnick, char *body)
 #endif
       return;
     }
-
-/*    s = &user->server->users[su_hash(source)];
-    while (*s && strcmp((*s)->N->num, user->num) != 0)
-      s = &(*s)->next;
-    suser = *s;*/
 
     /* change the nick in memory */
 

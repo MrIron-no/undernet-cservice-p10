@@ -151,7 +151,7 @@ void LogChan(void)
 }
 #endif
 
-#ifdef HISTORY
+#if defined(HISTORY) || defined(SOCKET)
 void HistLog(char *text)
 {
         int fd;
@@ -170,7 +170,8 @@ void HistLog(char *text)
         }
         alarm(0);
 }
-
+#endif
+#ifdef HISTORY
 void History(char *line)
 {
 	static char Log[25][512];

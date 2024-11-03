@@ -484,7 +484,7 @@ void Uworld_opcom(char *source, char *args)
 {
   char buffer[BUFFER_BLOCK_SIZE] = "";
   char command[80] = "";
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[CHANNELNAME_LENGTH + 1] = "";
   char modestring[80] = "";
   char orig[80] = ""; /* The original string with nicknames and not numerics. */
   char *ptr;
@@ -585,7 +585,7 @@ void ClearChan(char *source, char *args)
   register char *curr;
   register aban *oneban;
   register int i;
-  char buffer[BUFFER_BLOCK_SIZE] = "", channel[CHANNELNAME_LENGTH] = "", arg[80] = "";
+  char buffer[BUFFER_BLOCK_SIZE] = "", channel[CHANNELNAME_LENGTH + 1] = "", arg[80] = "";
 
   if ((user = ToLuser(source)) == NULL)
   {
@@ -680,7 +680,7 @@ void Uworld_reop(char *source, char *args)
 {
   register aluser *user;
   char buffer[512] = "";
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[CHANNELNAME_LENGTH + 1] = "";
 
   GetnWord(0, args, channel, CHANNELNAME_LENGTH);
 

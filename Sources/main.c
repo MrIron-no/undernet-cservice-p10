@@ -583,7 +583,7 @@ void GetWord(int nb, char *string, char *output)
   *ptr2 = 0;
 }
 
-void GetnWord(int nb, char *string, char *output, int n) 
+void GetnWord(int nb, char *string, char *output, int n)
 {
   register char *ptr1;
   register char *ptr2;
@@ -603,7 +603,7 @@ int StringSize(const char *sentence)
     int inword = 0;
 
     do switch(*sentence) {
-        case '\0': 
+        case '\0':
         case ' ': case '\t': case '\n': case '\r':
             if (inword) { inword = 0; counted++; }
             break;
@@ -948,13 +948,6 @@ void proc(char *source, char *function, char *target, char *body)
   {
     showversion(source);
 
-  }
-  else if (strcmp(function, "436") == 0) // TODO: Is this obsolete?
-  {
-    if (!strcasecmp(target, mynick))
-    {
-      NickInUse();
-    }
   }
 }
 

@@ -28,7 +28,7 @@
 
 int cl_hash(char *channel)
 {
-  register int i, j;
+  int i, j;
 
   for (i = j = 0; i < strlen(channel); i++)
     j += (unsigned char)toupper(channel[i]);
@@ -37,8 +37,8 @@ int cl_hash(char *channel)
 
 void NewChannel(char *channelname, time_t TS, int on)
 {
-  register achannel *chan;
-  register adefchan *defs;
+  achannel *chan;
+  adefchan *defs;
   char buffer[200] = "";
 
   if (!channelname || !*channelname)
@@ -104,12 +104,12 @@ void NewChannel(char *channelname, time_t TS, int on)
 
 void DelChannel(char *channelname)
 {
-  register achannel *chan;
-  register achannel *prec = NULL;
-  register auser *user;
-  register modequeue *mode;
-  register aban *ban;
-  char channel[CHANNELNAME_LENGTH] = "";
+  achannel *chan;
+  achannel *prec = NULL;
+  auser *user;
+  modequeue *mode;
+  aban *ban;
+  char channel[CHANNELNAME_LENGTH + 1] = "";
 
   // For some reason this took care of alot of valgrind warnings...
   strcpy(channel, channelname);
@@ -124,6 +124,7 @@ void DelChannel(char *channelname)
       {
         chan->users = user->next;
         FreeUser(user);
+        user = NULL;
       }
       if (prec)
       {
@@ -179,8 +180,8 @@ void DelChannel(char *channelname)
 
 void FreeUser(auser * user)
 {
-  register adeop *nodedeop;
-  register amsg *nodemsg;
+  adeop *nodedeop;
+  amsg *nodemsg;
   while ((nodedeop = user->deophist) != NULL)
   {
     user->deophist = nodedeop->next;
@@ -196,14 +197,13 @@ void FreeUser(auser * user)
   }
   TTLALLOCMEM -= sizeof(auser);
   free(user);
-  user = NULL;
   /* phew! */
 }
 
 
 achannel *ToChannel(char *channel)
 {
-  register achannel *curr = ChannelList[cl_hash(channel)];
+  achannel *curr = ChannelList[cl_hash(channel)];
 
   while (curr && strcasecmp(curr->name, channel) != 0)
   {
@@ -214,8 +214,8 @@ achannel *ToChannel(char *channel)
 
 auser *ToUser(char *channel, char *num)
 {
-  register auser *curr;
-  register achannel *chan;
+  auser *curr;
+  achannel *chan;
 
   if (strlen(num) != 5)
   return NULL;
@@ -252,8 +252,8 @@ auser *ToUser(char *channel, char *num)
 
 auser *ToUserNick(char *channel, char *nick)
 {
-  register auser *curr;
-  register achannel *chan;
+  auser *curr;
+  achannel *chan;
 
   chan = ToChannel(channel);
   if (!chan)
@@ -291,8 +291,8 @@ auser *ToUserNick(char *channel, char *nick)
 void GetOps(char *channel)
 {
   char buffer[BUFFER_BLOCK_SIZE] = "";
-  register aluser *user;
-  register achannel *chan;
+  aluser *user;
+  achannel *chan;
 
   chan = ToChannel(channel);
 
@@ -351,10 +351,10 @@ void GetOps(char *channel)
 
 int GuessChannel(char *num, char *output)
 {
-  register aluser *luser;
-  register avalchan *vchan;
-  register achannelnode *nchan;
-  register int found = 0;
+  aluser *luser;
+  avalchan *vchan;
+  achannelnode *nchan;
+  int found = 0;
   char tmp[80] = "";
 
   luser = ToLuser(num);
@@ -430,7 +430,7 @@ void onopless(char *channel)
 void oninvite(char *source, char *args)
 {
   char buffer[1024] = "";
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[CHANNELNAME_LENGTH + 1] = "";
 
   GetnWord(0, args, channel, CHANNELNAME_LENGTH);
 
@@ -721,17 +721,18 @@ void onburst(char *source, char *chanarg, char *args)
   char string[600] = "";
   char buffer[80] = "";
   char YYXXX[6] = "";
-  char channel[CHANNELNAME_LENGTH] = "";
+  char channel[CHANNELNAME_LENGTH + 1] = "";
   char modestring[50] = "";
   char *sptr, *ptr, *ptr2, *mode, *bans;
-  register achannel *chan;
+  achannel *chan;
+  aluser *user;
   int i = 0;
   int isOp = 0;
   int tokenPos = 0;
-  long timestamp = 0;
+  time_t timestamp = 0;
 
-  strncpy(channel, chanarg, CHANNELNAME_LENGTH - 1);
-  channel[CHANNELNAME_LENGTH - 1] = '\0';
+  strncpy(channel, chanarg, CHANNELNAME_LENGTH);
+  channel[CHANNELNAME_LENGTH] = '\0';
 
   // Fetching timestamp
   GetWord(tokenPos, args, string);
@@ -880,18 +881,29 @@ void onburst(char *source, char *chanarg, char *args)
         strncpy(YYXXX, sptr, 5);
         YYXXX[5] = '\0';
 
-      // Checking if modes are attached to the numeric. If :o or :ov, flag that next users are ops.
+      // Checking if modes are attached to the numeric. If :o or :vo, flag that next users are ops.
       mode = strchr(sptr, ':');
       if (mode != NULL)
       {
-        if (strcmp(mode, ":o") == 0 || strcmp(mode, ":ov") == 0)
+        if (strcmp(mode, ":o") == 0 || strcmp(mode, ":vo") == 0)
           isOp = 1;
         else
           isOp = 0;
       }
 
+      user = ToLuser(YYXXX);
+      if (user == NULL)
+      {
+        /* a server would send a KILL, but I think
+         * it'll be ok to ignore it
+         */
+        PutLog("ERROR onburst(): Unknown USER %s!", YYXXX);
+        sptr = ptr;
+        continue;
+      }
+
       // Registering user.
-      JoinUser(YYXXX, isOp, chan);
+      JoinUser(user, isOp, chan);
 
       // Next
       sptr = ptr;
@@ -905,125 +917,99 @@ void onjoin(char *function, char *source, char *channel, char *args)
   // This function gets called on J (joins), C (new channels)
 
   char *ptr;
-  register achannel *chan;
+  achannel *chan;
+  achannelnode *c;
+  aluser *user;
   int isOp = 0;
   time_t timestamp = atol(ToWord(0, args));
+
+  user = ToLuser(source);
+  if (user == NULL)
+  {
+    /* a server would send a KILL, but I think
+     * it'll be ok to ignore it
+     */
+    PutLog("ERROR onjoin(): Unknown USER %s!", source);
+    return;
+  }
 
   // Setting isOp to 1 if the channel is created.
   if (strcmp(function,"C") == 0)
     isOp = 1;
 
-#ifdef DEBUG
-  printf("onjoin(%s, %s (%s))\n", source, channel, function);
-#endif
-
   while (channel)
   {
-  ptr = strchr(channel, ',');
-  if (ptr != NULL)
-    *(ptr++) = '\0';
+    ptr = strchr(channel, ',');
+    if (ptr != NULL)
+      *(ptr++) = '\0';
 
-  if (!*channel)
-  {
-    PutLog("ERROR: onjoin(): JOIN to null channel (%s)! (%s)", channel, source);
-    channel = ptr;
-    continue;
-  }
-
-  if (strcmp(channel, "0") == 0)
-  {
-    aluser* user = ToLuser(source);
-    if (!user)
+    /* join 0 */
+    if (!strcmp(channel, "0"))
     {
-      PutLog("ERROR: onjoin(%s, %s (%s)): Can't find user!\n", source, channel, function);
-    return;
+      while ((c = user->channel) != NULL)
+      {
+	onpart(source, c->N->name);
+      }
+      channel = ptr;
+      continue;
     }
 
 #ifdef DEBUG
-  printf("onjoin(%s, %s (%s)): Parting all channels\n", source, channel, function);
+    printf("onjoin(%s, %s (%s))\n", source, channel, function);
 #endif
-    achannelnode* channode = user->channel;
-    while (channode != NULL)
+
+    if (!*channel)
     {
-#ifdef DEBUG
-  printf("onjoin(0): Sending part for %s\n", channode->N->name);
-#endif
-      achannelnode* nextNode = channode->next;
-      onpart(source, channode->N->name);
-      channode = nextNode;
+      PutLog("ERROR: onjoin(): JOIN to null channel (%s)! (%s)", channel, source);
+      channel = ptr;
+      continue;
     }
-
-    // Continue, they don't join 0...
-    channel = ptr;
-    continue;
-  }
-
-  chan = ToChannel(channel);
-  if (!chan)
-  {
-#ifdef DEBUG
-    printf("onjoin(): New channel\n");
-#endif
-
-    if (!timestamp)
-      NewChannel(channel, now + TSoffset, 0);
-    else
-      NewChannel(channel, timestamp, 0);
 
     chan = ToChannel(channel);
-  }
+    if (!chan)
+    {
+#ifdef DEBUG
+      printf("onjoin(): New channel\n");
+#endif
 
-  chan->lastact = now;
+      if (!timestamp)
+        NewChannel(channel, now + TSoffset, 0);
+      else
+        NewChannel(channel, timestamp, 0);
 
-  // Registering the user
-  JoinUser(source, isOp, chan);
+      chan = ToChannel(channel);
+    }
 
-  channel = ptr;
+    chan->lastact = now;
+
+    // Registering the user
+    JoinUser(user, isOp, chan);
+
+    channel = ptr;
   }
 }
 
-void JoinUser(char *num, int isOp, achannel * chan)
+void JoinUser(aluser *user, int isOp, achannel * chan)
 {
   char buffer[700] = "";
   char mask[200] = "";
   char reason[200] = "";
-  register aluser *user;
-  register auser *usr, *tmp;
-  register RegUser *reg;
-  register achannelnode *c;
+  auser *usr, *tmp;
+  RegUser *reg;
+  achannelnode *c;
 
-  // Checking user.
-  user = ToLuser(num);
-  if (user == NULL)
+  if (!chan || !user)
   {
-    /* a server would send a KILL, but I think
-    * it'll be ok to ignore it
-    */
-    PutLog("ERROR JoinUser(): Unknown USER %s!", num);
+    PutLog("ERROR JoinUser(): Channel or user is null!");
     return;
   }
 
-  if (!chan)
-  {
-    PutLog("ERROR JoinUser(): Channel is null!");
-    return;
-  }
-
-/* Check whether the user is already on the channel!? Zombie. */
-  tmp = ToUser(chan->name, num);
-  if (tmp != NULL)
-  {
-    PutLog("WARNING: JoinUser(): %s is already on the channel %s", user->nick, chan->name);
-    return;
-  }
-  tmp = NULL;
-
-/*#ifdef DEBUG
+#ifdef DEBUG
   printf("JOIN: %s!%s@%s (%s) on channel %s", user->nick, user->username, gethost(user), user->num, chan->name);
   if (isOp)
     printf(" (@)");
   printf("\n");
-#endif*/
+#endif
 
   c = (achannelnode *) MALLOC(sizeof(achannelnode));
   c->N = chan;
@@ -1032,7 +1018,7 @@ void JoinUser(char *num, int isOp, achannel * chan)
   c->next = user->channel;
   user->channel = c;
 
-  strcpy(chan->lastjoin, num);
+  strcpy(chan->lastjoin, user->num);
 
   usr = (auser *) MALLOC(sizeof(auser));
 
@@ -1071,7 +1057,7 @@ void JoinUser(char *num, int isOp, achannel * chan)
   if (chan->on && chan->AmChanOp && IsShit(chan->name, user, mask, reason) >= AUTO_KICK_SHIT_LEVEL)
   {
   PutLog("Detected banned user (AUTO-KICK LEVEL)");
-  notice(num, "*** Sorry. You are on my banlist ***");
+  notice(user->num, "*** Sorry. You are on my banlist ***");
   mban("", chan->name, mask);
   sprintf(buffer, "%s %s [%s]", mask, mask, reason);
   kick("", chan->name, buffer);
@@ -1107,12 +1093,7 @@ void onpart(char *num, char *channel)
 {
   char buffer[200] = "";
   char *ptr;
-  register auser *user;
-  register aluser *luser;
-  register auser *prec = NULL;
-  register achannel *chan;
-  register achannelnode **ch, *c;
-  register anickchange *nickhist;
+  aluser *luser;
 
 #ifdef DEBUG
   printf("PART: %s from %s\n", num, channel);
@@ -1145,6 +1126,9 @@ void onpart(char *num, char *channel)
     continue;
   }
 
+  achannel *chan;
+  auser *user;
+  auser *prec = NULL;
   chan = ToChannel(channel);
 
   if (chan == NULL)
@@ -1189,6 +1173,7 @@ void onpart(char *num, char *channel)
     }
   }
 
+  achannelnode **ch, *c;
   ch = &luser->channel;
   while (*ch && strcasecmp(channel, (*ch)->N->name))
     ch = &(*ch)->next;
@@ -1202,6 +1187,7 @@ void onpart(char *num, char *channel)
   {
     *ch = c->next;
 
+    anickchange *nickhist;
     while ((nickhist = c->nickhist) != NULL)
     {
       c->nickhist = nickhist->next;
@@ -1229,7 +1215,7 @@ void onkick(char *source, char *channel, char *body)
 {
   char YYXXX[6] = "";
   char buffer[1024] = "";
-  register auser *user;
+  auser *user;
 
   GetWord(0, body, YYXXX);
   CheckFlood(source, channel, 80);
@@ -1252,13 +1238,13 @@ void onkick(char *source, char *channel, char *body)
     broadcast(buffer, 0);
     part("", channel, "");
   }
-  else
+  else if (strncmp(source, YYXXX, 2) == 0) // Authoritative kick (P10)
     onpart(YYXXX, channel);
 }
 
 void QuitAll(void)
 {
-  register int j;
+  int j;
 
   if (ServerList != NULL)
     onsquit("", ServerList->name, NULL);

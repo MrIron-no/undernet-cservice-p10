@@ -34,6 +34,7 @@ CFLAGS = -Wpedantic -ggdb -O0 -pedantic-errors
 #DEFINES = -DDEBUG_MALLOC -DHISTORY
 #DEFINES= -DHISTORY
 DEFINES= -DHISTORY -DDEBUG
+#DEFINES= -DSOCKET -DDEBUG
 #DEFINES=
 
 # necessary for Solaris
@@ -41,13 +42,13 @@ DEFINES= -DHISTORY -DDEBUG
 
 OBJECTS = bans.o buffer.o channels.o chat.o conf.o connect.o dbio.o debug.o \
 	  defchan.o events.o floodpro.o help.o http.o ignore.o kicks.o \
-	  match.o modes.o nick.o nickserv.o opcom.o ops.o patch.o privmsg.o \
+	  match.o modes.o nickserv.o opcom.o ops.o patch.o privmsg.o \
 	  replies.o servers.o shitlist.o socketio.o special.o userlist.o \
 	  users.o version.o ccontrol.o
 
 SOURCES = bans.c buffer.c channels.c chat.c conf.c connect.c dbio.c debug.c \
 	  defchan.c events.c floodpro.c help.c http.c ignore.c kicks.c \
-	  match.c modes.c nick.c nickserv.c opcom.c ops.c patch.c privmsg.c \
+	  match.c modes.c nickserv.c opcom.c ops.c patch.c privmsg.c \
 	  replies.c servers.c shitlist.c socketio.c special.c userlist.c \
 	  users.c version.c ccontrol.c
 
