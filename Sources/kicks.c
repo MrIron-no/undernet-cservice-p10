@@ -30,7 +30,7 @@ void kick(char *source,char *chanarg,char *args)
 {
 	char buffer[BUFFER_BLOCK_SIZE] = "";
 	char nick[80] = "";
-	char kicknum[6] = "";
+//	char kicknum[6] = "";
 	char channel[80] = "";
 	char *comment;
 	int found=0;
@@ -120,7 +120,7 @@ void kick(char *source,char *chanarg,char *args)
 		sendtoserv(buffer);
 		sprintf(buffer,"I KICK %s OFF %s",nick,channel);
 		PutLog(buffer);
-		onpart(user->N->num, channel);
+//		onpart(user->N->num, channel);
 	} else {
 #ifdef DEBUG
 		sprintf(buffer, "KICK REQUEST (WITH WILDCARDS)\nSOURCE %s\nCHANNEL %s\nTARGET %s\n",
@@ -161,13 +161,12 @@ void kick(char *source,char *chanarg,char *args)
 							myYYXXX,channel,user->N->num,mynick);
 				}
 				sendtoserv(buffer);
-				sprintf(buffer,"I KICK %s OFF %s",user->N->nick,channel);
-				strncpy(kicknum, user->N->num, 5);
-				user=user->next;
-				onpart(kicknum, channel);
-				PutLog(buffer);
+				PutLog("I KICK %s OFF %s",user->N->nick,channel);
+//				strncpy(kicknum, user->N->num, 5);
+//				user=user->next;
+//				onpart(kicknum, channel);
 				found=1;
-				continue;
+//				continue;
 			}
 			user=user->next;
 		}
