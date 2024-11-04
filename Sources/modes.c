@@ -26,9 +26,6 @@
 
 #include "h.h"
 
-static void AddFlag(char *, char, char *);
-static void RemFlag(char *, char);
-
 void setchanmode(char *line)
 {
   register char *mode;

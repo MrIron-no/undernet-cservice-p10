@@ -224,7 +224,7 @@ void ClearMode(char *source, char *chan, char *args)
   register achannel *ch;
   register char *curr;
   register int i;
-  char buffer[200], channel[80], arg[80];
+  char buffer[200], channel[80], arg[80], mode[80];
 
   if ((user = ToLuser(source)) == NULL)
   {
@@ -283,7 +283,8 @@ void ClearMode(char *source, char *chan, char *args)
     channel, user->nick, user->username, gethost(user));
   PutLog(buffer);
 
-  curr = ch->mode;
+  strcpy(mode, ch->mode);
+  curr = mode;
   i = 1;
 
   while (*curr && *curr != ' ')
@@ -294,22 +295,24 @@ void ClearMode(char *source, char *chan, char *args)
       if (*curr == 'k')
       {
 	changemode(channel, "-k", arg, 0);
+	RemFlag(ch->mode, *curr);
       }
       else
       {
 	changemode(channel, "-l", "", 0);
+	RemFlag(ch->mode, *curr);
       }
     }
     else if (!strchr("R", *curr))
     {
       sprintf(buffer, "-%c", *curr);
       changemode(channel, buffer, "", 0);
+      RemFlag(ch->mode, *curr);
     }
 
     curr++;
   }
 
-  ch->mode[0] = '\0';
   flushmode(channel);
 }
 

@@ -133,6 +133,8 @@ void onkill(char *,char *,char *);
 void onwho(char *);
 void showusers(char *, char *);
 void showchannels(char *);
+void AddFlag(char *, char, char *);
+void RemFlag(char *, char);
 void setchanmode(char *);
 void onclearmode(char *,char *,char *);
 void ModeChange(char *,char *,char *);
