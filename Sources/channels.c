@@ -1181,7 +1181,9 @@ void onpart(char *num, char *channel)
   c = *ch;
   if (c == NULL)
   {
-    PutLog("WARNING: onpart(): channel %s not found!\n", channel);
+    /* We ignore this warning since we are calling onpart() from onkick(),
+     * and as such will be receiving L messages from the kickee's server (zombie).
+    PutLog("WARNING: onpart(): channel %s not found!\n", channel);*/
   }
   else
   {
@@ -1238,7 +1240,7 @@ void onkick(char *source, char *channel, char *body)
     broadcast(buffer, 0);
     part("", channel, "");
   }
-  else if (strncmp(source, YYXXX, 2) == 0) // Authoritative kick (P10)
+  else
     onpart(YYXXX, channel);
 }
 
